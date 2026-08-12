@@ -1,0 +1,83 @@
+[gd_scene load_steps=5 format=3 uid="uid://d3jafobskux2q"]
+
+[ext_resource type="Script" uid="uid://kkkdu12ag13u" path="res://scripts/ui/MinigameCard.gd" id="1_script"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hvgxg"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1v3a2"]
+bg_color = Color(0.2, 0.2, 0.3, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 4
+shadow_offset = Vector2(0, 4)
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_BorderOverlay"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+anti_aliasing = false
+
+[node name="MinigameCard" type="Button"]
+custom_minimum_size = Vector2(256, 144)
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_hvgxg")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_hvgxg")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_hvgxg")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_hvgxg")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_hvgxg")
+script = ExtResource("1_script")
+
+[node name="BackgroundPanel" type="Panel" parent="."]
+clip_children = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_1v3a2")
+
+[node name="StatusTexture" type="TextureRect" parent="BackgroundPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Label" type="Label" parent="BackgroundPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 32
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BorderOverlay" type="Panel" parent="BackgroundPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_BorderOverlay")

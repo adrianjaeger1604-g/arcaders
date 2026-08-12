@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://cax2j4f2e2n4c"]
+
+[node name="GameButton" type="Button"]
+custom_minimum_size = Vector2(0, 80)
+offset_right = 8.0
+offset_bottom = 8.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 64
+text = "Aktion"

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arcaders Controller</title>
+    <link rel="stylesheet" href="style.css?v=11">
+</head>
+
+<body>
+
+    <!-- Score Display (nur sichtbar im Spiel) -->
+    <div id="score-display"
+        style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: 2px solid #4CAF50; border-radius: 8px; color: #4CAF50; font-weight: bold; padding: 5px 15px; font-size: 20px; z-index: 1000; display: none;">
+        Punkte: <span id="player-score">0</span>
+    </div>
+
+    <div id="connection-screen" class="screen active">
+        <h1>Verbinde...</h1>
+        <p id="status-text">Suche Spielleiter...</p>
+    </div>
+
+    <div id="join-screen" class="screen">
+        <h1>Wähle deinen Namen</h1>
+        <input type="text" id="player-name" placeholder="Dein Name" maxlength="12">
+        <button id="btn-join" class="btn primary">Beitreten</button>
+    </div>
+
+    <div id="character-select-screen" class="screen">
+        <h1>Wähle deinen Charakter</h1>
+        <div class="char-grid" id="char-grid">
+            <!-- Dynamically populated by app.js -->
+        </div>
+        <p id="char-status" style="margin-top: 20px; font-weight: bold;"></p>
+    </div>
+
+    <div id="quiz-screen" class="screen">
+        <h2 id="quiz-question">Frage lädt...</h2>
+        <input type="text" id="quiz-answer" placeholder="Deine Antwort...">
+        <button id="btn-submit-answer" class="btn primary">Senden</button>
+    </div>
+
+    <div id="buzzer-screen" class="screen">
+        <button id="btn-buzzer" class="btn buzzer"></button>
+    </div>
+
+    <div id="minigame-10sec-screen" class="screen">
+        <h2>10 Sekunden</h2>
+        <p>Halte den Knopf so genau wie möglich 10 Sekunden lang gedrückt!</p>
+        <button id="btn-10sec-hold" class="btn hold-btn">HALTEN</button>
+    </div>
+
+    <div id="minigame-tip-fast-screen" class="screen" style="padding: 0; background: lightgreen;">
+        <div id="btn-tip-fast-mash" class="mash-area"></div>
+    </div>
+
+    <div id="waiting-screen" class="screen">
+        <h1>Warten...</h1>
+        <p>Bitte schau auf den Hauptbildschirm.</p>
+    </div>
+
+    <!-- On-Screen Debug Log -->
+    <div id="debug-log"
+        style="position: fixed; bottom: 0; left: 0; right: 0; height: 120px; background: rgba(0,0,0,0.8); color: lime; font-family: monospace; font-size: 11px; overflow-y: auto; z-index: 9999; padding: 5px; pointer-events: none;">
+    </div>
+
+    <script src="app.js?v=10"></script>
+</body>
+
+</html>

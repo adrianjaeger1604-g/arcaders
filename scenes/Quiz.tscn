@@ -1,0 +1,93 @@
+[gd_scene load_steps=5 format=3 uid="uid://bpfnaqtlvp0bv"]
+
+[ext_resource type="Script" path="res://scripts/Quiz.gd" id="1_quiz"]
+[ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="2_btn"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
+[ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="4_tileset"]
+
+[node name="Quiz" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_quiz")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.121569, 0.12549, 0.180392, 1)
+
+[node name="BackgroundTileMap" type="TileMap" parent="."]
+z_index = -1
+scale = Vector2(4, 4)
+tile_set = ExtResource("4_tileset")
+format = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(800, 0)
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Allgemeinwissen-Quiz"
+horizontal_alignment = 1
+
+[node name="RoundLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 32
+text = "Runde 1 / 10"
+horizontal_alignment = 1
+
+[node name="QuestionLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Lade Frage..."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="AnswerLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.180392, 0.8, 0.443137, 1)
+theme_override_font_sizes/font_size = 48
+text = "Lösung: Paris"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="AnswersTitle" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 24
+text = "Warte auf Antworten..."
+horizontal_alignment = 1
+
+[node name="AnswersList" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="CloseRoundButton" parent="CenterContainer/VBoxContainer" instance=ExtResource("2_btn")]
+layout_mode = 2
+text = "RUNDE SCHLIESSEN"
+
+[node name="NextRoundButton" parent="CenterContainer/VBoxContainer" instance=ExtResource("2_btn")]
+visible = false
+layout_mode = 2
+text = "NÄCHSTE FRAGE (Oder Mini-Spiel)"

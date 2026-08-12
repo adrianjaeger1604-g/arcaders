@@ -1,0 +1,235 @@
+[gd_scene load_steps=6 format=3 uid="uid://c5ohettnlgqbc"]
+
+[ext_resource type="Script" uid="uid://c1ccpo73nq6d" path="res://scripts/MainBoard.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="2_theme"]
+[ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="3_tileset"]
+[ext_resource type="PackedScene" uid="uid://2q7c2wrtns1y" path="res://scenes/CloudSpawner.tscn" id="3_tu677"]
+[ext_resource type="Texture2D" uid="uid://chfiio7xj6y6m" path="res://assets/ui/shared/settings_gear.png" id="4_gear"]
+
+[node name="MainBoard" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.34901962, 0.5803922, 0.9882353, 1)
+
+[node name="TileMap" type="TileMap" parent="."]
+scale = Vector2(4, 4)
+tile_set = ExtResource("3_tileset")
+format = 2
+layer_0/tile_data = PackedInt32Array(655360, 131073, 3, 720896, 131073, 3, 786432, 131073, 3, 851968, 131073, 3, 917504, 131073, 3, 983040, 131073, 3, 655361, 131073, 3, 720897, 131073, 3, 786433, 131073, 3, 851969, 131073, 3, 917505, 131073, 3, 983041, 131073, 3, 655362, 131073, 3, 720898, 131073, 3, 786434, 131073, 3, 851970, 131073, 3, 917506, 131073, 3, 983042, 131073, 3, 655363, 131073, 3, 720899, 131073, 3, 786435, 131073, 3, 851971, 131073, 3, 917507, 131073, 3, 983043, 131073, 3, 655364, 131073, 3, 720900, 131073, 3, 786436, 131073, 3, 851972, 131073, 3, 917508, 131073, 3, 983044, 131073, 3, 655365, 131073, 3, 720901, 131073, 3, 786437, 131073, 3, 851973, 131073, 3, 917509, 131073, 3, 983045, 131073, 3, 655366, 131073, 3, 720902, 131073, 3, 786438, 131073, 3, 851974, 131073, 3, 917510, 131073, 3, 983046, 131073, 3, 655367, 131073, 3, 720903, 131073, 3, 786439, 131073, 3, 851975, 131073, 3, 917511, 131073, 3, 983047, 131073, 3, 655368, 131073, 3, 720904, 131073, 3, 786440, 131073, 3, 851976, 131073, 3, 917512, 131073, 3, 983048, 131073, 3, 655369, 131073, 3, 720905, 131073, 3, 786441, 131073, 3, 851977, 131073, 3, 917513, 131073, 3, 983049, 131073, 3, 655370, 131073, 3, 720906, 131073, 3, 786442, 131073, 3, 851978, 131073, 3, 917514, 131073, 3, 983050, 131073, 3, 655371, 131073, 3, 720907, 131073, 3, 786443, 131073, 3, 851979, 131073, 3, 917515, 131073, 3, 983051, 131073, 3, 655372, 131073, 3, 720908, 131073, 3, 786444, 131073, 3, 851980, 131073, 3, 917516, 131073, 3, 983052, 131073, 3, 655373, 131073, 3, 720909, 131073, 3, 786445, 131073, 3, 851981, 131073, 3, 917517, 131073, 3, 983053, 131073, 3, 655374, 131073, 3, 720910, 131073, 3, 786446, 131073, 3, 851982, 131073, 3, 917518, 131073, 3, 983054, 131073, 3, 655375, 131073, 3, 720911, 131073, 3, 786447, 131073, 3, 851983, 131073, 3, 917519, 131073, 3, 983055, 131073, 3, 655376, 131073, 3, 720912, 131073, 3, 786448, 131073, 3, 851984, 131073, 3, 917520, 131073, 3, 983056, 131073, 3, 655377, 131073, 3, 720913, 131073, 3, 786449, 131073, 3, 851985, 131073, 3, 917521, 131073, 3, 983057, 131073, 3, 655378, 131073, 3, 720914, 131073, 3, 786450, 131073, 3, 851986, 131073, 3, 917522, 131073, 3, 983058, 131073, 3, 655379, 131073, 3, 720915, 131073, 3, 786451, 131073, 3, 851987, 131073, 3, 917523, 131073, 3, 983059, 131073, 3, 655380, 131073, 3, 720916, 131073, 3, 786452, 131073, 3, 851988, 131073, 3, 917524, 131073, 3, 983060, 131073, 3, 655381, 131073, 3, 720917, 131073, 3, 786453, 131073, 3, 851989, 131073, 3, 917525, 131073, 3, 983061, 131073, 3, 655382, 131073, 3, 720918, 131073, 3, 786454, 131073, 3, 851990, 131073, 3, 917526, 131073, 3, 983062, 131073, 3, 655383, 131073, 3, 720919, 131073, 3, 786455, 131073, 3, 851991, 131073, 3, 917527, 131073, 3, 983063, 131073, 3, 655384, 131073, 3, 720920, 131073, 3, 786456, 131073, 3, 851992, 131073, 3, 917528, 131073, 3, 983064, 131073, 3, 655385, 131073, 3, 720921, 131073, 3, 786457, 131073, 3, 851993, 131073, 3, 917529, 131073, 3, 983065, 131073, 3, 655386, 131073, 3, 720922, 131073, 3, 786458, 131073, 3, 851994, 131073, 3, 917530, 131073, 3, 983066, 131073, 3, 655387, 131073, 3, 720923, 131073, 3, 786459, 131073, 3, 851995, 131073, 3, 917531, 131073, 3, 983067, 131073, 3, 655388, 131073, 3, 720924, 131073, 3, 786460, 131073, 3, 851996, 131073, 3, 917532, 131073, 3, 983068, 131073, 3, 655389, 131073, 3, 720925, 131073, 3, 786461, 131073, 3, 851997, 131073, 3, 917533, 131073, 3, 983069, 131073, 3, 524290, 1, 3, 589826, 65537, 3, 524291, 65537, 3, 589827, 65537, 3, 524292, 131073, 3, 589828, 131073, 3, 524293, 196609, 3, 589829, 196609, 3, 589830, 65537, 3, 458756, 131073, 2, 589832, 65537, 3, 589833, 131073, 3, 589834, 196609, 3, 524297, 131073, 2, 524302, 1179649, 3, 589838, 1179649, 3, 524304, 1179649, 3, 589840, 1179649, 3, 524307, 1179649, 3, 589843, 1179649, 3, 524309, 1179649, 3, 589845, 1179649, 3, 458773, 1179649, 2, 393237, 1179649, 1, 458771, 1179649, 2, 458768, 1179649, 2, 458766, 1179649, 2, 393230, 1179649, 1, 393232, 1179649, 1, 393235, 1179649, 1, 589831, 1, 3, 589835, 262145, 3, 524296, 65537, 2, 524298, 196609, 2, 458761, 131073, 1, 393220, 131073, 1, 458755, 65537, 2, 458757, 196609, 2, 524294, 262145, 3, 589825, 1, 3)
+
+[node name="TileMap2" type="TileMap" parent="."]
+scale = Vector2(4, 4)
+tile_set = ExtResource("3_tileset")
+format = 2
+layer_0/tile_data = PackedInt32Array(917512, 1179649, 3, 851976, 1179649, 3, 786440, 1179649, 2, 720904, 1179649, 1, 917507, 524289, 1, 917508, 589825, 1, 917514, 524289, 1, 917515, 589825, 1, 720919, 131073, 0, 786436, 262145, 0, 786459, 262145, 0, 720912, 262145, 0, 786443, 131073, 0)
+
+[node name="TileMap4" type="TileMap" parent="."]
+z_index = 2
+scale = Vector2(4, 4)
+tile_set = ExtResource("3_tileset")
+format = 2
+layer_0/z_index = -2
+layer_0/tile_data = PackedInt32Array(917508, 655361, 1, 917509, 720897, 1, 917510, 786433, 1, 917511, 851969, 1, 917512, 917505, 1, 917513, 983041, 1, 917514, 1048577, 1, 589825, 917505, 1, 589826, 983041, 1, 589827, 1048577, 1, 589828, 655361, 1, 589829, 720897, 1, 589830, 786433, 1, 589831, 851969, 1, 589832, 655361, 1, 589833, 720897, 1, 589834, 786433, 1, 589835, 851969, 1, 589836, 655361, 1, 589837, 720897, 1, 589838, 786433, 1, 589839, 851969, 1, 589840, 524289, 1, 589841, 589825, 1, 589845, 524289, 1, 589846, 589825, 1, 589842, 917505, 1, 589843, 983041, 1, 589844, 1048577, 1, 589847, 655361, 1, 589848, 720897, 1, 589849, 786433, 1, 589850, 851969, 1, 589851, 655361, 1, 589852, 720897, 1, 589853, 786433, 1, 589824, 589825, 1, 1048576, 458753, 0, 1048577, 458753, 0, 1048578, 458753, 0, 1048579, 458753, 0, 1048580, 458753, 0, 1048581, 458753, 0, 1048582, 458753, 0, 1048583, 458753, 0, 1048584, 458753, 0, 1048585, 458753, 0, 1048586, 458753, 0, 1048587, 458753, 0, 1048588, 458753, 0, 1048589, 458753, 0, 1048590, 458753, 0, 1048591, 458753, 0, 1048592, 458753, 0, 1048593, 458753, 0, 1048594, 458753, 0, 1048595, 458753, 0, 1048596, 458753, 0, 1048597, 458753, 0, 1048598, 458753, 0, 1048599, 458753, 0, 1048600, 458753, 0, 1048601, 458753, 0, 1048602, 458753, 0, 1048603, 458753, 0, 1048604, 458753, 0, 1048605, 458753, 0)
+
+[node name="TileMap3" type="TileMap" parent="."]
+z_index = 2
+scale = Vector2(4, 4)
+tile_set = ExtResource("3_tileset")
+format = 2
+layer_0/tile_data = PackedInt32Array(1048576, 458753, 0, 1048577, 458753, 0, 1048578, 458753, 0, 1048579, 458753, 0, 1048580, 458753, 0, 1048581, 458753, 0, 1048582, 458753, 0, 1048583, 458753, 0, 1048584, 458753, 0, 1048585, 458753, 0, 1048586, 458753, 0, 1048587, 458753, 0, 1048588, 458753, 0, 1048589, 458753, 0, 1048590, 458753, 0, 1048591, 458753, 0, 1048592, 458753, 0, 1048593, 458753, 0, 1048594, 458753, 0, 1048595, 458753, 0, 1048596, 458753, 0, 1048597, 458753, 0, 1048598, 458753, 0, 1048599, 458753, 0, 1048600, 458753, 0, 1048601, 458753, 0, 1048602, 458753, 0, 1048603, 458753, 0, 1048604, 458753, 0, 1048605, 458753, 0)
+
+[node name="CloudSpawner" parent="." instance=ExtResource("3_tu677")]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopMargin" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MinigameGrid" type="GridContainer" parent="VBoxContainer/CenterContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
+columns = 6
+
+[node name="BottomSpacer" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="SettingsButton" type="TextureButton" parent="."]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 100.0
+grow_horizontal = 0
+texture_normal = ExtResource("4_gear")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="SettingsOverlay" type="ColorRect" parent="."]
+visible = false
+z_index = 10
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.705882)
+
+[node name="CenterContainer" type="CenterContainer" parent="SettingsOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="SettingsOverlay/CenterContainer"]
+custom_minimum_size = Vector2(500, 300)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsOverlay/CenterContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Title" type="Label" parent="SettingsOverlay/CenterContainer/PanelContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "EINSTELLUNGEN"
+horizontal_alignment = 1
+
+[node name="ShowQRButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_colors/font_pressed_color = Color(0.4, 0.4, 0.4, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "QR-CODE ANZEIGEN"
+
+[node name="CloseSettingsButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_colors/font_pressed_color = Color(0.4, 0.4, 0.4, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "SCHLIESSEN"
+
+[node name="QROverlay" type="ColorRect" parent="."]
+visible = false
+z_index = 11
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.823529)
+
+[node name="CenterContainer" type="CenterContainer" parent="QROverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="QROverlay/CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="InstructionLabel" type="Label" parent="QROverlay/CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Scanne den QR Code!
+Lokale IP: "
+horizontal_alignment = 1
+
+[node name="CenterBox" type="CenterContainer" parent="QROverlay/CenterContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ColorRect" type="ColorRect" parent="QROverlay/CenterContainer/VBoxContainer/CenterBox"]
+custom_minimum_size = Vector2(320, 320)
+layout_mode = 2
+
+[node name="QRCodeRect" type="TextureRect" parent="QROverlay/CenterContainer/VBoxContainer/CenterBox"]
+custom_minimum_size = Vector2(300, 300)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CloseQRButton" type="Button" parent="QROverlay/CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.6, 0.6, 0.6, 1)
+theme_override_colors/font_pressed_color = Color(0.4, 0.4, 0.4, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "ZURÜCK"
+
+[node name="QRHTTPRequest" type="HTTPRequest" parent="."]
+
+[node name="EventOverlay" type="ColorRect" parent="."]
+visible = false
+modulate = Color(1, 1, 1, 0)
+z_index = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="CenterContainer" type="CenterContainer" parent="EventOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MessageLabel" type="Label" parent="EventOverlay/CenterContainer"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 16
+theme_override_font_sizes/font_size = 72
+text = "Team Rot ist dran!"
+horizontal_alignment = 1
+vertical_alignment = 1

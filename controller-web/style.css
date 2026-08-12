@@ -1,0 +1,190 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #1a1a2e;
+    color: #e94560;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    touch-action: manipulation;
+    /* Prevent zoom on double tap */
+}
+
+.screen {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+    gap: 20px;
+    height: 100%;
+}
+
+.screen.active {
+    display: flex;
+}
+
+h1,
+h2 {
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+    border: 2px solid #0f3460;
+    border-radius: 10px;
+    background-color: #16213e;
+    color: #fff;
+    text-align: center;
+}
+
+.btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    /* Etwas kantiger, wie gewünscht */
+    background-color: #DD5917;
+    color: white;
+    box-shadow: inset 0 0 0 4px #FFEBAE;
+    cursor: pointer;
+    transition: filter 0.1s;
+}
+
+.btn:hover {
+    filter: brightness(0.85);
+    /* Dunkler beim Hovern */
+}
+
+.btn:active {
+    padding: 16px 15px 14px 15px;
+}
+
+.btn:focus {
+    outline: none;
+}
+
+/* Big Buzzer Button */
+.buzzer {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background-color: #ff3333;
+    border: 10px solid #cc0000;
+    box-shadow: 0 10px 0 #990000, 0 15px 20px rgba(0, 0, 0, 0.5);
+    transition: all 0.1s;
+}
+
+.buzzer:active {
+    transform: translateY(10px);
+    box-shadow: 0 0 0 #990000, 0 5px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Hold Button */
+.hold-btn {
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    border: 10px solid #388E3C;
+    box-shadow: 0 10px 0 #1b5e20, 0 15px 20px rgba(0, 0, 0, 0.5);
+    font-size: 2.5rem;
+    transition: all 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+    margin-top: 30px;
+}
+
+.hold-btn:active,
+.hold-btn.active-hold {
+    transform: translateY(10px) scale(0.95);
+    box-shadow: 0 0 0 #1b5e20, 0 5px 10px rgba(0, 0, 0, 0.5);
+    background-color: #45a049;
+}
+
+/* Character Selection */
+#character-select-screen {
+    justify-content: flex-start;
+    padding: 30px 10px 80px 10px;
+    /* Mehr Platz oben/unten */
+    overflow-y: auto;
+    /* Erlaube Scrollen, falls auf kleinen Handys nötig */
+}
+
+.char-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    /* Etwas weniger Abstand für Platz */
+    width: 100%;
+    max-width: 350px;
+    /* Begrenze maximale Breite */
+    margin: 0 auto;
+    /* Zentrieren */
+}
+
+.char-img {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    /* Erhält die Schärfe bei Pixel-Art */
+    image-rendering: crisp-edges;
+    margin-bottom: 5px;
+}
+
+.char-btn {
+    padding: 8px 5px;
+    /* Kleineres Padding */
+    font-size: 0.8rem;
+    /* Kleinere Schrift */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    background-color: #DD5917;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 4px #FFEBAE;
+    transition: transform 0.1s, filter 0.1s;
+    cursor: pointer;
+}
+
+.char-btn:hover {
+    filter: brightness(0.85);
+}
+
+.char-btn:active {
+    padding: 9px 5px 7px 5px;
+}
+
+.char-btn:focus {
+    outline: none;
+}
+
+.char-btn.selected {
+    box-shadow: inset 0 0 0 4px #FFEBAE, 0 0 10px #e94560;
+    filter: brightness(1.2);
+}
+
+/* Tip Fast Mash Area */
+.mash-area {
+    width: 100vw;
+    height: 100vh;
+    background-color: transparent;
+}

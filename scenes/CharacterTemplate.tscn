@@ -1,0 +1,124 @@
+[gd_scene load_steps=18 format=3 uid="uid://c66jepc2qsnnk"]
+
+[ext_resource type="Script" uid="uid://kex8wvc3pfqh" path="res://scripts/CharacterTemplate.gd" id="1_xxx"]
+[ext_resource type="Texture2D" uid="uid://beqo3alrs6bvt" path="res://assets/characters/sprites/spr_cedric_idle_1.png" id="2_yyy"]
+[ext_resource type="Texture2D" uid="uid://dyrq01x5c4gm" path="res://assets/characters/cedric/idle/spr_cedric_idle_2.png" id="3_yyy"]
+[ext_resource type="Texture2D" uid="uid://cup6audhlforp" path="res://assets/characters/cedric/run/spr_cedric_run_1.png" id="4_yyy"]
+[ext_resource type="Texture2D" uid="uid://dnahseitgx21o" path="res://assets/characters/cedric/run/spr_cedric_run_2.png" id="5_yyy"]
+[ext_resource type="Texture2D" uid="uid://dsrq6db728k61" path="res://assets/characters/cedric/run/spr_cedric_run_3.png" id="6_yyy"]
+[ext_resource type="Texture2D" uid="uid://ctal7bi1l7e17" path="res://assets/characters/cedric/jump/spr_cedric_jump.png" id="7_yyy"]
+[ext_resource type="Texture2D" uid="uid://cwgwbbly5v2w0" path="res://assets/characters/cedric/drink/spr_cedric_drink_1.png" id="8_yyy"]
+[ext_resource type="Texture2D" uid="uid://ci7rbtv743idn" path="res://assets/characters/cedric/drink/spr_cedric_drink_2.png" id="9_yyy"]
+[ext_resource type="Texture2D" uid="uid://biaj56lb0od1j" path="res://assets/characters/mikka/surprised/spr_cedric_surprised.png" id="10_dvsku"]
+[ext_resource type="Texture2D" uid="uid://c5m4xik5adygm" path="res://assets/characters/sprites/drink_drip/spr_drink_drip_1.png" id="10_zzz"]
+[ext_resource type="Texture2D" uid="uid://x6wxoq0vykuj" path="res://assets/characters/sprites/drink_drip/spr_drink_drip_2.png" id="11_zzz"]
+[ext_resource type="Texture2D" uid="uid://s6kn3x2wh5s1" path="res://assets/characters/sprites/drink_drip/spr_drink_drip_3.png" id="12_zzz"]
+[ext_resource type="Texture2D" uid="uid://b0jaxmexlsj6l" path="res://assets/characters/sprites/drink_drip/spr_drink_drip_4.png" id="13_zzz"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_xxx"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_yyy")
+}],
+"loop": true,
+"name": &"drink",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_yyy")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_yyy")
+}],
+"loop": true,
+"name": &"jump",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_yyy")
+}],
+"loop": true,
+"name": &"run",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_dvsku")
+}],
+"loop": true,
+"name": &"surprised",
+"speed": 5.0
+}]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_yyy"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_zzz")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_zzz")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_zzz")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_zzz")
+}],
+"loop": false,
+"name": &"drip",
+"speed": 10.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_xxx"]
+radius = 16.0
+height = 32.0
+
+[node name="CharacterTemplate" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_xxx")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(8, 8)
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_xxx")
+animation = &"drink"
+
+[node name="DripSprite" type="AnimatedSprite2D" parent="."]
+visible = false
+z_index = 1
+scale = Vector2(8, 8)
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_yyy")
+animation = &"drip"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 24)
+scale = Vector2(2.56, 2.56)
+shape = SubResource("CapsuleShape2D_xxx")
+
+[connection signal="animation_finished" from="DripSprite" to="." method="_on_drip_animation_finished"]

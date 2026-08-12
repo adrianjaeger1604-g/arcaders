@@ -1,0 +1,1 @@
+; Ignore HTML/JS controller files so Godot doesn't try to import them

@@ -1,0 +1,76 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="PackedScene" uid="uid://c66jepc2qsnnk" path="res://scenes/CharacterTemplate.tscn" id="1_xxx"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/idle/spr_marius_idle_1.png" id="2_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/idle/spr_marius_idle_2.png" id="3_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/run/spr_marius_run_1.png" id="4_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/run/spr_marius_run_2.png" id="5_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/run/spr_marius_run_3.png" id="6_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/jump/spr_marius_jump.png" id="7_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/drink/spr_marius_drink_1.png" id="8_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/drink/spr_marius_drink_2.png" id="9_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/marius/surprised/spr_marius_surprised.png" id="10_dvsku"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_marius"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_yyy")
+}],
+"loop": true,
+"name": &"drink",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_yyy")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_yyy")
+}],
+"loop": true,
+"name": &"jump",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_yyy")
+}],
+"loop": true,
+"name": &"run",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_dvsku")
+}],
+"loop": true,
+"name": &"surprised",
+"speed": 5.0
+}]
+
+[node name="Marius" instance=ExtResource("1_xxx")]
+character_name = "Marius"
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+sprite_frames = SubResource("SpriteFrames_marius")

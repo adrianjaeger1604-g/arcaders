@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3 uid="uid://dfy2k3h6p8n7b"]
+
+[ext_resource type="Script" path="res://scripts/Cloud.gd" id="1_cloud"]
+
+[node name="Cloud" type="Node2D"]
+script = ExtResource("1_cloud")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(3, 3)

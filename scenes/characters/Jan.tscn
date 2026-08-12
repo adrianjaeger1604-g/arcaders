@@ -1,0 +1,76 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="PackedScene" uid="uid://c66jepc2qsnnk" path="res://scenes/CharacterTemplate.tscn" id="1_xxx"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/idle/spr_jan_idle_1.png" id="2_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/idle/spr_jan_idle_2.png" id="3_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/run/spr_jan_run_1.png" id="4_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/run/spr_jan_run_2.png" id="5_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/run/spr_jan_run_3.png" id="6_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/jump/spr_jan_jump.png" id="7_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/drink/spr_jan_drink_1.png" id="8_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/drink/spr_jan_drink_2.png" id="9_yyy"]
+[ext_resource type="Texture2D" path="res://assets/characters/jan/surprised/spr_jan_surprised.png" id="10_dvsku"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_jan"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_yyy")
+}],
+"loop": true,
+"name": &"drink",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_yyy")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_yyy")
+}],
+"loop": true,
+"name": &"jump",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_yyy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_yyy")
+}],
+"loop": true,
+"name": &"run",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_dvsku")
+}],
+"loop": true,
+"name": &"surprised",
+"speed": 5.0
+}]
+
+[node name="Jan" instance=ExtResource("1_xxx")]
+character_name = "Jan"
+
+[node name="AnimatedSprite2D" parent="." index="0"]
+sprite_frames = SubResource("SpriteFrames_jan")

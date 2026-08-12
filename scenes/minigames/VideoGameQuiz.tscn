@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3 uid="uid://bxc28bx0l1l2y"]
+
+[ext_resource type="PackedScene" path="res://scenes/minigames/BaseTextFieldQuiz.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://cywuxyn87agf5" path="res://scripts/minigames/VideoGameQuiz.gd" id="2_script"]
+
+[node name="VideoGameQuiz" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
