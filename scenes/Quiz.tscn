@@ -45,20 +45,19 @@ theme_override_constants/separation = 40
 
 [node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 48
+theme_type_variation = &"H2"
 text = "Allgemeinwissen-Quiz"
 horizontal_alignment = 1
 
 [node name="RoundLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 32
+theme_type_variation = &"H3"
 text = "Runde 1 / 10"
 horizontal_alignment = 1
 
 [node name="QuestionLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 64
+theme_type_variation = &"H1"
 text = "Lade Frage..."
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -66,7 +65,7 @@ autowrap_mode = 2
 [node name="AnswerLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.180392, 0.8, 0.443137, 1)
+theme_type_variation = &"Success"
 theme_override_font_sizes/font_size = 48
 text = "Lösung: Paris"
 horizontal_alignment = 1
@@ -74,8 +73,7 @@ autowrap_mode = 2
 
 [node name="AnswersTitle" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
-theme_override_font_sizes/font_size = 24
+theme_type_variation = &"Hint"
 text = "Warte auf Antworten..."
 horizontal_alignment = 1
 

@@ -1,12 +1,12 @@
 extends Control
 
-@onready var question_label = $CenterContainer/VBoxContainer/QuestionLabel
-@onready var answers_list = $CenterContainer/VBoxContainer/AnswersList
-@onready var close_round_btn = $CenterContainer/VBoxContainer/CloseRoundButton
-@onready var next_round_btn = $CenterContainer/VBoxContainer/NextRoundButton
-@onready var round_label = $CenterContainer/VBoxContainer/RoundLabel
-@onready var answer_label = $CenterContainer/VBoxContainer/AnswerLabel
-@onready var answers_title = $CenterContainer/VBoxContainer/AnswersTitle
+@onready var question_label = $MarginContainer/VBoxContainer/QuestionLabel
+@onready var answers_list = $MarginContainer/VBoxContainer/ScrollContainer/AnswersList
+@onready var close_round_btn = $MarginContainer/VBoxContainer/CloseRoundButton
+@onready var next_round_btn = $MarginContainer/VBoxContainer/NextRoundButton
+@onready var round_label = $MarginContainer/VBoxContainer/RoundLabel
+@onready var answer_label = $MarginContainer/VBoxContainer/AnswerLabel
+@onready var answers_title = $MarginContainer/VBoxContainer/AnswersTitle
 
 var is_round_open = false
 var answered_players = [] # Merken, wer schon geantwortet hat
@@ -80,6 +80,31 @@ func start_quiz_question():
 	for child in answers_list.get_children():
 		child.queue_free()
 		
+	# Dynamische Spaltenanzahl für das Grid berechnen
+	var p_count = NetworkManager.player_sessions.size()
+	if p_count <= 4:
+		answers_list.columns = 4
+	elif p_count <= 6:
+		answers_list.columns = 3
+	elif p_count <= 10:
+		answers_list.columns = 5
+	else:
+		answers_list.columns = 6
+		
+	# Generiere Karten für alle Spieler
+	var card_scene = preload("res://scenes/minigames/QuizParticipantCard.tscn")
+	for p_id in NetworkManager.player_sessions.keys():
+		var p_data = NetworkManager.player_sessions[p_id]
+		var card = card_scene.instantiate()
+		var p_name = p_data.get("name", "Unbekannt")
+		var p_char = p_data.get("character", "Leon")
+		answers_list.add_child(card)
+		card.setup(p_name, [p_char], Color(0.2, 0.8, 0.2, 1))
+		card.set_meta("player_id", p_id)
+		card.pressed.connect(func(): AudioManager.play_sfx("button_press"))
+		card.pressed.connect(self._on_answer_button_pressed.bind(card))
+		card.disabled = true # Gamemaster kann noch nicht klicken
+		
 	close_round_btn.visible = true
 	next_round_btn.visible = false
 	
@@ -107,27 +132,12 @@ func _on_message_received(player_id, data):
 			
 		print("Spieler ", player_name, " antwortet: ", answer)
 		
-		# Erstelle einen Button für die Antwort, damit GM ihn später anklicken kann
-		var btn = Button.new()
-		btn.text = player_name + ": (Eingeloggt \u2714)" # \u2714 ist ein Checkmark Sysbol
-		btn.add_theme_font_size_override("font_size", 28)
-		
-		# Explizite Farb-Overrides für das Retro-Design (Weiß zu Beige/Gelb bei Hover)
-		btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-		btn.add_theme_color_override("font_disabled_color", Color(1, 1, 1, 1)) # Weiß wenn noch deaktivert
-		btn.add_theme_color_override("font_hover_color", Color(1, 0.921569, 0.682353, 1))
-		btn.add_theme_color_override("font_pressed_color", Color(1, 0.921569, 0.682353, 1))
-		btn.add_theme_color_override("font_focus_color", Color(1, 1, 1, 1))
-		
-		# Deaktiviere ihn auf dem PC vorerst, bis die Runde geschlossen wird
-		btn.disabled = true 
-		# Speichere die player_id im Meta-Data-Feld des Buttons!
-		btn.set_meta("player_id", player_id)
-		btn.set_meta("raw_answer", answer)
-		btn.pressed.connect(func(): AudioManager.play_sfx("button_press"))
-		btn.pressed.connect(self._on_answer_button_pressed.bind(btn))
-		
-		answers_list.add_child(btn)
+		# Finde die Karte des Spielers und aktualisiere sie
+		for card in answers_list.get_children():
+			if card.has_meta("player_id") and card.get_meta("player_id") == player_id:
+				if card.has_method("set_answer"):
+					card.set_answer(answer)
+				break
 
 func _on_close_round_pressed():
 	is_round_open = false
@@ -141,24 +151,23 @@ func _on_close_round_pressed():
 	answer_label.visible = true
 	
 	print("Runde geschlossen! Verteile nun Punkte.")
-	# Sende allen Handys den "Warten" Befehl (falls sie noch tippen, ist es zu spät)
+	# Sende allen Handys den "Warten" Befehl
 	NetworkManager.broadcast({
 		"type": "state_change",
 		"state": "waiting"
 	})
 	
-	# Mache alle Antwort-Buttons anklickbar und decke die Antworten auf
-	for child in answers_list.get_children():
-		if child is Button:
-			child.disabled = false
-			# Hole den Namen des Spielers und die eigentliche Antwort aus den Metadaten
-			var p_id = child.get_meta("player_id")
-			var raw_answer = child.get_meta("raw_answer")
-			var p_name = NetworkManager.player_sessions[p_id]["name"] if NetworkManager.player_sessions.has(p_id) else "Unbekannt"
-			child.text = p_name + " sagt:\n" + raw_answer
+	# Mache alle Antwort-Karten anklickbar und decke die Antworten auf
+	for card in answers_list.get_children():
+		if card.has_method("set_state"):
+			card.disabled = false
+			card.set_state(2) # 2 = REVEALED
 			
-func _on_answer_button_pressed(btn: Button):
-	var p_id = btn.get_meta("player_id")
+func _on_answer_button_pressed(card: Button):
+	if card.has_method("set_state") and not card.is_active:
+		return # Wenn inaktiv (keine Antwort), dann nichts tun
+		
+	var p_id = card.get_meta("player_id")
 	if NetworkManager.player_sessions.has(p_id):
 		var p_name = NetworkManager.player_sessions[p_id]["name"]
 		
@@ -166,14 +175,12 @@ func _on_answer_button_pressed(btn: Button):
 		if pending_points.has(p_id) and pending_points[p_id] > 0:
 			# Punkte wieder abziehen (Toggle aus)
 			pending_points[p_id] = 0
-			btn.text = p_name + " sagt:\n" + btn.get_meta("raw_answer")
-			btn.modulate = Color(1, 1, 1, 1) # Normal weiß
+			card.set_state(2) # 2 = REVEALED
 			print("Punkte abgewählt für ", p_name)
 		else:
 			# Punkte vergeben (Toggle an)
 			pending_points[p_id] = 1
-			btn.text = "[+1] " + p_name + " sagt:\n" + btn.get_meta("raw_answer")
-			btn.modulate = Color(0.2, 0.8, 0.2, 1) # Mach ihn grün
+			card.set_state(3) # 3 = SELECTED
 			print("Punkte ausgewählt für ", p_name)
 
 func _on_next_round_pressed():

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://biaj56lb0od1j"
-path="res://.godot/imported/spr_cedric_surprised.png-7b91347446563bdd35b842fde019f91d.ctex"
+uid="uid://dju88oafhh0rg"
+path="res://.godot/imported/spr_mikka_drink_2.png-15d820cc63828c09fa34789d49fc0b75.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/mikka/surprised/spr_cedric_surprised.png"
-dest_files=["res://.godot/imported/spr_cedric_surprised.png-7b91347446563bdd35b842fde019f91d.ctex"]
+source_file="res://assets/characters/mikka/drink/spr_mikka_drink_2.png"
+dest_files=["res://.godot/imported/spr_mikka_drink_2.png-15d820cc63828c09fa34789d49fc0b75.ctex"]
 
 [params]
 

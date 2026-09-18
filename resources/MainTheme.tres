@@ -1,6 +1,35 @@
-[gd_resource type="Theme" load_steps=2 format=3 uid="uid://b1234b5l6r123"]
+[gd_resource type="Theme" load_steps=2 format=3 uid="uid://cy8153okc4i7r"]
 
 [ext_resource type="FontFile" uid="uid://bmd23dvkny65r" path="res://assets/fonts/BoldPixels.otf" id="1_font"]
 
 [resource]
 default_font = ExtResource("1_font")
+default_font_size = 24
+Button/font_sizes/font_size = 32
+Button/fonts/font = ExtResource("1_font")
+H1/base_type = &"Label"
+H1/colors/font_color = Color(1, 1, 1, 1)
+H1/font_sizes/font_size = 64
+H2/base_type = &"Label"
+H2/colors/font_color = Color(1, 1, 1, 1)
+H2/font_sizes/font_size = 48
+H3/base_type = &"Label"
+H3/colors/font_color = Color(1, 1, 1, 1)
+H3/font_sizes/font_size = 32
+Highlight/base_type = &"Label"
+Highlight/colors/font_color = Color(0.901961, 0.8, 0.2, 1)
+Highlight/font_sizes/font_size = 32
+Hint/base_type = &"Label"
+Hint/colors/font_color = Color(0.5, 0.5, 0.5, 1)
+Hint/font_sizes/font_size = 24
+Label/colors/font_color = Color(1, 1, 1, 1)
+Label/font_sizes/font_size = 24
+Label/fonts/font = ExtResource("1_font")
+Success/base_type = &"Label"
+Success/colors/font_color = Color(0.180392, 0.8, 0.443137, 1)
+Success/font_sizes/font_size = 32
+Title/base_type = &"Label"
+Title/colors/font_color = Color(1, 1, 1, 1)
+Title/font_sizes/font_size = 128
+BigButton/base_type = &"Button"
+BigButton/font_sizes/font_size = 64

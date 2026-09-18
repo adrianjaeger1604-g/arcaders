@@ -45,13 +45,13 @@ theme_override_constants/separation = 40
 
 [node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 64
+theme_type_variation = &"H1"
 text = "Charakterauswahl"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_type_variation = &"Hint"
 theme_override_font_sizes/font_size = 32
 text = "Warte auf die Auswahl aller Spieler am Handy..."
 horizontal_alignment = 1

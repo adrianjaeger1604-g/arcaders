@@ -248,9 +248,39 @@ function handleServerMessage(msg) {
     else if (msg.type === "score_update") {
         updateScore(msg.score);
     }
+    else if (msg.type === "kicked") {
+        alert("Du wurdest vom Spielleiter entfernt.");
+        localStorage.removeItem('playerName');
+        location.reload();
+    }
 }
 
 // UI Event Listeners
+const btnLogout = document.getElementById('btn-logout');
+const btnToggleDebug = document.getElementById('btn-toggle-debug');
+const debugLog = document.getElementById('debug-log');
+
+if (btnToggleDebug && debugLog) {
+    btnToggleDebug.addEventListener('click', () => {
+        if (debugLog.style.display === 'none') {
+            debugLog.style.display = 'block';
+        } else {
+            debugLog.style.display = 'none';
+        }
+    });
+}
+
+if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+        localStorage.removeItem('playerName');
+        location.reload();
+    });
+    
+    if (myPlayerName) {
+        btnLogout.style.display = 'block';
+    }
+}
+
 if (btnJoin && playerNameInput) {
     btnJoin.addEventListener('click', () => {
         const name = playerNameInput.value.trim();
@@ -258,6 +288,7 @@ if (btnJoin && playerNameInput) {
         if (name) {
             myPlayerName = name;
             localStorage.setItem('playerName', name);
+            if (btnLogout) btnLogout.style.display = 'block';
             btnJoin.disabled = true;
             btnJoin.innerText = "Warte...";
             sendMessage({ type: "join", name: name });
@@ -369,7 +400,8 @@ const availableCharacters = [
     { id: "Max", file: "sprites/spr_max_idle_1.png" },
     { id: "Mikka", file: "sprites/spr_mikka_idle_1.png" },
     { id: "Miles", file: "sprites/spr_miles_idle_1.png" },
-    { id: "Mirja", file: "sprites/spr_mirja_idle_1.png" }
+    { id: "Mirja", file: "sprites/spr_mirja_idle_1.png" },
+    { id: "Paul", file: "sprites/spr_paul_idle_1.png" }
 ];
 
 if (charGrid) {
@@ -396,6 +428,27 @@ if (charGrid) {
 
             document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
+
+            const charNameLower = char.id.toLowerCase() === "cedi" ? "cedric" : char.id.toLowerCase();
+            const playJumpFallback = () => {
+                const jumpAudio = document.getElementById('audio-jump');
+                if (jumpAudio) {
+                    jumpAudio.currentTime = 0;
+                    jumpAudio.play().catch(e => console.log("Fallback audio failed:", e));
+                }
+            };
+
+            const tryPlay = (url, fallback) => {
+                const audio = new Audio(url);
+                audio.play().catch(e => fallback());
+            };
+
+            // Try _select.wav -> _select.mp3 -> generic jump
+            tryPlay(`assets/audio/sfx/characters/${charNameLower}_select.wav`, () => {
+                tryPlay(`assets/audio/sfx/characters/${charNameLower}_select.mp3`, () => {
+                    playJumpFallback();
+                });
+            });
 
             sendMessage({
                 type: "select_character",

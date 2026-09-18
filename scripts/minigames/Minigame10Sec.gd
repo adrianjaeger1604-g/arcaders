@@ -90,12 +90,13 @@ func _create_result_row(p_id: int, time_str: String, best_id: int):
 	row.add_theme_constant_override("separation", 20)
 	
 	# Trophy
-	var trophy_label = Label.new()
-	trophy_label.text = "🏆" if p_id == best_id else ""
-	trophy_label.add_theme_font_size_override("font_size", 32)
-	trophy_label.custom_minimum_size = Vector2(40, 0)
-	trophy_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	row.add_child(trophy_label)
+	var trophy_rect = TextureRect.new()
+	if p_id == best_id:
+		trophy_rect.texture = preload("res://assets/ui/icons/icon_trophy.png")
+	trophy_rect.custom_minimum_size = Vector2(40, 40)
+	trophy_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	trophy_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(trophy_rect)
 	
 	# Character + Name Box
 	var char_name_vbox = VBoxContainer.new()
@@ -174,6 +175,11 @@ func _on_close_pressed():
 			
 	if winning_team != null:
 		AudioManager.play_sfx("victory_jubel")
+		if winning_team.has("players"):
+			for p in winning_team["players"]:
+				if p.has("character"):
+					AudioManager.play_character_sfx(p["character"], "win")
+					
 		var p_name = NetworkManager.player_sessions[best_player_id]["name"]
 		status_label.text = "Gewinner: " + p_name + " (" + winning_team["name"] + ")!"
 		# Färbe den Text in der entsprechenden Teamfarbe

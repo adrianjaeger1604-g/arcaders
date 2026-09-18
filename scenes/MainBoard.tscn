@@ -80,130 +80,6 @@ columns = 6
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 
-[node name="SettingsButton" type="TextureButton" parent="."]
-texture_filter = 1
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -100.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 100.0
-grow_horizontal = 0
-texture_normal = ExtResource("4_gear")
-ignore_texture_size = true
-stretch_mode = 5
-
-[node name="SettingsOverlay" type="ColorRect" parent="."]
-visible = false
-z_index = 10
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.705882)
-
-[node name="CenterContainer" type="CenterContainer" parent="SettingsOverlay"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="PanelContainer" type="PanelContainer" parent="SettingsOverlay/CenterContainer"]
-custom_minimum_size = Vector2(500, 300)
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="SettingsOverlay/CenterContainer/PanelContainer"]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="Title" type="Label" parent="SettingsOverlay/CenterContainer/PanelContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 48
-text = "EINSTELLUNGEN"
-horizontal_alignment = 1
-
-[node name="ShowQRButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(0.6, 0.6, 0.6, 1)
-theme_override_colors/font_pressed_color = Color(0.4, 0.4, 0.4, 1)
-theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "QR-CODE ANZEIGEN"
-
-[node name="CloseSettingsButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(0.6, 0.6, 0.6, 1)
-theme_override_colors/font_pressed_color = Color(0.4, 0.4, 0.4, 1)
-theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "SCHLIESSEN"
-
-[node name="QROverlay" type="ColorRect" parent="."]
-visible = false
-z_index = 11
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.823529)
-
-[node name="CenterContainer" type="CenterContainer" parent="QROverlay"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="QROverlay/CenterContainer"]
-layout_mode = 2
-theme_override_constants/separation = 30
-alignment = 1
-
-[node name="InstructionLabel" type="Label" parent="QROverlay/CenterContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 36
-text = "Scanne den QR Code!
-Lokale IP: "
-horizontal_alignment = 1
-
-[node name="CenterBox" type="CenterContainer" parent="QROverlay/CenterContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="ColorRect" type="ColorRect" parent="QROverlay/CenterContainer/VBoxContainer/CenterBox"]
-custom_minimum_size = Vector2(320, 320)
-layout_mode = 2
-
-[node name="QRCodeRect" type="TextureRect" parent="QROverlay/CenterContainer/VBoxContainer/CenterBox"]
-custom_minimum_size = Vector2(300, 300)
-layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="CloseQRButton" type="Button" parent="QROverlay/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_hover_color = Color(0.6, 0.6, 0.6, 1)
-theme_override_colors/font_pressed_color = Color(0.4, 0.4, 0.4, 1)
-theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "ZURÜCK"
-
-[node name="QRHTTPRequest" type="HTTPRequest" parent="."]
 
 [node name="EventOverlay" type="ColorRect" parent="."]
 visible = false
@@ -227,9 +103,9 @@ grow_vertical = 2
 
 [node name="MessageLabel" type="Label" parent="EventOverlay/CenterContainer"]
 layout_mode = 2
+theme_type_variation = &"H1"
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 16
-theme_override_font_sizes/font_size = 72
 text = "Team Rot ist dran!"
 horizontal_alignment = 1
 vertical_alignment = 1

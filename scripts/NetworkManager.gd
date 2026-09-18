@@ -43,7 +43,8 @@ var character_textures = {
 	"Max": preload("res://assets/characters/sprites/spr_max_idle_1.png"),
 	"Mikka": preload("res://assets/characters/sprites/spr_mikka_idle_1.png"),
 	"Miles": preload("res://assets/characters/sprites/spr_miles_idle_1.png"),
-	"Mirja": preload("res://assets/characters/sprites/spr_mirja_idle_1.png")
+	"Mirja": preload("res://assets/characters/sprites/spr_mirja_idle_1.png"),
+	"Paul": preload("res://assets/characters/sprites/spr_paul_idle_1.png")
 }
 
 # Phase 2 Status
@@ -71,7 +72,7 @@ func _ready():
 func _start_local_web_server():
 	var web_dir = ProjectSettings.globalize_path("res://controller-web")
 	var os_name = OS.get_name()
-	var python_cmd = "python" if os_name == "Windows" else "python3"
+	var python_cmd = "py" if os_name == "Windows" else "python3"
 	
 	print("Starte lokalen Web-Server auf Port 8000 in Verzeichnis: ", web_dir)
 	web_server_pid = OS.create_process(python_cmd, ["-m", "http.server", "8000", "-d", web_dir])
@@ -235,7 +236,8 @@ func _handle_packet(peer: WebSocketPeer, data_string: String):
 				player_sessions[p_id] = {
 					"name": player_name,
 					"score": 0,
-					"connected": true
+					"connected": true,
+					"character": ""
 				}
 				print("Spieler NEU beigetreten: ", player_name, " ID: ", p_id)
 
@@ -256,8 +258,8 @@ func _handle_packet(peer: WebSocketPeer, data_string: String):
 		elif data.has("type") and data["type"] == "select_character":
 			var p_id = int(data.get("player_id", -1))
 			if p_id != -1 and player_sessions.has(p_id):
-				player_sessions[p_id]["character"] = data.get("character", "unknown")
-				print("Spieler ", player_sessions[p_id]["name"], " hat Charakter gewählt: ", player_sessions[p_id]["character"])
+				player_sessions[p_id]["character"] = data.get("character", "Cedric")
+				print("Spieler ", player_sessions[p_id]["name"], " hat Charakter gewhlt: ", player_sessions[p_id]["character"])
 				emit_signal("character_selected", p_id, player_sessions[p_id]["character"])
 			else:
 				print("ERR: Konnte select_character nicht zuordnen. p_id:", p_id, " player_sessions:", player_sessions)
@@ -278,6 +280,22 @@ func send_to_player(p_id: int, message_dict: Dictionary):
 			if peer.get_ready_state() == WebSocketPeer.STATE_OPEN:
 				send_to_peer(peer, message_dict)
 			break
+
+func kick_player(p_id: int):
+	if player_sessions.has(p_id):
+		# Client benachrichtigen
+		send_to_player(p_id, {"type": "kicked"})
+		
+		# Verbindung schließen
+		for peer in peer_to_player_id.keys():
+			if peer_to_player_id[peer] == p_id:
+				peer.close(1000, "Kicked")
+				break
+				
+		# Session entfernen
+		player_sessions.erase(p_id)
+		emit_signal("client_disconnected", p_id)
+		print("Spieler ", p_id, " wurde gekickt.")
 
 func broadcast(message_dict: Dictionary):
 	# Wenn wir den state broadcasten, sichern wir ihn intern für spätere Reconnects!

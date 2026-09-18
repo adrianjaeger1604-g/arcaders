@@ -44,22 +44,20 @@ theme_override_constants/separation = 40
 
 [node name="Title" type="Label" parent="CenterContainer/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 64
+theme_type_variation = &"H1"
 text = "15 Sekunden Tasten-Mashing!"
 horizontal_alignment = 1
 
 [node name="Instruction" type="Label" parent="CenterContainer/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_font_sizes/font_size = 32
+theme_type_variation = &"H3"
 text = "Wenn der Countdown abläuft, tippe so schnell du kannst auf dein Handy!\nWer nach 15 Sekunden die meisten Klicks hat, gewinnt für sein Team!"
 horizontal_alignment = 1
 autowrap_mode = 2
 
 [node name="StatusLabel" type="Label" parent="CenterContainer/VBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.8, 0.2, 1)
-theme_override_font_sizes/font_size = 32
+theme_type_variation = &"Highlight"
 text = "Warte auf Spieler..."
 horizontal_alignment = 1
 

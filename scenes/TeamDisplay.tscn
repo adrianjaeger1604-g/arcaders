@@ -44,7 +44,7 @@ theme_override_constants/separation = 40
 
 [node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 64
+theme_type_variation = &"H1"
 text = "Teams für Phase 2"
 horizontal_alignment = 1
 

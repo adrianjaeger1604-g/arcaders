@@ -44,13 +44,16 @@ theme_override_constants/separation = 40
 
 [node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 64
+theme_type_variation = &"H1"
 text = "Punktestand"
 horizontal_alignment = 1
 
-[node name="PlayerList" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+[node name="PlayerList" type="GridContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 20
+size_flags_horizontal = 4
+theme_override_constants/v_separation = 20
+theme_override_constants/h_separation = 20
+columns = 2
 
 [node name="NextPhaseButton" parent="CenterContainer/VBoxContainer" instance=ExtResource("2_btn")]
 layout_mode = 2

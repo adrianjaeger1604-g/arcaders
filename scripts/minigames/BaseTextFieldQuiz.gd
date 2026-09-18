@@ -1,16 +1,16 @@
 extends Control
 
-@onready var title_label = $CenterContainer/VBoxContainer/Title
-@onready var question_label = $CenterContainer/VBoxContainer/QuestionLabel
-@onready var answers_list = $CenterContainer/VBoxContainer/AnswersList
-@onready var close_round_btn = $CenterContainer/VBoxContainer/CloseRoundButton
-@onready var next_round_btn = $CenterContainer/VBoxContainer/NextRoundButton
-@onready var round_label = $CenterContainer/VBoxContainer/RoundLabel
-@onready var answer_label = $CenterContainer/VBoxContainer/AnswerLabel
-@onready var score_label = $CenterContainer/VBoxContainer/ScoreLabel
-@onready var instruction_label = $CenterContainer/VBoxContainer/InstructionLabel
-@onready var start_game_btn = $CenterContainer/VBoxContainer/StartGameButton
-@onready var answers_title = $CenterContainer/VBoxContainer/AnswersTitle
+@onready var title_label = $MarginContainer/VBoxContainer/Title
+@onready var question_label = $MarginContainer/VBoxContainer/QuestionLabel
+@onready var answers_list = $MarginContainer/VBoxContainer/ScrollContainer/AnswersList
+@onready var close_round_btn = $MarginContainer/VBoxContainer/CloseRoundButton
+@onready var next_round_btn = $MarginContainer/VBoxContainer/NextRoundButton
+@onready var round_label = $MarginContainer/VBoxContainer/RoundLabel
+@onready var answer_label = $MarginContainer/VBoxContainer/AnswerLabel
+@onready var score_label = $MarginContainer/VBoxContainer/ScoreLabel
+@onready var instruction_label = $MarginContainer/VBoxContainer/InstructionLabel
+@onready var start_game_btn = $MarginContainer/VBoxContainer/StartGameButton
+@onready var answers_title = $MarginContainer/VBoxContainer/AnswersTitle
 
 # Eigenschaften, die in vererbenden Scripts überschrieben werden
 var quiz_title = "Quiz"
@@ -125,6 +125,25 @@ func start_quiz_question():
 	for child in answers_list.get_children():
 		child.queue_free()
 		
+	# Generiere Karten für alle Teams
+	var card_scene = preload("res://scenes/minigames/QuizParticipantCard.tscn")
+	for team in NetworkManager.computed_teams:
+		var card = card_scene.instantiate()
+		var t_name = team["name"]
+		var t_color = team["color"]
+		
+		# Extrahiere die Charakter-Namen der Teammitglieder
+		var chars = []
+		for p in team["players"]:
+			chars.append(p.get("character", "Leon"))
+			
+		answers_list.add_child(card)
+		card.setup(t_name, chars, t_color)
+		card.set_meta("team_color", t_color)
+		card.pressed.connect(func(): AudioManager.play_sfx("button_press"))
+		card.pressed.connect(self._on_answer_button_pressed.bind(card))
+		card.disabled = true # Gamemaster kann noch nicht klicken
+		
 	close_round_btn.visible = true
 	next_round_btn.visible = false
 	
@@ -186,29 +205,12 @@ func _on_message_received(player_id, data):
 			
 		print("Team ", team["name"], " (", player_name, ") antwortet: ", answer)
 		
-		# Erstelle einen Button für die Antwort, damit GM ihn später anklicken kann
-		var btn = Button.new()
-		btn.text = team["name"] + ": (Eingeloggt \u2714)" # \u2714 ist ein Checkmark Sysbol
-		btn.add_theme_font_size_override("font_size", 28)
-		
-		# Explizite Farb-Overrides für das Retro-Design (Weiß zu Beige/Gelb bei Hover)
-		btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-		btn.add_theme_color_override("font_disabled_color", Color(1, 1, 1, 1)) # Weiß wenn noch deaktivert
-		btn.add_theme_color_override("font_hover_color", Color(1, 0.921569, 0.682353, 1))
-		btn.add_theme_color_override("font_pressed_color", Color(1, 0.921569, 0.682353, 1))
-		btn.add_theme_color_override("font_focus_color", Color(1, 1, 1, 1))
-		
-		# Deaktiviere ihn auf dem PC vorerst, bis die Runde geschlossen wird
-		btn.disabled = true 
-		# Speichere Daten im Meta-Data-Feld des Buttons!
-		btn.set_meta("team_color", team_color)
-		btn.set_meta("player_name", player_name)
-		btn.set_meta("team_name", team["name"])
-		btn.set_meta("raw_answer", answer)
-		btn.pressed.connect(func(): AudioManager.play_sfx("button_press"))
-		btn.pressed.connect(self._on_answer_button_pressed.bind(btn))
-		
-		answers_list.add_child(btn)
+		# Finde die Karte des Teams und aktualisiere sie
+		for card in answers_list.get_children():
+			if card.has_meta("team_color") and card.get_meta("team_color") == team_color:
+				if card.has_method("set_answer"):
+					card.set_answer(player_name + ":\n" + answer)
+				break
 
 func _on_close_round_pressed():
 	is_round_open = false
@@ -228,45 +230,36 @@ func _on_close_round_pressed():
 		"state": "waiting"
 	})
 	
-	# Mache alle Antwort-Buttons anklickbar und decke die Antworten auf
-	for child in answers_list.get_children():
-		if child is Button:
-			child.disabled = false
-			var p_name = child.get_meta("player_name")
-			var raw_answer = child.get_meta("raw_answer")
-			var t_name = child.get_meta("team_name") if child.has_meta("team_name") else ""
-			if t_name != "":
-				child.text = t_name + " (" + p_name + ") sagt:\n" + raw_answer
-			else:
-				child.text = p_name + " sagt:\n" + raw_answer
+	# Mache alle Antwort-Karten anklickbar und decke die Antworten auf
+	for card in answers_list.get_children():
+		if card.has_method("set_state"):
+			card.disabled = false
+			card.set_state(2) # 2 = REVEALED
 			
-func _on_answer_button_pressed(btn: Button):
-	var t_color = btn.get_meta("team_color")
-	var p_name = btn.get_meta("player_name")
-	var t_name = btn.get_meta("team_name") if btn.has_meta("team_name") else ""
-	
-	var prefix = t_name + " (" + p_name + ") sagt:\n" if t_name != "" else p_name + " sagt:\n"
+func _on_answer_button_pressed(card: Button):
+	if card.has_method("set_state") and not card.is_active:
+		return # Keine Antwort abgegeben, kann nicht gepunktet werden
+		
+	var t_color = card.get_meta("team_color")
 	
 	# Toggle-Logik
 	if pending_points.has(t_color) and pending_points[t_color] > 0:
 		# Punkte wieder abziehen (Toggle aus)
 		pending_points[t_color] = 0
-		btn.text = prefix + btn.get_meta("raw_answer")
-		btn.modulate = Color(1, 1, 1, 1) # Normal
+		card.set_state(2) # 2 = REVEALED
 		print("Punkte abgewählt für Team")
 	else:
 		# Punkte vergeben (Toggle an)
 		pending_points[t_color] = 1
-		btn.text = "[+1] " + prefix + btn.get_meta("raw_answer")
-		btn.modulate = Color(0.2, 0.8, 0.2, 1) # Mach ihn schön grün
+		card.set_state(3) # 3 = SELECTED
 		print("Punkte ausgewählt für Team")
 
 func _update_score_label():
-	var score_text = "Punkte: "
+	var parts = []
 	for team in NetworkManager.computed_teams:
 		var c = team["color"]
-		score_text += team["name"] + ": " + str(team_scores[c]) + " | "
-	score_label.text = score_text
+		parts.append(team["name"] + ": " + str(team_scores[c]))
+	score_label.text = "Punkte: " + " | ".join(parts)
 
 func _on_next_round_pressed():
 	# Punkte verrechnen
@@ -314,8 +307,15 @@ func _end_minigame(winning_team: Variant):
 	question_label.text = "Quiz beendet!"
 	answers_title.visible = false
 	answer_label.visible = false
+	score_label.visible = false
+	
 	if winning_team != null and typeof(winning_team) == TYPE_DICTIONARY and not winning_team.is_empty():
 		AudioManager.play_sfx("victory_jubel")
+		if winning_team.has("players"):
+			for p in winning_team["players"]:
+				if p.has("character"):
+					AudioManager.play_character_sfx(p["character"], "win")
+					
 		round_label.text = "Gewinner: " + winning_team["name"]
 		round_label.add_theme_color_override("font_color", winning_team["color"])
 		
@@ -348,15 +348,145 @@ func _end_minigame(winning_team: Variant):
 		"state": "waiting"
 	})
 	
-	# Button erstellen um zurückzukehren
+	# --- LEADERBOARD AUFBAUEN ---
+	for child in answers_list.get_children():
+		child.queue_free()
+		
+	answers_list.columns = 2
+	answers_list.add_theme_constant_override("v_separation", 20)
+	answers_list.add_theme_constant_override("h_separation", 60)
+	
+	var sorted_teams = []
+	var max_score_possible = 1
+	for team in NetworkManager.computed_teams:
+		sorted_teams.append(team)
+		if team_scores[team["color"]] > max_score_possible:
+			max_score_possible = team_scores[team["color"]]
+			
+	max_score_possible = max(5, max_score_possible)
+	sorted_teams.sort_custom(func(a, b): return team_scores[a["color"]] > team_scores[b["color"]])
+	
+	var i = 0
+	for team in sorted_teams:
+		var target_score = team_scores[team["color"]]
+		var t_color = team["color"]
+		
+		var row = HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", 20)
+		
+		var left_box = HBoxContainer.new()
+		left_box.alignment = BoxContainer.ALIGNMENT_END
+		left_box.custom_minimum_size = Vector2(350, 0)
+		left_box.add_theme_constant_override("separation", 15)
+		
+		var trophy_rect = TextureRect.new()
+		if i == 0:
+			trophy_rect.texture = preload("res://assets/ui/icons/icon_trophy.png")
+		trophy_rect.custom_minimum_size = Vector2(40, 40)
+		trophy_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		trophy_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		if i == 0:
+			trophy_rect.modulate.a = 0.0
+		left_box.add_child(trophy_rect)
+		
+		var char_name_vbox = VBoxContainer.new()
+		char_name_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		
+		var chars_hbox = HBoxContainer.new()
+		chars_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		for p in team["players"]:
+			var char_icon = TextureRect.new()
+			char_icon.custom_minimum_size = Vector2(48, 48)
+			char_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			char_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			char_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			var c_name = p.get("character", "")
+			if c_name == "" or not NetworkManager.character_textures.has(c_name):
+				c_name = "Cedi"
+			if NetworkManager.character_textures.has(c_name):
+				char_icon.texture = NetworkManager.character_textures[c_name]
+			chars_hbox.add_child(char_icon)
+		char_name_vbox.add_child(chars_hbox)
+		
+		var name_label = Label.new()
+		name_label.text = team["name"]
+		name_label.add_theme_font_size_override("font_size", 20)
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		char_name_vbox.add_child(name_label)
+		
+		left_box.add_child(char_name_vbox)
+		row.add_child(left_box)
+		
+		var bar_container = MarginContainer.new()
+		bar_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		
+		var bar = ProgressBar.new()
+		bar.custom_minimum_size = Vector2(450, 40)
+		bar.max_value = max_score_possible
+		bar.value = 0
+		bar.step = 1.0
+		bar.show_percentage = false
+		
+		var style_bg = StyleBoxFlat.new()
+		style_bg.bg_color = Color(0.2, 0.2, 0.2, 1)
+		style_bg.corner_radius_top_left = 10
+		style_bg.corner_radius_top_right = 10
+		style_bg.corner_radius_bottom_right = 10
+		style_bg.corner_radius_bottom_left = 10
+		bar.add_theme_stylebox_override("background", style_bg)
+		
+		var style_fg = StyleBoxFlat.new()
+		style_fg.bg_color = t_color
+		style_fg.corner_radius_top_left = 10
+		style_fg.corner_radius_top_right = 10
+		style_fg.corner_radius_bottom_right = 10
+		style_fg.corner_radius_bottom_left = 10
+		bar.add_theme_stylebox_override("fill", style_fg)
+		
+		bar_container.add_child(bar)
+		
+		var score_lbl = Label.new()
+		score_lbl.text = "0 / " + str(max_score_possible)
+		score_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		score_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		score_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+		score_lbl.add_theme_font_size_override("font_size", 24)
+		bar_container.add_child(score_lbl)
+		
+		row.add_child(bar_container)
+		
+		answers_list.add_child(row)
+		
+		var tween = create_tween()
+		tween.tween_interval(0.2 * i)
+		tween.tween_property(bar, "value", target_score, 1.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		
+		var int_tween = create_tween()
+		int_tween.tween_interval(0.2 * i)
+		int_tween.tween_method(func(val: float): score_lbl.text = str(int(val)) + " Points", 0.0, float(target_score), 1.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		
+		if i == 0:
+			var trophy_tween = create_tween()
+			trophy_tween.tween_interval((0.2 * i) + 1.6)
+			trophy_tween.tween_property(trophy_rect, "modulate:a", 1.0, 0.5)
+			
+		i += 1
+		
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 30)
+	$MarginContainer/VBoxContainer.add_child(spacer)
+	
 	var back_btn = Button.new()
 	back_btn.text = "ZURÜCK ZUM MAINBOARD"
 	back_btn.add_theme_font_size_override("font_size", 32)
+	back_btn.custom_minimum_size = Vector2(400, 60)
+	back_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	back_btn.pressed.connect(func(): 
 		AudioManager.play_music("intro")
 		get_tree().change_scene_to_file("res://scenes/MainBoard.tscn")
 	)
-	answers_list.add_child(back_btn)
+	$MarginContainer/VBoxContainer.add_child(back_btn)
 
 func _on_client_reconnected(p_id: int, p_name: String):
 	# Wenn ein Spieler während des laufenden Quizes wiederverbindet,

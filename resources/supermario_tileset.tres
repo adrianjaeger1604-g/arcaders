@@ -1,4 +1,4 @@
-[gd_resource type="TileSet" load_steps=3 format=3 uid="uid://c5xk8j2p1n1q4"]
+[gd_resource type="TileSet" format=3 uid="uid://c5xk8j2p1n1q4"]
 
 [ext_resource type="Texture2D" uid="uid://bin0wbq3wyw81" path="res://assets/ui/shared/mario_tileset_1.png" id="2_tex"]
 

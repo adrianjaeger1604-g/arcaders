@@ -193,7 +193,13 @@ func _end_game():
 		var win_tween = create_tween()
 		win_tween.tween_interval(max_delay)
 		win_tween.tween_property(status_label, "modulate:a", 1.0, 0.5)
-		win_tween.tween_callback(func(): AudioManager.play_sfx("victory_jubel"))
+		win_tween.tween_callback(func(): 
+			AudioManager.play_sfx("victory_jubel")
+			if winning_team.has("players"):
+				for p in winning_team["players"]:
+					if p.has("character"):
+						AudioManager.play_character_sfx(p["character"], "win")
+		)
 		
 		# Punkt an das Team vergeben
 		if NetworkManager.current_minigame_index != -1:
@@ -232,15 +238,16 @@ func _create_result_bar(p_id: int, clicks: int, index: int, best_id: int):
 	left_box.custom_minimum_size = Vector2(350, 0)
 	left_box.add_theme_constant_override("separation", 15)
 	
-	var trophy_label = Label.new()
-	trophy_label.text = "🏆" if p_id == best_id else ""
-	trophy_label.add_theme_font_size_override("font_size", 32)
-	trophy_label.custom_minimum_size = Vector2(40, 0)
-	trophy_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var trophy_rect = TextureRect.new()
+	if p_id == best_id:
+		trophy_rect.texture = preload("res://assets/ui/icons/icon_trophy.png")
+	trophy_rect.custom_minimum_size = Vector2(40, 40)
+	trophy_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	trophy_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	# Pokal erst unsichtbar machen, wenn einer da ist
 	if p_id == best_id:
-		trophy_label.modulate.a = 0.0
-	left_box.add_child(trophy_label)
+		trophy_rect.modulate.a = 0.0
+	left_box.add_child(trophy_rect)
 	
 	var char_name_vbox = VBoxContainer.new()
 	char_name_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -324,7 +331,7 @@ func _create_result_bar(p_id: int, clicks: int, index: int, best_id: int):
 		var trophy_tween = create_tween()
 		# Warte, bis (0.3 * index) + 5.0 s Animation vorbei ist + minimaler "Suspense"-Delay
 		trophy_tween.tween_interval((0.3 * index) + 5.2)
-		trophy_tween.tween_property(trophy_label, "modulate:a", 1.0, 0.5)
+		trophy_tween.tween_property(trophy_rect, "modulate:a", 1.0, 0.5)
 
 func _on_back_pressed():
 	AudioManager.play_music("intro")

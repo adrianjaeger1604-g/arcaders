@@ -9,6 +9,28 @@ extends Node
 @export var volume_music: float = 0.0 # Globale Hintergrundmusik-Lautstärke
 @export var volume_sfx: float = -8.0   # Globale Soundeffekt-Lautstärke
 
+var music_muted: bool = false
+var sfx_muted: bool = false
+
+func set_music_volume(vol: float):
+	volume_music = vol
+	if not music_muted and active_player != null:
+		active_player.volume_db = volume_music
+
+func set_sfx_volume(vol: float):
+	volume_sfx = vol
+
+func toggle_music_mute():
+	music_muted = not music_muted
+	if active_player != null:
+		if music_muted:
+			active_player.volume_db = -80.0
+		else:
+			active_player.volume_db = volume_music
+
+func toggle_sfx_mute():
+	sfx_muted = not sfx_muted
+
 # Individuelle Lautstärke-Offsets für jeden Soundeffekt (falls manche zu laut/leise sind)
 @export var sfx_volume_overrides = {
 	"camera_shake": 2.0,      # Erhöhe Shake-Lautstärke leicht (+2 dB)
@@ -95,6 +117,8 @@ func play_music(track_name: String, fade_duration: float = 0.5, start_from_sec: 
 	
 	# Fade in BGM to target volume (global volume + custom offset)
 	var target_volume = volume_music + volume_offset_db
+	if music_muted:
+		target_volume = -80.0
 	tween.tween_property(fade_in_player, "volume_db", target_volume, fade_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	
 	# Parallel fade out the previous player if playing
@@ -113,6 +137,9 @@ func stop_music(fade_duration: float = 0.5):
 		tween.tween_callback(func(): fade_out_player.stop())
 
 func play_sfx(sfx_name: String):
+	if sfx_muted:
+		return
+		
 	if not sfx_tracks.has(sfx_name):
 		printerr("AudioManager: SFX not found: ", sfx_name)
 		return
@@ -142,3 +169,55 @@ func play_sfx(sfx_name: String):
 	add_child(asp)
 	asp.play()
 	asp.finished.connect(func(): asp.queue_free())
+
+func play_character_sfx(character_name: String, action: String = ""):
+	if sfx_muted or character_name == "" or character_name == "unknown":
+		return
+		
+	var formatted_name = character_name.to_lower().strip_edges()
+	if formatted_name == "cedi":
+		formatted_name = "cedric"
+		
+	var base_name = formatted_name
+	if action != "":
+		base_name = formatted_name + "_" + action
+		
+	var wav_path = "res://assets/audio/sfx/characters/" + base_name + ".wav"
+	var mp3_path = "res://assets/audio/sfx/characters/" + base_name + ".mp3"
+	
+	var final_path = ""
+	if ResourceLoader.exists(wav_path):
+		final_path = wav_path
+	elif ResourceLoader.exists(mp3_path):
+		final_path = mp3_path
+	else:
+		# Fallback auf Sound ohne Action-Suffix
+		wav_path = "res://assets/audio/sfx/characters/" + formatted_name + ".wav"
+		mp3_path = "res://assets/audio/sfx/characters/" + formatted_name + ".mp3"
+		if ResourceLoader.exists(wav_path):
+			final_path = wav_path
+		elif ResourceLoader.exists(mp3_path):
+			final_path = mp3_path
+		
+	if final_path != "":
+		# Sicherheits-Limit: Maximal 16 parallele Soundeffekte gleichzeitig
+		var active_sfx = []
+		for child in get_children():
+			if child is AudioStreamPlayer and child != player_a and child != player_b:
+				active_sfx.append(child)
+				
+		if active_sfx.size() >= 16:
+			var oldest = active_sfx[0]
+			oldest.stop()
+			oldest.queue_free()
+			
+		var asp = AudioStreamPlayer.new()
+		asp.stream = load(final_path)
+		asp.volume_db = volume_sfx # Standard SFX volume
+		add_child(asp)
+		asp.play()
+		asp.finished.connect(func(): asp.queue_free())
+	else:
+		# Nur fuer Debugging
+		print("Kein Charakter-SFX gefunden fuer: ", formatted_name, " (Aktion: ", action, ")")
+

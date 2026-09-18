@@ -53,27 +53,22 @@ func _create_player_bar(p_data: Dictionary, index: int):
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 20)
 	
-	# Spacer (Left Invisible Element to keep bar centered)
-	var spacer_left = Control.new()
-	spacer_left.custom_minimum_size = Vector2(0, 0) # Flexible spacer
-	spacer_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(spacer_left)
-	
 	# Left Content (Name + Character)
 	var left_box = HBoxContainer.new()
 	left_box.alignment = BoxContainer.ALIGNMENT_END
-	left_box.custom_minimum_size = Vector2(350, 0)
+	left_box.custom_minimum_size = Vector2(250, 0)
 	left_box.add_theme_constant_override("separation", 15)
 	
 	# Trophy
-	var trophy_label = Label.new()
-	trophy_label.text = "🏆" if index == 0 else ""
-	trophy_label.add_theme_font_size_override("font_size", 32)
-	trophy_label.custom_minimum_size = Vector2(40, 0)
-	trophy_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var trophy_rect = TextureRect.new()
 	if index == 0:
-		trophy_label.modulate.a = 0.0
-	left_box.add_child(trophy_label)
+		trophy_rect.texture = preload("res://assets/ui/icons/icon_trophy.png")
+	trophy_rect.custom_minimum_size = Vector2(40, 40)
+	trophy_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	trophy_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if index == 0:
+		trophy_rect.modulate.a = 0.0
+	left_box.add_child(trophy_rect)
 	
 	# Character + Name Box
 	var char_name_vbox = VBoxContainer.new()
@@ -86,6 +81,9 @@ func _create_player_bar(p_data: Dictionary, index: int):
 	char_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	char_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var character_name = p_data.get("character", "")
+	if character_name == "" or not NetworkManager.character_textures.has(character_name):
+		character_name = "Cedi"
+		
 	if NetworkManager.character_textures.has(character_name):
 		char_icon.texture = NetworkManager.character_textures[character_name]
 	char_name_vbox.add_child(char_icon)
@@ -107,7 +105,7 @@ func _create_player_bar(p_data: Dictionary, index: int):
 	
 	# Progress Bar
 	var bar = ProgressBar.new()
-	bar.custom_minimum_size = Vector2(450, 40)
+	bar.custom_minimum_size = Vector2(350, 40)
 	bar.max_value = max_score_possible
 	bar.value = 0 # Start at 0 for animation
 	bar.step = 1.0 # Or 0.1 for smoother animation, though scores are integers
@@ -152,11 +150,6 @@ func _create_player_bar(p_data: Dictionary, index: int):
 	
 	row.add_child(bar_container)
 	
-	# Spacer (Right Invisible Element to keep bar centered)
-	var spacer_right = Control.new()
-	spacer_right.custom_minimum_size = Vector2(350, 0) # Same size as left content to center bar
-	row.add_child(spacer_right)
-	
 	player_list.add_child(row)
 	
 	# Animate using Tween
@@ -175,7 +168,7 @@ func _create_player_bar(p_data: Dictionary, index: int):
 	if index == 0:
 		var trophy_tween = create_tween()
 		trophy_tween.tween_interval((0.2 * index) + 1.6)
-		trophy_tween.tween_property(trophy_label, "modulate:a", 1.0, 0.5)
+		trophy_tween.tween_property(trophy_rect, "modulate:a", 1.0, 0.5)
 
 
 func _on_next_phase_pressed():

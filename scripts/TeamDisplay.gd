@@ -95,6 +95,8 @@ func _create_team_ui(team_name: String, p1: Dictionary, p2, bg_color: Color, cha
 	t1.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t1.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var char1 = p1.get("character", "")
+	if char1 == "" or not NetworkManager.character_textures.has(char1):
+		char1 = "Cedi"
 	if NetworkManager.character_textures.has(char1):
 		t1.texture = NetworkManager.character_textures[char1]
 	
@@ -116,6 +118,8 @@ func _create_team_ui(team_name: String, p1: Dictionary, p2, bg_color: Color, cha
 		t2.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		t2.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		var char2 = p2.get("character", "")
+		if char2 == "" or not NetworkManager.character_textures.has(char2):
+			char2 = "Cedi"
 		if NetworkManager.character_textures.has(char2):
 			t2.texture = NetworkManager.character_textures[char2]
 		

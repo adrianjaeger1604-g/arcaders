@@ -2,11 +2,8 @@ extends Control
 
 @onready var grid = $VBoxContainer/CenterContainer/MinigameGrid
 
-# Settings UI
-@onready var settings_button = $SettingsButton
-@onready var settings_overlay = $SettingsOverlay
-@onready var show_qr_button = $SettingsOverlay/CenterContainer/PanelContainer/VBoxContainer/ShowQRButton
-@onready var close_settings_button = $SettingsOverlay/CenterContainer/PanelContainer/VBoxContainer/CloseSettingsButton
+# QR Button
+@onready var show_qr_button = $ShowQRButton
 
 # QR UI
 @onready var qr_overlay = $QROverlay
@@ -32,21 +29,14 @@ var team_colors = [
 
 func _ready():
 	AudioManager.play_music("intro")
-	_setup_settings_button()
 	_populate_grid()
 	_spawn_players()
 	
-	# Settings & QR Signalkopplung
-	var btn_settings = settings_button if settings_button else find_child("SettingsButton", true, false)
-	var btn_close_settings = close_settings_button if close_settings_button else find_child("CloseSettingsButton", true, false)
+	# QR Signalkopplung
 	var btn_show_qr = show_qr_button if show_qr_button else find_child("ShowQRButton", true, false)
 	var btn_close_qr = close_qr_button if close_qr_button else find_child("CloseQRButton", true, false)
 	var http_qr = qr_http_request if qr_http_request else find_child("QRHTTPRequest", true, false)
 	
-	if btn_settings:
-		btn_settings.pressed.connect(_on_settings_button_pressed)
-	if btn_close_settings:
-		btn_close_settings.pressed.connect(_on_close_settings_button_pressed)
 	if btn_show_qr:
 		btn_show_qr.pressed.connect(_on_show_qr_button_pressed)
 	if btn_close_qr:
@@ -59,12 +49,22 @@ func _ready():
 		var active_index = NetworkManager.current_turn_number % NetworkManager.computed_teams.size()
 		var active_team = NetworkManager.computed_teams[active_index]
 		
-		# Wenn gerade ein Spiel beendet wurde, zögern wir das Runden-Popup um 1.6s raus, damit der Slam zuerst kommt!
+		# Wenn gerade ein Spiel beendet wurde, zgern wir das Runden-Popup um 1.6s raus, damit der Slam zuerst kommt!
 		if NetworkManager.current_minigame_index != -1:
 			var turn_timer = get_tree().create_timer(1.6)
-			turn_timer.timeout.connect(func(): show_event_popup(active_team["name"] + " ist dran!", active_team["color"]))
+			turn_timer.timeout.connect(func(): 
+				show_event_popup(active_team["name"] + " ist dran!", active_team["color"])
+				if active_team.has("players"):
+					for p in active_team["players"]:
+						if p.has("character"):
+							AudioManager.play_character_sfx(p["character"], "turn")
+			)
 		else:
 			show_event_popup(active_team["name"] + " ist dran!", active_team["color"])
+			if active_team.has("players"):
+				for p in active_team["players"]:
+					if p.has("character"):
+						AudioManager.play_character_sfx(p["character"], "turn")
 			
 	# Jetzt können wir den minigame_index zurücksetzen, damit die Animation nicht bei Overlay-Updates neu triggert
 	NetworkManager.current_minigame_index = -1
@@ -294,16 +294,7 @@ func _get_character_scene_path(character_name: String) -> String:
 	# Fallback, falls die spezifische .tscn nicht existiert
 	return "res://scenes/characters/Cedric.tscn"
 
-# --- Einstellungen & QR Code Steuerung ---
-
-func _on_settings_button_pressed():
-	AudioManager.play_sfx("settings_open")
-	if settings_overlay:
-		settings_overlay.visible = true
-
-func _on_close_settings_button_pressed():
-	if settings_overlay:
-		settings_overlay.visible = false
+# --- QR Code Steuerung ---
 
 func _on_show_qr_button_pressed():
 	AudioManager.play_sfx("settings_open")
@@ -346,15 +337,6 @@ func _on_qr_request_completed(result, response_code, headers, body):
 	else:
 		print("Fehler beim Abrufen des QR Codes. HTTP Code: ", response_code)
 
-func _setup_settings_button():
-	var btn = settings_button if settings_button else find_child("SettingsButton", true, false)
-	if btn:
-		btn.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		# Micro-animations/hover-effects using modulations
-		btn.mouse_entered.connect(func(): btn.modulate = Color(0.85, 0.85, 0.85, 1))
-		btn.mouse_exited.connect(func(): btn.modulate = Color(1, 1, 1, 1))
-		btn.button_down.connect(func(): btn.modulate = Color(0.7, 0.7, 0.7, 1))
-		btn.button_up.connect(func(): btn.modulate = Color(0.85, 0.85, 0.85, 1) if btn.is_hovered() else Color(1, 1, 1, 1))
 
 func show_event_popup(message: String, team_color: Color = Color.WHITE):
 	if event_overlay:

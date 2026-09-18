@@ -3,7 +3,7 @@ extends Control
 @onready var http_request = $HTTPRequest
 @onready var qr_texture_rect = $CenterContainer/VBoxContainer/CenterBox/QRCodeRect
 @onready var instruction_label = $CenterContainer/VBoxContainer/InstructionLabel
-@onready var player_list = $CenterContainer/VBoxContainer/PlayerList
+@onready var player_list_container = $CenterContainer/VBoxContainer/PlayerListContainer
 @onready var start_button = $CenterContainer/VBoxContainer/GameButton
 
 # Dies wäre später die echte gehostete Adresse, z.B. https://arcaders.vercel.app
@@ -26,13 +26,47 @@ func _connect_buttons_sfx(node: Node):
 		_connect_buttons_sfx(child)
 
 func _update_player_list_text():
-	var names = []
-	for player in NetworkManager.player_sessions.values():
+	# Alte UI Elemente entfernen
+	for child in player_list_container.get_children():
+		child.queue_free()
+		
+	var has_players = false
+	for player_id in NetworkManager.player_sessions.keys():
+		has_players = true
+		var player = NetworkManager.player_sessions[player_id]
 		var p_name = player.get("name", "Unbekannt")
-		names.append(p_name)
-	player_list.text = ", ".join(names)
+		
+		# HBox für Name und Kick-Button
+		var hbox = HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 15) # Abstand zwischen Name und Button
+		
+		# Name Label
+		var label = Label.new()
+		label.text = p_name
+		label.theme_type_variation = "H2"
+		hbox.add_child(label)
+		
+		# Kick Button
+		var kick_btn = Button.new()
+		kick_btn.text = "X"
+		kick_btn.modulate = Color(1, 0.3, 0.3)
+		
+		# Button verkleinern
+		kick_btn.add_theme_font_size_override("font_size", 24)
+		kick_btn.custom_minimum_size = Vector2(30, 30)
+		kick_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER # Zentriere den Button vertikal neben dem Text
+		
+		kick_btn.pressed.connect(func(): NetworkManager.kick_player(player_id))
+		hbox.add_child(kick_btn)
+		
+		# Kleiner Abstandshalter zwischen den Spielern
+		var spacer = Control.new()
+		spacer.custom_minimum_size = Vector2(20, 0)
+		hbox.add_child(spacer)
+		
+		player_list_container.add_child(hbox)
 	
-	start_button.disabled = names.is_empty()
+	start_button.disabled = not has_players
 
 func _on_player_connected(player_id, player_name):
 	_update_player_list_text()

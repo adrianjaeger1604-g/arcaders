@@ -32,7 +32,6 @@ func _on_character_selected(player_id, character):
 	if NetworkManager.player_sessions.has(player_id):
 		var p_name = NetworkManager.player_sessions[player_id]["name"]
 		_add_or_update_player_ui(player_id, p_name, character)
-		AudioManager.play_sfx("jump")
 
 func _add_or_update_player_ui(p_id, p_name, character):
 	var node_name = "PlayerRow_" + str(p_id)

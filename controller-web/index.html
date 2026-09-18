@@ -10,6 +10,12 @@
 
 <body>
 
+    <!-- Top Bar Controls -->
+    <div id="top-bar" style="position: fixed; top: 10px; left: 10px; z-index: 1000; display: flex; gap: 10px;">
+        <button id="btn-logout" class="btn" style="padding: 5px 10px; font-size: 12px; display: none; background: #e74c3c;">Abmelden</button>
+        <button id="btn-toggle-debug" class="btn" style="padding: 5px 10px; font-size: 12px; background: #555;">Debug</button>
+    </div>
+
     <!-- Score Display (nur sichtbar im Spiel) -->
     <div id="score-display"
         style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: 2px solid #4CAF50; border-radius: 8px; color: #4CAF50; font-weight: bold; padding: 5px 15px; font-size: 20px; z-index: 1000; display: none;">
@@ -62,8 +68,10 @@
 
     <!-- On-Screen Debug Log -->
     <div id="debug-log"
-        style="position: fixed; bottom: 0; left: 0; right: 0; height: 120px; background: rgba(0,0,0,0.8); color: lime; font-family: monospace; font-size: 11px; overflow-y: auto; z-index: 9999; padding: 5px; pointer-events: none;">
+        style="position: fixed; bottom: 0; left: 0; right: 0; height: 120px; background: rgba(0,0,0,0.8); color: lime; font-family: monospace; font-size: 11px; overflow-y: auto; z-index: 9999; padding: 5px; pointer-events: none; display: none;">
     </div>
+
+    <audio id="audio-jump" src="assets/jump.mp3" preload="auto"></audio>
 
     <script src="app.js?v=10"></script>
 </body>
