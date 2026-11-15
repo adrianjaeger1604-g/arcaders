@@ -1,27 +1,53 @@
 extends Control
 
 @onready var title_label = $CenterContainer/VBox/TitleBox/Title
-@onready var quiz_option = $CenterContainer/VBox/SettingsPanel/SettingsList/QuizRow/QuizOption
-@onready var minigames_option = $CenterContainer/VBox/SettingsPanel/SettingsList/MinigamesRow/MinigamesOption
 @onready var start_button = $CenterContainer/VBox/StartButton
 
 var pulse_tween: Tween
 
 var character_scenes = [
 	preload("res://scenes/characters/Aaron.tscn"),
+	preload("res://scenes/characters/Anna.tscn"),
+	preload("res://scenes/characters/Cedric.tscn"),
+	preload("res://scenes/characters/Finnja.tscn"),
 	preload("res://scenes/characters/Jan.tscn"),
 	preload("res://scenes/characters/Janek.tscn"),
+	preload("res://scenes/characters/Leonie.tscn"),
+	preload("res://scenes/characters/Lia.tscn"),
+	preload("res://scenes/characters/Luca.tscn"),
 	preload("res://scenes/characters/Marius.tscn"),
-	preload("res://scenes/characters/Cedric.tscn"),
-	preload("res://scenes/characters/Paul.tscn")
+	preload("res://scenes/characters/Mikka.tscn"),
+	preload("res://scenes/characters/Miles.tscn"),
+	preload("res://scenes/characters/Paul.tscn"),
+	preload("res://scenes/characters/Simon.tscn")
 ]
 var active_characters = []
 var spawn_timer: Timer
 
+func is_in_intro() -> bool:
+	if get_parent() != null and get_parent().name == "IntroSequence":
+		return true
+	if owner != null and owner.name == "IntroSequence":
+		return true
+	if get_tree() != null and get_tree().current_scene != null and get_tree().current_scene.name == "IntroSequence":
+		return true
+	return false
+
 func _ready():
+	_start_title_animation()
+
+	if is_in_intro():
+		# Wenn das Startmenü als Kindknoten in IntroSequence eingebunden ist,
+		# darf es weder die Musik neu starten noch Charaktere spawnen.
+		# Erst wenn die IntroSequenz endet und StartMenu.tscn als eigenständige Szene geladen wird,
+		# wird der normale Startmenü-Ablauf aktiv.
+		return
+
+	if GlobalSettingsLayer:
+		GlobalSettingsLayer.show_gear_button()
+
 	AudioManager.play_music("intro")
 	start_button.pressed.connect(_on_start_pressed)
-	_start_title_animation()
 	_connect_buttons_sfx(self)
 	_setup_random_animations()
 
@@ -29,6 +55,8 @@ var available_scenes = []
 var last_spawned_scene = null
 
 func _setup_random_animations():
+	if is_in_intro():
+		return
 	spawn_timer = Timer.new()
 	spawn_timer.wait_time = randf_range(1.0, 3.0)
 	spawn_timer.autostart = true
@@ -51,6 +79,7 @@ func _on_spawn_timer_timeout():
 	
 	if char_scene:
 		var char_inst = char_scene.instantiate()
+		char_inst.mute_sfx = true
 		add_child(char_inst)
 		# Bewege den Charakter im Szenenbaum nach oben (vor das Tilemap, hinter das UI)
 		move_child(char_inst, 2) 
@@ -67,6 +96,8 @@ func _on_spawn_timer_timeout():
 		active_characters.append(char_inst)
 
 func _process(delta):
+	if is_in_intro():
+		return
 	for i in range(active_characters.size() - 1, -1, -1):
 		var c = active_characters[i]
 		if is_instance_valid(c):
@@ -82,7 +113,7 @@ func _process(delta):
 					# Zufällig entscheiden: Trinken (stehen bleiben) oder Springen
 					if randf() > 0.5:
 						c.set_meta("state", "drink")
-						c.play_drink()
+						c.play_drink(false)
 						c.play_drip()
 						
 						var t = create_tween()
@@ -96,7 +127,7 @@ func _process(delta):
 						)
 					else:
 						c.set_meta("state", "jump")
-						c.play_jump()
+						c.play_jump(false)
 						
 						var jump_dur = 0.35
 						var t = create_tween()
@@ -131,26 +162,26 @@ func _connect_buttons_sfx(node: Node):
 	for child in node.get_children():
 		_connect_buttons_sfx(child)
 
+func _update_title_pivot():
+	if is_instance_valid(title_label):
+		title_label.pivot_offset = title_label.size / 2.0
+
 func _start_title_animation():
+	if pulse_tween and pulse_tween.is_valid():
+		pulse_tween.kill()
+
+	if not title_label.resized.is_connected(_update_title_pivot):
+		title_label.resized.connect(_update_title_pivot)
+	_update_title_pivot()
+	get_tree().process_frame.connect(_update_title_pivot, CONNECT_ONE_SHOT)
+
+	title_label.scale = Vector2.ONE
+
+	# Endlose Puls-Animation (Pochen) für den Titel
 	pulse_tween = create_tween().set_loops()
-	
-	# Initial scale setup for centering
-	title_label.pivot_offset = title_label.size / 2.0
-	
-	# Scale UP
 	pulse_tween.tween_property(title_label, "scale", Vector2(1.1, 1.1), 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	# Scale DOWN
 	pulse_tween.tween_property(title_label, "scale", Vector2(1.0, 1.0), 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_start_pressed():
-	# Speichere die Einstellungen im NetworkManager
-	NetworkManager.quiz_questions_count = quiz_option.get_selected_id()
-	
-	# Hole den gewählten Wert aus dem OptionButton (12, 16, 20, 24)
-	var selected_id = minigames_option.get_selected_id()
-	NetworkManager.minigames_count = selected_id
-	
-	print("Einstellungen gespeichert: ", NetworkManager.quiz_questions_count, " Quiz Fragen, ", NetworkManager.minigames_count, " Minispiele.")
-	
-	# Wechsle zur Lobby (QR Code Szene)
-	get_tree().change_scene_to_file("res://scenes/Main.tscn")
+	# Wechsle zur neuen Szene für Spieloptionen
+	get_tree().change_scene_to_file("res://scenes/GameSetup.tscn")

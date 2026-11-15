@@ -1,5 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://cndhsct0lcoof"]
+[gd_scene load_steps=2 format=3 uid="uid://c87qmipgrgcpa"]
 
-[ext_resource type="PackedScene" path="res://scenes/minigames/BaseTextFieldQuiz.tscn" id="1_base"]
+[ext_resource type="PackedScene" uid="uid://cx6g3k7r8b2q" path="res://scenes/minigames/BaseTextFieldQuiz.tscn" id="1_base"]
 
 [node name="VideospielQuiz" instance=ExtResource("1_base")]
+
+[node name="PixelBackButton" parent="." index="3"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 80.0
+offset_bottom = 80.0

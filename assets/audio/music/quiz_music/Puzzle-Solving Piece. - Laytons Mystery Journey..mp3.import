@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://co7e2vncgwi47"
+path="res://.godot/imported/Puzzle-Solving Piece. - Laytons Mystery Journey..mp3-9c98cb8591a70b5f10e873b7b1d3ef45.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/quiz_music/Puzzle-Solving Piece. - Laytons Mystery Journey..mp3"
+dest_files=["res://.godot/imported/Puzzle-Solving Piece. - Laytons Mystery Journey..mp3-9c98cb8591a70b5f10e873b7b1d3ef45.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

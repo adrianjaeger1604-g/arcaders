@@ -1,0 +1,329 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/minigames/MinigameIceClimbers.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="2_btn"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PixelBackButton.tscn" id="4_back"]
+[ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="5_tileset"]
+[ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="6_bg"]
+
+[sub_resource type="Gradient" id="Gradient_snow"]
+colors = PackedColorArray(0.9, 0.96, 1, 0.85, 0.7, 0.85, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_HUD"]
+bg_color = Color(0.06, 0.12, 0.22, 0.85)
+border_width_bottom = 3
+border_color = Color(0.38, 0.72, 0.95, 0.9)
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="MinigameIceClimbers" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="SkyBackgroundLayer" type="CanvasLayer" parent="."]
+layer = -100
+
+[node name="SkyRect" type="ColorRect" parent="SkyBackgroundLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.062745, 0.109804, 0.188235, 1)
+
+[node name="StarField" type="CPUParticles2D" parent="SkyBackgroundLayer"]
+position = Vector2(960, 540)
+emitting = false
+amount = 100
+lifetime = 5.0
+preprocess = 3.0
+emission_shape = 3
+emission_rect_extents = Vector2(960, 540)
+gravity = Vector2(0, 0)
+initial_velocity_min = 0.0
+initial_velocity_max = 0.0
+scale_amount_min = 2.0
+scale_amount_max = 4.5
+color = Color(1, 1, 1, 0.85)
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="World"]
+position = Vector2(960, 540)
+
+[node name="SnowParticles" type="CPUParticles2D" parent="World"]
+position = Vector2(960, 0)
+amount = 120
+lifetime = 4.0
+preprocess = 3.0
+emission_shape = 3
+emission_rect_extents = Vector2(960, 10)
+direction = Vector2(0.2, 1)
+spread = 25.0
+gravity = Vector2(0, 45)
+initial_velocity_min = 40.0
+initial_velocity_max = 85.0
+scale_amount_min = 2.5
+scale_amount_max = 5.0
+color_ramp = SubResource("Gradient_snow")
+
+[node name="Platforms" type="Node2D" parent="World"]
+
+[node name="Players" type="Node2D" parent="World"]
+
+[node name="FX" type="Node2D" parent="World"]
+
+[node name="LeftWallColumn" type="ColorRect" parent="World"]
+offset_left = -200.0
+offset_top = -200000.0
+offset_right = 120.0
+offset_bottom = 2000.0
+color = Color(0.08, 0.18, 0.32, 1)
+
+[node name="LeftWallBorder" type="ColorRect" parent="World"]
+offset_left = 115.0
+offset_top = -200000.0
+offset_right = 120.0
+offset_bottom = 2000.0
+color = Color(0.45, 0.75, 0.95, 0.8)
+
+[node name="RightWallColumn" type="ColorRect" parent="World"]
+offset_left = 1800.0
+offset_top = -200000.0
+offset_right = 2200.0
+offset_bottom = 2000.0
+color = Color(0.08, 0.18, 0.32, 1)
+
+[node name="RightWallBorder" type="ColorRect" parent="World"]
+offset_left = 1800.0
+offset_top = -200000.0
+offset_right = 1805.0
+offset_bottom = 2000.0
+color = Color(0.45, 0.75, 0.95, 0.8)
+
+[node name="IntroBackground" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="IntroBackground"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.121569, 0.12549, 0.180392, 1)
+
+[node name="BackgroundTileMap" type="TileMap" parent="IntroBackground"]
+script = ExtResource("6_bg")
+scale = Vector2(4, 4)
+tile_set = ExtResource("5_tileset")
+format = 2
+
+[node name="IntroContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 80.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="IntroContainer"]
+custom_minimum_size = Vector2(1040, 0)
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="IntroContainer/VBox"]
+layout_mode = 2
+theme_type_variation = &"H1"
+theme_override_font_sizes/font_size = 72
+text = "Ice Climbers!"
+horizontal_alignment = 1
+
+[node name="ScrollArea" type="ScrollContainer" parent="IntroContainer/VBox"]
+custom_minimum_size = Vector2(1040, 480)
+layout_mode = 2
+size_flags_horizontal = 4
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="InstructionContainer" type="MarginContainer" parent="IntroContainer/VBox/ScrollArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 10
+
+[node name="Instruction" type="Label" parent="IntroContainer/VBox/ScrollArea/InstructionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"H3"
+theme_override_constants/line_spacing = 8
+text = "1. Alle gegen Alle auf eisigen Höhen:
+Alle Spieler treten gleichzeitig mit ihrem Charakter an und klettern um die Wette!
+
+2. Steuerung in Echtzeit über dein Handy:
+Steuere deinen Charakter live mit dem Joystick nach links und rechts und katapultiere dich mit dem Sprung-Button über die Plattformen.
+
+3. Endlos nach oben – Wer fällt, scheidet aus!
+Sobald ein Kletterer weit oben ankommt, zieht der Bildschirm nach oben nach.
+Wer unten aus dem Bildschirmrand fällt, scheidet sofort aus!
+
+4. Letztes überlebendes Team gewinnt:
+Kämpft euch plattformweise nach oben. Das letzte noch stehende Team gewinnt!"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="StartGameButton" parent="IntroContainer/VBox" instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(360, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "SPIEL STARTEN"
+
+[node name="PixelBackButton" parent="." instance=ExtResource("4_back")]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 104.0
+offset_bottom = 104.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 1
+visible = false
+
+[node name="TopBar" type="PanelContainer" parent="HUD"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 460.0
+offset_right = -460.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_HUD")
+
+[node name="Margin" type="MarginContainer" parent="HUD/TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="HUD/TopBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="TitleLabel" type="Label" parent="HUD/TopBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.92, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "ICE CLIMBERS"
+
+[node name="AltitudeLabel" type="Label" parent="HUD/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.32, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 24
+text = "HÖHE: 0 m"
+horizontal_alignment = 2
+
+[node name="CountdownLabel" type="Label" parent="HUD"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -80.0
+offset_right = 300.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 120
+text = "READY..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TeamSidebar" type="MarginContainer" parent="HUD"]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = 80.0
+offset_right = -20.0
+offset_bottom = -30.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="HUD/TeamSidebar"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="VictoryOverlay" type="CenterContainer" parent="HUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+
+[node name="ColorRect" type="ColorRect" parent="HUD/VictoryOverlay"]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 2
+color = Color(0.04, 0.08, 0.14, 0.88)
+
+[node name="VBox" type="VBoxContainer" parent="HUD/VictoryOverlay"]
+custom_minimum_size = Vector2(800, 0)
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="VictoryTitle" type="Label" parent="HUD/VictoryOverlay/VBox"]
+layout_mode = 2
+theme_type_variation = &"H1"
+theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 12
+theme_override_font_sizes/font_size = 72
+text = "SIEGER: TEAM 1!"
+horizontal_alignment = 1
+
+[node name="VictorySubtitle" type="Label" parent="HUD/VictoryOverlay/VBox"]
+layout_mode = 2
+theme_type_variation = &"H3"
+theme_override_colors/font_color = Color(0.85, 0.94, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "Das Team hat die eisige Bergspitze bezwungen!"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="HUD/VictoryOverlay/VBox"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="ReturnButton" parent="HUD/VictoryOverlay/VBox" instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(280, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 32
+text = "WEITER"
+

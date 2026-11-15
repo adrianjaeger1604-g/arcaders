@@ -13,7 +13,7 @@ var team_colors = [
 ]
 
 func _ready():
-	AudioManager.play_music("intro")
+	AudioManager.stop_music() # Intro-Musik nur bis zum Quiz-Start
 	start_btn.pressed.connect(_on_start_pressed)
 	_build_teams()
 	_connect_buttons_sfx(self)
@@ -29,27 +29,14 @@ func _build_teams():
 	NetworkManager.compute_teams()
 	var computed_teams = NetworkManager.computed_teams
 	
-	# Mapping der Charaktere zu Icons (Eingestellt in CharacterSelect)
-	var char_icons = {
-		"red": "🔴",
-		"blue": "🔵", 
-		"green": "🟢", 
-		"yellow": "🟡"
-	}
-	
 	# Lösche alte Platzhalter
 	for child in team_grid.get_children():
 		child.queue_free()
 	
 	for team in computed_teams:
-		var player1 = team["players"][0]
-		var player2 = null
-		if team["players"].size() > 1:
-			player2 = team["players"][1]
-			
-		_create_team_ui(team["name"], player1, player2, team["color"], char_icons)
+		_create_team_ui(team["name"], team["players"], team["color"])
 
-func _create_team_ui(team_name: String, p1: Dictionary, p2, bg_color: Color, char_icons: Dictionary):
+func _create_team_ui(team_name: String, players: Array, bg_color: Color):
 	var panel = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(400, 150)
 	
@@ -82,61 +69,68 @@ func _create_team_ui(team_name: String, p1: Dictionary, p2, bg_color: Color, cha
 	title.add_theme_color_override("font_color", Color(1,1,1,1))
 	vbox.add_child(title)
 	
+	if NetworkManager.team_assignment_mode == "manual":
+		var team_bonus = 0
+		for tp in players:
+			var pid = int(tp.get("id", -1))
+			if pid == -1:
+				for p_sess_id in NetworkManager.player_sessions.keys():
+					if NetworkManager.player_sessions[p_sess_id].get("name", "") == tp.get("name", ""):
+						pid = int(p_sess_id)
+						break
+			team_bonus += NetworkManager.quiz_bonus_points.get(pid, 0)
+			
+		if team_bonus > 0:
+			var bonus_lbl = Label.new()
+			bonus_lbl.text = "+%d Startpunkte aus Qualifikationsquiz" % team_bonus
+			bonus_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			bonus_lbl.add_theme_font_size_override("font_size", 16)
+			bonus_lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4, 1.0))
+			bonus_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+			bonus_lbl.add_theme_constant_override("outline_size", 6)
+			vbox.add_child(bonus_lbl)
+	
 	var players_hbox = HBoxContainer.new()
 	players_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	players_hbox.add_theme_constant_override("separation", 40)
 	
-	# P1 Name + Icon
-	var p1_box = VBoxContainer.new()
-	p1_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	var t1 = TextureRect.new()
-	t1.custom_minimum_size = Vector2(96, 96)
-	t1.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	t1.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	t1.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var char1 = p1.get("character", "")
-	if char1 == "" or not NetworkManager.character_textures.has(char1):
-		char1 = "Cedi"
-	if NetworkManager.character_textures.has(char1):
-		t1.texture = NetworkManager.character_textures[char1]
-	
-	var l1 = Label.new()
-	l1.text = p1.get("name", "Unbekannt")
-	l1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l1.add_theme_font_size_override("font_size", 24)
-	p1_box.add_child(t1)
-	p1_box.add_child(l1)
-	players_hbox.add_child(p1_box)
-	
-	# P2 falls vorhanden
-	if p2 != null:
-		var p2_box = VBoxContainer.new()
-		p2_box.alignment = BoxContainer.ALIGNMENT_CENTER
-		var t2 = TextureRect.new()
-		t2.custom_minimum_size = Vector2(96, 96)
-		t2.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		t2.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		t2.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		var char2 = p2.get("character", "")
-		if char2 == "" or not NetworkManager.character_textures.has(char2):
-			char2 = "Cedi"
-		if NetworkManager.character_textures.has(char2):
-			t2.texture = NetworkManager.character_textures[char2]
-		
-		var l2 = Label.new()
-		l2.text = p2.get("name", "Unbekannt")
-		l2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l2.add_theme_font_size_override("font_size", 24)
-		p2_box.add_child(t2)
-		p2_box.add_child(l2)
-		players_hbox.add_child(p2_box)
-	else:
+	if players.is_empty():
 		var empty_lbl = Label.new()
-		empty_lbl.text = "(Spielt alleine)"
+		empty_lbl.text = "(Keine Spieler)"
 		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_lbl.add_theme_font_size_override("font_size", 20)
-		empty_lbl.add_theme_color_override("font_color", Color(0.8,0.8,0.8,1))
+		empty_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 0.7))
 		players_hbox.add_child(empty_lbl)
+	else:
+		for p in players:
+			var p_box = VBoxContainer.new()
+			p_box.alignment = BoxContainer.ALIGNMENT_CENTER
+			var t = TextureRect.new()
+			t.custom_minimum_size = Vector2(96, 96)
+			t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			var char_name = p.get("character", "")
+			if char_name == "" or not NetworkManager.character_textures.has(char_name):
+				char_name = "Cedi"
+			if NetworkManager.character_textures.has(char_name):
+				t.texture = NetworkManager.character_textures[char_name]
+			
+			var l = Label.new()
+			l.text = p.get("name", "Unbekannt")
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			l.add_theme_font_size_override("font_size", 24)
+			p_box.add_child(t)
+			p_box.add_child(l)
+			players_hbox.add_child(p_box)
+		
+		if players.size() == 1:
+			var solo_lbl = Label.new()
+			solo_lbl.text = "(Spielt alleine)"
+			solo_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			solo_lbl.add_theme_font_size_override("font_size", 18)
+			solo_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 0.7))
+			players_hbox.add_child(solo_lbl)
 		
 	vbox.add_child(players_hbox)
 	panel.add_child(vbox)
@@ -148,4 +142,6 @@ func _on_start_pressed():
 		NetworkManager.generate_board_layout()
 	
 	# Switch to Main Board / Phase 2
-	get_tree().change_scene_to_file("res://scenes/MainBoard.tscn")
+	var tree = get_tree()
+	if tree:
+		tree.change_scene_to_file("res://scenes/MainBoard.tscn")

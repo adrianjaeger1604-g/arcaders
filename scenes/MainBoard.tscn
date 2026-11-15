@@ -1,10 +1,25 @@
-[gd_scene load_steps=6 format=3 uid="uid://c5ohettnlgqbc"]
+[gd_scene load_steps=7 format=3 uid="uid://c5ohettnlgqbc"]
 
 [ext_resource type="Script" uid="uid://c1ccpo73nq6d" path="res://scripts/MainBoard.gd" id="1_script"]
 [ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="2_theme"]
 [ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="3_tileset"]
 [ext_resource type="PackedScene" uid="uid://2q7c2wrtns1y" path="res://scenes/CloudSpawner.tscn" id="3_tu677"]
 [ext_resource type="Texture2D" uid="uid://chfiio7xj6y6m" path="res://assets/ui/shared/settings_gear.png" id="4_gear"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_RepeatModal"]
+bg_color = Color(0.08, 0.09, 0.15, 0.96)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.95, 0.8, 0.25, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.75)
+shadow_size = 24
+shadow_offset = Vector2(0, 8)
 
 [node name="MainBoard" type="Control"]
 layout_mode = 3
@@ -63,7 +78,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TopMargin" type="Control" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
 [node name="CenterContainer" type="CenterContainer" parent="VBoxContainer"]
@@ -77,7 +92,7 @@ theme_override_constants/v_separation = 20
 columns = 6
 
 [node name="BottomSpacer" type="Control" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 
 
@@ -109,3 +124,82 @@ theme_override_constants/outline_size = 16
 text = "Team Rot ist dran!"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="RepeatConfirmOverlay" type="ColorRect" parent="."]
+visible = false
+z_index = 30
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.02, 0.05, 0.85)
+
+[node name="PanelContainer" type="PanelContainer" parent="RepeatConfirmOverlay"]
+custom_minimum_size = Vector2(760, 320)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -160.0
+offset_right = 380.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_RepeatModal")
+
+[node name="MarginContainer" type="MarginContainer" parent="RepeatConfirmOverlay/PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="RepeatConfirmOverlay/PanelContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="Title" type="Label" parent="RepeatConfirmOverlay/PanelContainer/MarginContainer/VBox"]
+layout_mode = 2
+theme_type_variation = &"H2"
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 12
+text = "SPIEL WIEDERHOLEN?"
+horizontal_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="RepeatConfirmOverlay/PanelContainer/MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+text = "Soll dieses Spiel wirklich wiederholt werden?
+Die bisher vergebenen Punkte werden zurückgesetzt."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="HBox" type="HBoxContainer" parent="RepeatConfirmOverlay/PanelContainer/MarginContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 28
+alignment = 1
+
+[node name="BtnCancelRepeat" type="Button" parent="RepeatConfirmOverlay/PanelContainer/MarginContainer/VBox/HBox"]
+custom_minimum_size = Vector2(230, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 24
+text = "ABBRECHEN"
+
+[node name="BtnConfirmRepeat" type="Button" parent="RepeatConfirmOverlay/PanelContainer/MarginContainer/VBox/HBox"]
+custom_minimum_size = Vector2(230, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 24
+text = "WIEDERHOLEN"

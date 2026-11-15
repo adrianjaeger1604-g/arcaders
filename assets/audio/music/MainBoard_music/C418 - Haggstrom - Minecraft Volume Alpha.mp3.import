@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://3gta7spjjb1s"
+path="res://.godot/imported/C418 - Haggstrom - Minecraft Volume Alpha.mp3-48d12e92f4a29ede8839bcaad95db5fc.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/MainBoard_music/C418 - Haggstrom - Minecraft Volume Alpha.mp3"
+dest_files=["res://.godot/imported/C418 - Haggstrom - Minecraft Volume Alpha.mp3-48d12e92f4a29ede8839bcaad95db5fc.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

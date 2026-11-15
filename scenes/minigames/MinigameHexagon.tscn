@@ -1,0 +1,511 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/minigames/MinigameHexagon.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="2_btn"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
+[ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="4_tileset"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PixelBackButton.tscn" id="5_back"]
+[ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="6_bg"]
+[ext_resource type="StyleBox" uid="uid://c6f2y8p1n5m4a" path="res://resources/panel_side_style.tres" id="7_panel_side"]
+[ext_resource type="StyleBox" uid="uid://d1x8j2n7p9k3q" path="res://resources/panel_modal_style.tres" id="8_panel_modal"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/pixel/hourglass.svg" id="9_hourglass"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
+bg_color = Color(0.04, 0.05, 0.08, 0.5)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TimerBg"]
+bg_color = Color(0.06, 0.08, 0.12, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.35, 0.48, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TimerFill"]
+bg_color = Color(0.88, 0.74, 0.28, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+anti_aliasing = false
+
+[node name="MinigameHexagon" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.121569, 0.12549, 0.180392, 1)
+
+[node name="BackgroundTileMap" type="TileMap" parent="."]
+script = ExtResource("6_bg")
+scale = Vector2(4, 4)
+tile_set = ExtResource("4_tileset")
+format = 2
+
+[node name="IntroContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 80.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="IntroContainer"]
+custom_minimum_size = Vector2(1040, 0)
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="IntroContainer/VBox"]
+layout_mode = 2
+theme_type_variation = &"H1"
+theme_override_font_sizes/font_size = 72
+text = "Hexagon"
+horizontal_alignment = 1
+
+[node name="ScrollArea" type="ScrollContainer" parent="IntroContainer/VBox"]
+custom_minimum_size = Vector2(1040, 480)
+layout_mode = 2
+size_flags_horizontal = 4
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="InstructionContainer" type="MarginContainer" parent="IntroContainer/VBox/ScrollArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 10
+
+[node name="Instruction" type="Label" parent="IntroContainer/VBox/ScrollArea/InstructionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"H3"
+theme_override_constants/line_spacing = 8
+text = "1. Die Merkphase (60 Sekunden):
+19 Hexagon-Felder zeigen Zufallszahlen von 1 bis 5. Prägt euch die Positionen und Werte gut ein!
+
+2. Die Quizphase & Zielsumme:
+Nach Ablauf der Merkzeit werden die Zahlen durch Buchstaben (A bis S) verdeckt. Eine Zielsumme wird aufgedeckt.
+
+3. Drei Felder in gerader Linie:
+Drei zusammenhängende Felder in einer geraden Linie (waagerecht oder diagonal) müssen addiert die Zielsumme ergeben.
+
+4. Buzzer auf dem Smartphone:
+Wer eine gültige Dreier-Reihe weiß, buzzert auf dem Handy und nennt dem Game Master die 3 Buchstaben (z. B. A-D-H)!
+
+5. Punkte & Spielziel:
+• Richtig: +1 Punkt für das Team!
+• Falsch: -1 Punkt Abzug (Minuspunkte sind möglich!).
+• Wenn 30 Sekunden lang niemand buzzert, werden alle restlichen Kombinationen direkt auf dem Hexagon aufgedeckt.
+• Das Team mit den meisten Punkten nach 5 Runden gewinnt das Minispiel!"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="StartGameButton" parent="IntroContainer/VBox" instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(360, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "SPIEL STARTEN"
+
+[node name="TopHeader" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 16.0
+offset_bottom = 88.0
+grow_horizontal = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="RoundLabel" type="Label" parent="TopHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Runde 1 / 5"
+horizontal_alignment = 1
+
+[node name="ScoreContainer" type="HBoxContainer" parent="TopHeader"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="MainLayout" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 96.0
+offset_right = -30.0
+offset_bottom = -70.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 24
+
+[node name="CenterArea" type="VBoxContainer" parent="MainLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BoardContainer" type="CenterContainer" parent="MainLayout/CenterArea"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HexCanvas" type="Control" parent="MainLayout/CenterArea/BoardContainer"]
+custom_minimum_size = Vector2(760, 540)
+layout_mode = 2
+
+[node name="TimerContainer" type="PanelContainer" parent="MainLayout/CenterArea"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/CenterArea/TimerContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="TimerDisplayHBox" type="HBoxContainer" parent="MainLayout/CenterArea/TimerContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="HourglassIcon" type="TextureRect" parent="MainLayout/CenterArea/TimerContainer/VBox/TimerDisplayHBox"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("9_hourglass")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+modulate = Color(0.85, 0.88, 0.95, 0.9)
+
+[node name="TimerDesc" type="Label" parent="MainLayout/CenterArea/TimerContainer/VBox/TimerDisplayHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.9, 1)
+theme_override_font_sizes/font_size = 20
+text = "Merkzeit:"
+vertical_alignment = 1
+
+[node name="TimerLabel" type="Label" parent="MainLayout/CenterArea/TimerContainer/VBox/TimerDisplayHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 38
+text = "60 s"
+vertical_alignment = 1
+
+[node name="TimerBar" type="ProgressBar" parent="MainLayout/CenterArea/TimerContainer/VBox"]
+custom_minimum_size = Vector2(480, 16)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_TimerBg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_TimerFill")
+max_value = 60.0
+step = 0.1
+value = 60.0
+show_percentage = false
+
+[node name="BtnSkipTimer" type="Button" parent="MainLayout/CenterArea/TimerContainer/VBox"]
+custom_minimum_size = Vector2(260, 44)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 18
+text = "Merkzeit überspringen"
+
+[node name="RightPanel" type="PanelContainer" parent="MainLayout"]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_override_styles/panel = ExtResource("7_panel_side")
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TargetSumCard" type="PanelContainer" parent="MainLayout/RightPanel/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/TargetSumCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="MainLayout/RightPanel/VBox/TargetSumCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "GESUCHTE ZIEL-SUMME"
+horizontal_alignment = 1
+
+[node name="TargetSumLabel" type="Label" parent="MainLayout/RightPanel/VBox/TargetSumCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.1, 1)
+theme_override_font_sizes/font_size = 54
+text = "10"
+horizontal_alignment = 1
+
+[node name="BuzzerCard" type="PanelContainer" parent="MainLayout/RightPanel/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/BuzzerCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BuzzerStatusLabel" type="Label" parent="MainLayout/RightPanel/VBox/BuzzerCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "BUZZER AKTIV"
+horizontal_alignment = 1
+
+[node name="PlayerNameLabel" type="Label" parent="MainLayout/RightPanel/VBox/BuzzerCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Warte auf Buzzer..."
+horizontal_alignment = 1
+
+[node name="TeamBadge" type="Label" parent="MainLayout/RightPanel/VBox/BuzzerCard/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Team"
+horizontal_alignment = 1
+
+[node name="CharIcon" type="TextureRect" parent="MainLayout/RightPanel/VBox/BuzzerCard/VBox"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GMCard" type="PanelContainer" parent="MainLayout/RightPanel/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/GMCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GMTitle" type="Label" parent="MainLayout/RightPanel/VBox/GMCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "GAME MASTER EINGABE"
+horizontal_alignment = 1
+
+[node name="Slots" type="HBoxContainer" parent="MainLayout/RightPanel/VBox/GMCard/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 16
+
+[node name="Slot1" type="Label" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Slots"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 38
+text = "_"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot2" type="Label" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Slots"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 38
+text = "_"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot3" type="Label" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Slots"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 38
+text = "_"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="MainLayout/RightPanel/VBox/GMCard/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnResolve" type="Button" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Auflösen"
+
+[node name="BtnClear" type="Button" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 18
+text = "Löschen"
+
+[node name="RevealCard" type="PanelContainer" parent="MainLayout/RightPanel/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/RevealCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RevealCardTitle" type="Label" parent="MainLayout/RightPanel/VBox/RevealCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "RUNDEN-AUFLÖSUNG"
+horizontal_alignment = 1
+
+[node name="RevealSummaryLabel" type="Label" parent="MainLayout/RightPanel/VBox/RevealCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Alle Kombinationen aufgedeckt."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SolutionsScroll" type="ScrollContainer" parent="MainLayout/RightPanel/VBox/RevealCard/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SolutionsList" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/RevealCard/VBox/SolutionsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="BtnNextRound" type="Button" parent="MainLayout/RightPanel/VBox/RevealCard/VBox"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Nächste Runde"
+
+[node name="Spacer" type="Control" parent="MainLayout/RightPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BtnEndRound" type="Button" parent="MainLayout/RightPanel/VBox"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Runde beenden"
+
+[node name="BottomBar" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -60.0
+offset_right = -20.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="FeedbackLabel" type="Label" parent="BottomBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Erkläre Hexagon..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PixelBackButton" parent="." instance=ExtResource("5_back")]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 64.0
+offset_bottom = 64.0
+
+[node name="VictoryOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.03, 0.04, 0.07, 0.85)
+
+[node name="Panel" type="PanelContainer" parent="VictoryOverlay"]
+custom_minimum_size = Vector2(800, 480)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -240.0
+offset_right = 400.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("8_panel_modal")
+
+[node name="VBox" type="VBoxContainer" parent="VictoryOverlay/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="VictoryTitle" type="Label" parent="VictoryOverlay/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 42
+text = "SIEGEREHRUNG"
+horizontal_alignment = 1
+
+[node name="Podium" type="HBoxContainer" parent="VictoryOverlay/Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+theme_override_constants/separation = 24
+
+[node name="BtnBackToBoard" parent="VictoryOverlay/Panel/VBox" instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(340, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Zurück zum Spielbrett"

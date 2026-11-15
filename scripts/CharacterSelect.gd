@@ -58,7 +58,8 @@ func _add_or_update_player_ui(p_id, p_name, character):
 		label.custom_minimum_size = Vector2(200, 0)
 		label.add_theme_font_size_override("font_size", 32)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.clip_text = true
+		label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		
 		hbox.add_child(tex_rect)
 		hbox.add_child(label)
@@ -83,5 +84,11 @@ func _add_or_update_player_ui(p_id, p_name, character):
 			tex_rect.texture = null
 
 func _on_next_pressed():
-	print("Lobby Auswahl beendet. Wechsle zum Quiz...")
-	get_tree().change_scene_to_file("res://scenes/Qualifikationsquiz.tscn")
+	print("Lobby Auswahl beendet.")
+	NetworkManager.game_locked = true # Ab jetzt keine neuen Spieler mehr
+	if NetworkManager.team_assignment_mode == "manual":
+		print("Manuelle Teamauswahl aktiv -> wechsle zur Zuweisungsszene...")
+		get_tree().change_scene_to_file("res://scenes/ManualTeamAssignment.tscn")
+	else:
+		print("Quiz-Ranking aktiv -> wechsle zum Qualifikationsquiz...")
+		get_tree().change_scene_to_file("res://scenes/Qualifikationsquiz.tscn")

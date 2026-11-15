@@ -1,0 +1,111 @@
+[gd_scene load_steps=0 format=3 uid="uid://c7e4g2h1v8lal"]
+
+[ext_resource type="Script" path="res://scripts/ManualTeamAssignment.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="2_btn"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
+[ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="4_tileset"]
+[ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="bg_script"]
+
+[node name="ManualTeamAssignment" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="BackgroundTileMap" type="TileMap" parent="."]
+script = ExtResource("bg_script")
+scale = Vector2(4, 4)
+tile_set = ExtResource("4_tileset")
+format = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(1240, 0)
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="TitleBox" type="VBoxContainer" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="CenterContainer/VBox/TitleBox"]
+layout_mode = 2
+theme_type_variation = &"H1"
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+text = "TEAM-ZUWEISUNG"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="CenterContainer/VBox/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 22
+text = "Ziehe einen Spieler per Drag & Drop auf einen anderen Spieler, um ihre Plätze zu tauschen!"
+horizontal_alignment = 1
+
+[node name="ControlsBar" type="HBoxContainer" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="TeamCountLabel" type="Label" parent="CenterContainer/VBox/ControlsBar"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"H2"
+text = "Teams: 2 (Max. 2 Spieler pro Team)"
+vertical_alignment = 1
+
+[node name="BtnAutoDistribute" type="Button" parent="CenterContainer/VBox/ControlsBar"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 20
+text = "Zufällig mischen"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/VBox"]
+custom_minimum_size = Vector2(1240, 480)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="TeamsContainer" type="HFlowContainer" parent="CenterContainer/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 24
+theme_override_constants/v_separation = 24
+alignment = 1
+
+[node name="StatusLabel" type="Label" parent="CenterContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="ConfirmButton" parent="CenterContainer/VBox" instance=ExtResource("2_btn")]
+layout_mode = 2
+text = "TEAMS BESTÄTIGEN"

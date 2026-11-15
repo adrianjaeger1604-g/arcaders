@@ -5,22 +5,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Arcaders Controller</title>
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=32">
 </head>
 
 <body>
 
-    <!-- Top Bar Controls -->
-    <div id="top-bar" style="position: fixed; top: 10px; left: 10px; z-index: 1000; display: flex; gap: 10px;">
-        <button id="btn-logout" class="btn" style="padding: 5px 10px; font-size: 12px; display: none; background: #e74c3c;">Abmelden</button>
-        <button id="btn-toggle-debug" class="btn" style="padding: 5px 10px; font-size: 12px; background: #555;">Debug</button>
-    </div>
-
-    <!-- Score Display (nur sichtbar im Spiel) -->
-    <div id="score-display"
-        style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: 2px solid #4CAF50; border-radius: 8px; color: #4CAF50; font-weight: bold; padding: 5px 15px; font-size: 20px; z-index: 1000; display: none;">
-        Punkte: <span id="player-score">0</span>
-    </div>
+    <!-- Header oben auf dem Handy (Abmelden, Debug, angemeldete Person & Punkte) -->
+    <header id="controller-header" class="controller-header">
+        <div id="top-bar" class="header-left px-top-bar">
+            <button id="btn-logout" class="btn px-mini-btn px-mini-btn--danger" style="display: none;">Abmelden</button>
+            <button id="btn-toggle-debug" class="btn px-mini-btn">Debug</button>
+        </div>
+        <div id="top-right-bar" class="header-right px-top-right-bar">
+            <div id="user-badge" class="px-user-badge" style="display: none;">
+                <span class="px-user-icon">👤</span>
+                <span id="user-badge-name"></span>
+            </div>
+            <div id="score-display" class="px-score-badge" style="display: none;">
+                Punkte: <span id="player-score">0</span>
+            </div>
+        </div>
+    </header>
 
     <div id="connection-screen" class="screen active">
         <h1>Verbinde...</h1>
@@ -48,7 +53,44 @@
     </div>
 
     <div id="buzzer-screen" class="screen">
+        <div id="buzzer-header" class="buzzer-header" style="display: none;">
+            <div id="buzzer-game-title" class="buzzer-game-title">HEXAGON</div>
+            <div id="buzzer-target-container" class="buzzer-target-container">
+                <span class="buzzer-target-label">ZIEL-SUMME</span>
+                <span id="buzzer-target-value" class="buzzer-target-value">10</span>
+            </div>
+        </div>
+        <div id="buzzer-locked-badge" class="buzzer-locked-badge" style="display: none;"></div>
         <button id="btn-buzzer" class="btn buzzer"></button>
+    </div>
+
+    <div id="bet-buddy-screen" class="screen">
+        <div class="bet-buddy-header">
+            <div class="bet-buddy-tag">BET BUDDY EXTREME</div>
+            <h2 id="bet-buddy-topic-title" class="bet-buddy-topic-title">Thema lädt...</h2>
+        </div>
+        <div id="bet-buddy-partner-box" class="bet-buddy-partner-box">
+            <span class="bet-buddy-sub">Wie viele Begriffe schafft dein/e Partner/in:</span>
+            <div id="bet-buddy-partner-name" class="bet-buddy-partner-name">Partner</div>
+        </div>
+        <div id="bet-buddy-input-section" class="bet-buddy-input-section">
+            <div class="bet-stepper">
+                <button type="button" id="btn-bet-minus" class="btn bet-step-btn">-</button>
+                <input type="number" id="bet-buddy-input" class="bet-number-input" value="5" min="1" max="99" inputmode="numeric" />
+                <button type="button" id="btn-bet-plus" class="btn bet-step-btn">+</button>
+            </div>
+            <button type="button" id="btn-submit-bet" class="btn primary bet-submit-btn">WETTE EINLOGGEN</button>
+        </div>
+        <div id="bet-buddy-submitted-box" class="bet-buddy-submitted-box" style="display:none;">
+            <div class="bet-buddy-check">✓</div>
+            <div class="bet-buddy-locked-label">WETTE EINGELOGGT</div>
+            <div id="bet-buddy-locked-value" class="bet-buddy-locked-value">5</div>
+            <p class="bet-buddy-wait-text">Warte auf die anderen Teams... Bitte nicht vorsagen!</p>
+        </div>
+        <div id="bet-buddy-spectator-box" class="bet-buddy-spectator-box" style="display:none;">
+            <div id="bet-buddy-spec-player" class="bet-buddy-spec-player">Spieler ist dran!</div>
+            <div id="bet-buddy-spec-count" class="bet-buddy-spec-count">Noch 5 Begriffe</div>
+        </div>
     </div>
 
     <div id="minigame-10sec-screen" class="screen">
@@ -57,23 +99,197 @@
         <button id="btn-10sec-hold" class="btn hold-btn">HALTEN</button>
     </div>
 
-    <div id="minigame-tip-fast-screen" class="screen" style="padding: 0; background: lightgreen;">
-        <div id="btn-tip-fast-mash" class="mash-area"></div>
+    <div id="minigame-cookie-clickers-screen" class="screen cookie-clicker-screen">
+        <div class="cookie-header">
+            <div class="cookie-title">COOKIE CLICKERS</div>
+            <div class="cookie-subtitle" id="cookie-subtitle">Tippe so schnell du kannst auf den Cookie!</div>
+        </div>
+        <div id="btn-cookie-clickers-mash" class="mash-area cookie-mash-area">
+            <div class="cookie-graphic-wrapper">
+                <img id="cookie-graphic" class="cookie-pixel-art" src="assets/icons/pixel_cookie.svg" alt="Pixel Cookie" draggable="false">
+                <div id="cookie-click-particles" class="cookie-particles"></div>
+                <div id="cookie-lock-badge" class="cookie-lock-badge hidden">
+                    <span id="cookie-lock-icon" class="cookie-lock-icon">🔒</span>
+                    <span id="cookie-lock-text" class="cookie-lock-text">READY</span>
+                </div>
+            </div>
+            <div class="cookie-counter-display">
+                <span id="cookie-click-count">0</span> Klicks
+            </div>
+        </div>
+    </div>
+
+    <!-- Fire Emblem: Equipment Phase -->
+    <div id="fe-equip-screen" class="screen fe-screen">
+        <h2>Fire Emblem: Ausrüstung</h2>
+        <div class="fe-section">
+            <div class="fe-section-title">1. Wähle deinen Typ (Schere > Papier > Stein)</div>
+            <div class="fe-choice-row" id="fe-rps-group">
+                <button class="fe-choice-btn selected" data-rps="scissors">
+                    <span class="fe-icon"><img class="px-icon px-icon--l" src="assets/icons/scissors.svg" alt=""></span>
+                    <span class="fe-label">Schere</span>
+                </button>
+                <button class="fe-choice-btn" data-rps="rock">
+                    <span class="fe-icon"><img class="px-icon px-icon--l" src="assets/icons/rock.svg" alt=""></span>
+                    <span class="fe-label">Stein</span>
+                </button>
+                <button class="fe-choice-btn" data-rps="paper">
+                    <span class="fe-icon"><img class="px-icon px-icon--l" src="assets/icons/paper.svg" alt=""></span>
+                    <span class="fe-label">Papier</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="fe-section">
+            <div class="fe-section-title">2. Wähle deine Klasse</div>
+            <div class="fe-role-list" id="fe-role-group">
+                <button class="fe-role-btn selected" data-role="tank">
+                    <span class="fe-icon"><img class="px-icon px-icon--l" src="assets/icons/shield.svg" alt=""></span>
+                    <div class="fe-role-info">
+                        <strong>Tank</strong>
+                        <small><img class="px-icon px-icon--s" src="assets/icons/heart.svg" alt=""> 8 HP &nbsp;<img class="px-icon px-icon--s" src="assets/icons/sword.svg" alt=""> 2 DMG &nbsp;<img class="px-icon px-icon--s" src="assets/icons/boots.svg" alt=""> 2 Schritte</small>
+                    </div>
+                </button>
+                <button class="fe-role-btn" data-role="dps">
+                    <span class="fe-icon"><img class="px-icon px-icon--l" src="assets/icons/sword.svg" alt=""></span>
+                    <div class="fe-role-info">
+                        <strong>Damage Dealer</strong>
+                        <small><img class="px-icon px-icon--s" src="assets/icons/heart.svg" alt=""> 5 HP &nbsp;<img class="px-icon px-icon--s" src="assets/icons/sword.svg" alt=""> 3 DMG &nbsp;<img class="px-icon px-icon--s" src="assets/icons/boots.svg" alt=""> 2 Schritte</small>
+                    </div>
+                </button>
+                <button class="fe-role-btn" data-role="utility">
+                    <span class="fe-icon"><img class="px-icon px-icon--l" src="assets/icons/boots.svg" alt=""></span>
+                    <div class="fe-role-info">
+                        <strong>Utility</strong>
+                        <small><img class="px-icon px-icon--s" src="assets/icons/heart.svg" alt=""> 6 HP &nbsp;<img class="px-icon px-icon--s" src="assets/icons/sword.svg" alt=""> 2 DMG &nbsp;<img class="px-icon px-icon--s" src="assets/icons/boots.svg" alt=""> 3 Schritte</small>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <button id="btn-fe-equip-submit" class="btn primary">AUSRÜSTUNG EINLOGGEN</button>
+        <div class="fe-bottom-spacer"></div>
+    </div>
+
+    <!-- Fire Emblem: Taktik-Zug & Schwenkbare Schlachtfeld-Ansicht -->
+    <div id="fe-turn-screen" class="screen fe-screen">
+        <div id="fe-stats-bar" class="fe-stats-bar">
+            <span id="fe-hud-hp"><img class="px-icon px-icon--s" src="assets/icons/heart.svg" alt=""> 8/8</span>
+            <span id="fe-hud-type"><img class="px-icon px-icon--s" src="assets/icons/rock.svg" alt=""> Stein</span>
+            <span id="fe-hud-steps"><img class="px-icon px-icon--s" src="assets/icons/boots.svg" alt=""> 0/2</span>
+        </div>
+
+        <!-- Interaktives Schlachtfeld-Fenster (Wischen zum Umsehen + Antippen zum Laufen) -->
+        <div id="fe-map-viewport" class="fe-map-viewport">
+            <div id="fe-zoom-grid" class="fe-zoom-grid"></div>
+            <button id="btn-fe-center-cam" class="fe-center-cam-btn" type="button" title="Auf Charakter zentrieren">ZENTRIEREN</button>
+        </div>
+        <div class="fe-hint-text">Wische über die Karte zum Umsehen • Tippe Nachbarfeld zum Laufen</div>
+
+        <!-- Schritt-Steuerung -->
+        <div class="fe-controls-row">
+            <div class="fe-dpad">
+                <button class="fe-step-btn" data-dir="up"><img class="px-icon px-icon--m" src="assets/icons/arrow_up.svg" alt="Up"></button>
+                <div class="fe-dpad-mid">
+                    <button class="fe-step-btn" data-dir="left"><img class="px-icon px-icon--m" src="assets/icons/arrow_left.svg" alt="Left"></button>
+                    <button id="btn-fe-undo-step" class="fe-step-btn undo" title="Schritt zurück"><img class="px-icon px-icon--m" src="assets/icons/undo.svg" alt="Undo"></button>
+                    <button class="fe-step-btn" data-dir="right"><img class="px-icon px-icon--m" src="assets/icons/arrow_right.svg" alt="Right"></button>
+                </div>
+                <button class="fe-step-btn" data-dir="down"><img class="px-icon px-icon--m" src="assets/icons/arrow_down.svg" alt="Down"></button>
+            </div>
+
+            <!-- Schlagrichtung -->
+            <div class="fe-attack-box">
+                <div class="fe-mini-title"><img class="px-icon px-icon--s" src="assets/icons/sword.svg" alt=""> Schlagrichtung:</div>
+                <div class="fe-atk-grid" id="fe-atk-group">
+                    <button class="fe-atk-btn selected" data-atk="up"><img class="px-icon px-icon--s" src="assets/icons/arrow_up.svg" alt=""> Oben</button>
+                    <button class="fe-atk-btn" data-atk="left"><img class="px-icon px-icon--s" src="assets/icons/arrow_left.svg" alt=""> Links</button>
+                    <button class="fe-atk-btn" data-atk="right"><img class="px-icon px-icon--s" src="assets/icons/arrow_right.svg" alt=""> Rechts</button>
+                    <button class="fe-atk-btn" data-atk="down"><img class="px-icon px-icon--s" src="assets/icons/arrow_down.svg" alt=""> Unten</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optionales Typ-Wechsel-Menü falls Pfad auf Wechsel-Feld endet -->
+        <div id="fe-swap-box" class="fe-swap-box" style="display: none;">
+            <div class="fe-special-title"><img class="px-icon px-icon--s" src="assets/icons/swap.svg" alt=""> Wechsel-Feld: Wähle deinen neuen Typ:</div>
+            <div class="fe-swap-row" id="fe-swap-group">
+                <button class="fe-swap-btn selected" data-swap-rps="scissors"><img class="px-icon px-icon--s" src="assets/icons/scissors.svg" alt=""> Schere</button>
+                <button class="fe-swap-btn" data-swap-rps="rock"><img class="px-icon px-icon--s" src="assets/icons/rock.svg" alt=""> Stein</button>
+                <button class="fe-swap-btn" data-swap-rps="paper"><img class="px-icon px-icon--s" src="assets/icons/paper.svg" alt=""> Papier</button>
+            </div>
+        </div>
+
+        <!-- Optionales Meteor-Ziel-Menü falls Pfad auf Meteor-Schrein endet -->
+        <div id="fe-meteor-box" class="fe-meteor-box" style="display: none;">
+            <div class="fe-special-title"><img class="px-icon px-icon--s" src="assets/icons/meteor.svg" alt=""> Meteor-Schrein: Tippe Ziel für + Bereich an:</div>
+            <div id="fe-meteor-grid" class="fe-meteor-grid"></div>
+        </div>
+
+        <button id="btn-fe-turn-submit" class="btn primary">ZUG BESTÄTIGEN</button>
+        <div class="fe-bottom-spacer"></div>
+    </div>
+
+    <!-- Ice Climbers Real-Time Controller (Hochformat: Horizontaler Joystick unten links, Jump-Button unten rechts) -->
+    <div id="ice-climbers-screen" class="screen ic-screen">
+        <div class="ic-header">
+            <div class="ic-title">ICE CLIMBERS</div>
+        </div>
+
+        <div class="ic-stage-banner">
+            <span class="ic-mountain-icon">🏔️</span>
+            <span class="ic-banner-text" id="ic-banner-text">Klettere nach oben! Nicht abstürzen!</span>
+        </div>
+
+        <!-- Lock Badge während des Countdowns (wie bei Cookie Clickers) -->
+        <div id="ic-lock-badge" class="ic-lock-badge hidden">
+            <span id="ic-lock-icon" class="ic-lock-icon">🔒</span>
+            <span id="ic-lock-text" class="ic-lock-text">READY</span>
+        </div>
+
+        <!-- Gamepad Controls: Horizontaler Joystick unten links & Jump Button unten rechts -->
+        <div class="ic-gamepad-bottom">
+            <!-- Horizontal-Only Joystick (Unten Links) -->
+            <div class="ic-joystick-wrapper">
+                <div id="ic-joystick-zone" class="ic-joystick-zone">
+                    <span id="ic-joy-arrow-left" class="ic-joy-arrow left">◀</span>
+                    <div id="ic-joystick-track" class="ic-joystick-track">
+                        <div id="ic-joystick-thumb" class="ic-joystick-thumb">
+                            <div class="ic-joystick-thumb-inner"></div>
+                        </div>
+                    </div>
+                    <span id="ic-joy-arrow-right" class="ic-joy-arrow right">▶</span>
+                </div>
+                <div class="ic-pad-sublabel">LAUFEN</div>
+            </div>
+
+            <!-- Arcade Pixel Jump Button (Unten Rechts) -->
+            <div class="ic-jump-wrapper">
+                <button id="ic-btn-jump" class="ic-arcade-jump-btn" type="button" aria-label="Springen">
+                    <span class="ic-arcade-jump-icon">▲</span>
+                    <span class="ic-arcade-jump-text">JUMP</span>
+                </button>
+                <div class="ic-pad-sublabel">SPRUNG</div>
+            </div>
+        </div>
     </div>
 
     <div id="waiting-screen" class="screen">
         <h1>Warten...</h1>
         <p>Bitte schau auf den Hauptbildschirm.</p>
+        <div style="margin-top: 28px;">
+            <button id="btn-waiting-change-name" class="btn secondary" style="font-size: 13px; padding: 8px 16px; width: auto;">NAME ÄNDERN / ABMELDEN</button>
+        </div>
     </div>
 
     <!-- On-Screen Debug Log -->
     <div id="debug-log"
-        style="position: fixed; bottom: 0; left: 0; right: 0; height: 120px; background: rgba(0,0,0,0.8); color: lime; font-family: monospace; font-size: 11px; overflow-y: auto; z-index: 9999; padding: 5px; pointer-events: none; display: none;">
+        style="position: fixed; bottom: 0; left: 0; right: 0; height: 120px; background: rgba(0,0,0,0.8); color: lime; font-family: 'BoldPixels', monospace; font-size: 11px; overflow-y: auto; z-index: 9999; padding: 5px; pointer-events: none; display: none;">
     </div>
 
     <audio id="audio-jump" src="assets/jump.mp3" preload="auto"></audio>
 
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=31"></script>
 </body>
 
 </html>

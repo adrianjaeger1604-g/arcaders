@@ -1,7 +1,8 @@
 extends Control
 
 @onready var question_label = $MarginContainer/VBoxContainer/QuestionLabel
-@onready var answers_list = $MarginContainer/VBoxContainer/ScrollContainer/AnswersList
+@onready var scroll_container = $MarginContainer/VBoxContainer/ScrollContainer
+@onready var answers_list = $MarginContainer/VBoxContainer/ScrollContainer/CenterBox/AnswersList
 @onready var close_round_btn = $MarginContainer/VBoxContainer/CloseRoundButton
 @onready var next_round_btn = $MarginContainer/VBoxContainer/NextRoundButton
 @onready var round_label = $MarginContainer/VBoxContainer/RoundLabel
@@ -35,7 +36,7 @@ var current_round = 0
 var max_rounds = 5
 
 func _ready():
-	AudioManager.play_music("qualifikationsquiz")
+	AudioManager.play_random_quiz_music()
 	# Nutze die globale Einstellung, aber deckle sie auf die Anzahl der verfügbarer Fragen
 	max_rounds = min(NetworkManager.quiz_questions_count, question_pool.size())
 	
@@ -45,6 +46,10 @@ func _ready():
 	close_round_btn.pressed.connect(_on_close_round_pressed)
 	next_round_btn.pressed.connect(_on_next_round_pressed)
 	
+	# Stelle sicher, dass alle Spieler zu Beginn des Qualifikationsquizes mit 0 Punkten starten
+	for pid in NetworkManager.player_sessions.keys():
+		NetworkManager.player_sessions[pid]["score"] = 0
+		
 	# Initialisiere den Fragepool
 	randomize()
 	question_pool.shuffle()
@@ -52,6 +57,9 @@ func _ready():
 	selected_questions = question_pool.slice(0, max_rounds)
 	
 	start_quiz_question()
+	var bg_tilemap = get_node_or_null("BackgroundTileMap")
+	if bg_tilemap:
+		bg_tilemap.visible = false
 	_connect_buttons_sfx(self)
 
 func _connect_buttons_sfx(node: Node):
@@ -66,9 +74,13 @@ func start_quiz_question():
 	question_label.text = question_text
 	round_label.text = "Runde %d / %d" % [current_round + 1, max_rounds]
 	
-	# Lösung verstecken
-	answer_label.visible = false
-	answer_label.text = ""
+	# Lösung unsichtbar halten, aber im Layout belassen gegen Springen
+	answer_label.visible = true
+	answer_label.modulate.a = 0.0
+	answer_label.text = " "
+	
+	if scroll_container:
+		scroll_container.scroll_vertical = 0
 	
 	# UI Reset für die neue Runde
 	is_round_open = true
@@ -90,6 +102,7 @@ func start_quiz_question():
 		answers_list.columns = 5
 	else:
 		answers_list.columns = 6
+	_update_scroll_container_height(p_count, answers_list.columns)
 		
 	# Generiere Karten für alle Spieler
 	var card_scene = preload("res://scenes/minigames/QuizParticipantCard.tscn")
@@ -97,9 +110,16 @@ func start_quiz_question():
 		var p_data = NetworkManager.player_sessions[p_id]
 		var card = card_scene.instantiate()
 		var p_name = p_data.get("name", "Unbekannt")
-		var p_char = p_data.get("character", "Leon")
+		var p_char = p_data.get("character", "Cedric")
+		var p_color = Color(0.2, 0.8, 0.2, 1) # Fallback Grün
+		if NetworkManager.team_assignment_mode == "manual":
+			for team in NetworkManager.computed_teams:
+				for tp in team.get("players", []):
+					if int(tp.get("id", -1)) == int(p_id) or tp.get("name", "") == p_name:
+						p_color = team.get("color", p_color)
+						break
 		answers_list.add_child(card)
-		card.setup(p_name, [p_char], Color(0.2, 0.8, 0.2, 1))
+		card.setup(p_name, [p_char], p_color)
 		card.set_meta("player_id", p_id)
 		card.pressed.connect(func(): AudioManager.play_sfx("button_press"))
 		card.pressed.connect(self._on_answer_button_pressed.bind(card))
@@ -116,6 +136,23 @@ func start_quiz_question():
 	})
 	is_round_open = true
 	print("Quiz Frage gesendet!")
+
+func _update_scroll_container_height(count: int, columns: int):
+	if not scroll_container:
+		return
+	var cols = max(1, columns)
+	var rows = ceil(float(max(1, count)) / float(cols))
+	if rows <= 1:
+		# Bei nur einer Zeile reicht der Platz vollkommen -> Scrollen komplett deaktivieren
+		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll_container.custom_minimum_size.y = 234
+		scroll_container.scroll_vertical = 0
+	else:
+		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		# 180px Kartenhöhe + 16px vertikaler Zwischenraum + 10px Puffer
+		var content_height = rows * 180 + max(0, rows - 1) * 16 + 20
+		var max_height = 420 # Maximalhöhe ca. 2 Reihen von Boxen
+		scroll_container.custom_minimum_size.y = min(content_height, max_height)
 
 func _on_message_received(player_id, data):
 	if data.get("type") == "quiz_answer" and is_round_open:
@@ -145,10 +182,11 @@ func _on_close_round_pressed():
 	next_round_btn.visible = true
 	answers_title.text = "Eingegangene Antworten (GM wählt Punkte):"
 	
-	# Lösung auf dem Monitor anzeigen
+	# Lösung auf dem Monitor anzeigen (ohne Layout-Shift)
 	var question_dict = selected_questions[current_round]
 	answer_label.text = "Lösung: " + question_dict["a"]
 	answer_label.visible = true
+	answer_label.modulate.a = 1.0
 	
 	print("Runde geschlossen! Verteile nun Punkte.")
 	# Sende allen Handys den "Warten" Befehl
@@ -209,9 +247,10 @@ func _on_next_round_pressed():
 		round_label.text = "Bereite Leaderboard vor..."
 		next_round_btn.visible = false
 		# Scene Transition
-		AudioManager.play_sfx("victory_jubel")
-		AudioManager.play_music("intro")
-		get_tree().change_scene_to_file("res://scenes/Leaderboard.tscn")
+		AudioManager.stop_music() # Intro-Musik nur bis zum Quiz-Start
+		var tree = get_tree()
+		if tree:
+			tree.change_scene_to_file("res://scenes/Leaderboard.tscn")
 
 func _on_client_reconnected(p_id: int, p_name: String):
 	# Wenn ein Spieler während des laufenden Qualifikationsquizes wiederverbindet:

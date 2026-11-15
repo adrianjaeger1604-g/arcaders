@@ -1,0 +1,457 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/minigames/MinigameBetBuddyExtreme.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="2_btn"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
+[ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="4_tileset"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PixelBackButton.tscn" id="5_back"]
+[ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="6_bg"]
+[ext_resource type="StyleBox" uid="uid://c6f2y8p1n5m4a" path="res://resources/panel_side_style.tres" id="7_panel_side"]
+[ext_resource type="StyleBox" uid="uid://d1x8j2n7p9k3q" path="res://resources/panel_modal_style.tres" id="8_panel_modal"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/pixel/star.svg" id="9_star"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/pixel/dice.svg" id="10_dice"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/pixel/hourglass.svg" id="11_hourglass"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TimerBg"]
+bg_color = Color(0.06, 0.08, 0.12, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.35, 0.48, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TimerFill"]
+bg_color = Color(0.88, 0.74, 0.28, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_InnerCard"]
+bg_color = Color(0.04, 0.05, 0.08, 0.5)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 20.0
+content_margin_top = 16.0
+content_margin_right = 20.0
+content_margin_bottom = 16.0
+anti_aliasing = false
+
+[node name="MinigameBetBuddyExtreme" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.121569, 0.12549, 0.180392, 1)
+
+[node name="BackgroundTileMap" type="TileMap" parent="."]
+script = ExtResource("6_bg")
+scale = Vector2(4, 4)
+tile_set = ExtResource("4_tileset")
+format = 2
+
+[node name="IntroContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 80.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="IntroContainer"]
+custom_minimum_size = Vector2(1040, 0)
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="IntroContainer/VBox"]
+layout_mode = 2
+theme_type_variation = &"H1"
+theme_override_font_sizes/font_size = 72
+text = "Bet Buddy Extreme"
+horizontal_alignment = 1
+
+[node name="ScrollArea" type="ScrollContainer" parent="IntroContainer/VBox"]
+custom_minimum_size = Vector2(1040, 480)
+layout_mode = 2
+size_flags_horizontal = 4
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="InstructionContainer" type="MarginContainer" parent="IntroContainer/VBox/ScrollArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 10
+
+[node name="Instruction" type="Label" parent="IntroContainer/VBox/ScrollArea/InstructionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"H3"
+theme_override_constants/line_spacing = 8
+text = "1. Das Thema der Runde:
+Pro Runde wird ein zufälliges Thema vorgegeben (z. B. „Länder in Afrika“).
+
+2. Geheime Wettrunde auf dem Smartphone:
+Alle Spieler schätzen geheim ein, wie viele Begriffe der eigene Teampartner aufzählen kann.
+Wichtig: Während der Wettphase darf im Team NICHT gesprochen oder sich abgesprochen werden!
+
+3. Wetten aufdecken & Höchstbietender:
+Der Game Master deckt alle Gebote auf. Die Person mit dem höchsten Gebot muss antreten und aufzählen!
+Gibt es einen Gleichstand beim Höchstgebot, entscheidet das Los direkt im Spiel!
+
+4. Die Aufzählung – 10 Sekunden pro Begriff:
+Beim Aufzählen läuft unerbittlich ein 10-Sekunden-Timer!
+Wird innerhalb von 10 Sekunden kein neuer gültiger Begriff genannt, ist die Runde verloren.
+Jeder richtige Begriff zählt den Zähler um -1 herunter und setzt den Timer wieder auf 10 Sekunden zurück.
+
+5. Punkte & Spielziel:
+• Geschafft: Wird der Zähler auf 0 heruntergezählt, erhält das Team +1 Punkt!
+• Aufgeben oder Zeit abgelaufen: Das Team erhält -1 Punkt (Minuspunkte sind möglich!).
+• Welches Team zuerst 3 In-Game-Punkte erreicht, gewinnt das Minispiel!"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="StartGameButton" parent="IntroContainer/VBox" instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(360, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "SPIEL STARTEN"
+
+[node name="GameMargin" type="MarginContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="GameContainer" type="VBoxContainer" parent="GameMargin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ScoreContainer" type="HBoxContainer" parent="GameMargin/GameContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="MiddleSection" type="VBoxContainer" parent="GameMargin/GameContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="RoundLabel" type="Label" parent="GameMargin/GameContainer/MiddleSection"]
+layout_mode = 2
+theme_type_variation = &"H3"
+theme_override_font_sizes/font_size = 24
+text = "Runde 1"
+horizontal_alignment = 1
+
+[node name="TopicLabel" type="Label" parent="GameMargin/GameContainer/MiddleSection"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_type_variation = &"H1"
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 46
+text = "Länder in Afrika"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="StatusLabel" type="Label" parent="GameMargin/GameContainer/MiddleSection"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"Hint"
+theme_override_font_sizes/font_size = 22
+text = "Warte auf die geheimen Wetten aller Spieler..."
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="GameMargin/GameContainer/MiddleSection"]
+clip_contents = false
+custom_minimum_size = Vector2(1350, 210)
+layout_mode = 2
+size_flags_horizontal = 4
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="CenterBox" type="MarginContainer" parent="GameMargin/GameContainer/MiddleSection/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="AnswersList" type="GridContainer" parent="GameMargin/GameContainer/MiddleSection/ScrollContainer/CenterBox"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 16
+columns = 4
+
+[node name="TieNotice" type="HBoxContainer" parent="GameMargin/GameContainer/MiddleSection"]
+visible = false
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="DiceIcon" type="TextureRect" parent="GameMargin/GameContainer/MiddleSection/TieNotice"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("10_dice")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+modulate = Color(1, 0.85, 0.2, 1)
+
+[node name="TieNoticeLabel" type="Label" parent="GameMargin/GameContainer/MiddleSection/TieNotice"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.75, 0.2, 1)
+theme_override_font_sizes/font_size = 22
+text = "Gleichstand beim Höchstgebot! Das Los entscheidet..."
+horizontal_alignment = 1
+
+[node name="ActionArea" type="VBoxContainer" parent="GameMargin/GameContainer"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="BtnRevealBets" parent="GameMargin/GameContainer/ActionArea" instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(360, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 26
+text = "WETTEN AUFDECKEN"
+
+[node name="BtnStartCountdown" parent="GameMargin/GameContainer/ActionArea" instance=ExtResource("2_btn")]
+visible = false
+custom_minimum_size = Vector2(360, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 26
+text = "ZUR AUFZÄHLUNG STARTEN"
+
+[node name="ChallengeBox" type="PanelContainer" parent="GameMargin/GameContainer/ActionArea"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(1000, 0)
+theme_override_styles/panel = ExtResource("7_panel_side")
+
+[node name="VBox" type="VBoxContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HeaderBox" type="HBoxContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="ChallengerLabel" type="Label" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/HeaderBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 28
+text = "Cedric (Team Rot) muss aufzählen!"
+horizontal_alignment = 1
+
+[node name="CounterAndTimerBox" type="HBoxContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="CounterCard" type="PanelContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_InnerCard")
+
+[node name="VBox" type="VBoxContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/CounterCard"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="CountTitle" type="Label" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/CounterCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.9, 1)
+theme_override_font_sizes/font_size = 19
+text = "NOCH ZU NENNEN"
+horizontal_alignment = 1
+
+[node name="CountDisplay" type="Label" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/CounterCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 64
+text = "8"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/CounterCard/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="BtnHitMinus" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/CounterCard/VBox/Buttons"]
+custom_minimum_size = Vector2(240, 52)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 19
+text = "Treffer (-1)  [Leertaste]"
+
+[node name="BtnUndoPlus" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/CounterCard/VBox/Buttons"]
+custom_minimum_size = Vector2(150, 52)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 18
+text = "+1 Korrektur"
+
+[node name="TimerCard" type="PanelContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_InnerCard")
+
+[node name="VBox" type="VBoxContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/TimerCard"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="TimerTitle" type="Label" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/TimerCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.82, 0.9, 1)
+theme_override_font_sizes/font_size = 19
+text = "ZEIT PRO BEGRIFF"
+horizontal_alignment = 1
+
+[node name="TimerDisplayHBox" type="HBoxContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/TimerCard/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="HourglassIcon" type="TextureRect" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/TimerCard/VBox/TimerDisplayHBox"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("11_hourglass")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+modulate = Color(0.85, 0.88, 0.95, 0.9)
+
+[node name="TimerLabel" type="Label" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/TimerCard/VBox/TimerDisplayHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 54
+text = "10.0 s"
+horizontal_alignment = 1
+
+[node name="TimerBar" type="ProgressBar" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/TimerCard/VBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_TimerBg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_TimerFill")
+max_value = 10.0
+value = 10.0
+show_percentage = false
+
+[node name="BtnTogglePause" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/TimerCard/VBox"]
+custom_minimum_size = Vector2(210, 44)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 17
+text = "Timer Pausieren"
+
+[node name="HSeparator" type="HSeparator" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ChallengeActions" type="HBoxContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="BtnGiveUp" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/ChallengeActions"]
+custom_minimum_size = Vector2(260, 52)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"DangerButton"
+theme_override_font_sizes/font_size = 20
+text = "Aufgeben (-1 Punkt)"
+
+[node name="BtnSuccess" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/ChallengeActions"]
+custom_minimum_size = Vector2(260, 52)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"SuccessButton"
+theme_override_font_sizes/font_size = 20
+disabled = true
+text = "Geschafft! (+1 Punkt)"
+
+[node name="RoundResultBox" type="PanelContainer" parent="GameMargin/GameContainer/ActionArea"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(760, 0)
+theme_override_styles/panel = ExtResource("7_panel_side")
+
+[node name="VBox" type="VBoxContainer" parent="GameMargin/GameContainer/ActionArea/RoundResultBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="ResultTitle" type="Label" parent="GameMargin/GameContainer/ActionArea/RoundResultBox/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "GESCHAFFT!"
+horizontal_alignment = 1
+
+[node name="ResultDesc" type="Label" parent="GameMargin/GameContainer/ActionArea/RoundResultBox/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Cedric hat alle Begriffe genannt! +1 Punkt für Team Rot."
+horizontal_alignment = 1
+
+[node name="BtnNextRound" parent="GameMargin/GameContainer/ActionArea/RoundResultBox/VBox" instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(340, 54)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 24
+text = "NÄCHSTE RUNDE STARTEN"
+
+[node name="PixelBackButton" parent="." instance=ExtResource("5_back")]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 64.0
+offset_bottom = 64.0

@@ -9,10 +9,20 @@
 [ext_resource type="PackedScene" uid="uid://ccw5mmwq4265x" path="res://scenes/StartMenu.tscn" id="6_startmenu"]
 [ext_resource type="PackedScene" path="res://scenes/characters/Jan.tscn" id="7_char_jan"]
 [ext_resource type="PackedScene" path="res://scenes/characters/Janek.tscn" id="8_char_janek"]
+[ext_resource type="PackedScene" path="res://scenes/characters/Marius.tscn" id="9_char_marius"]
+[ext_resource type="PackedScene" path="res://scenes/characters/Paul.tscn" id="10_char_paul"]
+[ext_resource type="PackedScene" path="res://scenes/characters/Mikka.tscn" id="11_char_mikka"]
+[ext_resource type="PackedScene" path="res://scenes/characters/Simon.tscn" id="12_char_simon"]
+[ext_resource type="FontFile" uid="uid://bmd23dvkny65r" path="res://assets/fonts/BoldPixels.otf" id="13_font"]
+[ext_resource type="Texture2D" uid="uid://dhjxbugs2yews" path="res://icon.svg" id="14_icon"]
+[ext_resource type="Texture2D" path="res://assets/ui/shared/pixel_chevron_right.svg" id="15_chevron"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_skip"]
+
 
 [sub_resource type="Animation" id="Animation_intro1"]
 resource_name = "intro"
-length = 16.0
+length = 24.0
 tracks/0/type = "method"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -20,7 +30,7 @@ tracks/0/path = NodePath("Cedric")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(2, 4, 6, 8, 10, 11, 11.5),
+"times": PackedFloat32Array(10, 12, 14, 16, 18, 19, 19.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "values": [{
 "args": [],
@@ -52,7 +62,7 @@ tracks/1/path = NodePath("Aaron")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.1, 4, 6, 6.1, 8, 10, 11, 11.5),
+"times": PackedFloat32Array(0, 8.1, 12, 14, 14.1, 16, 18, 19, 19.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
 "values": [{
 "args": [],
@@ -90,7 +100,7 @@ tracks/2/path = NodePath("Pipe:position")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
-"times": PackedFloat32Array(5, 6),
+"times": PackedFloat32Array(13, 14),
 "transitions": PackedFloat32Array(1, 1),
 "update": 0,
 "values": [Vector2(949, 1100), Vector2(949, 1010)]
@@ -102,7 +112,7 @@ tracks/3/path = NodePath(".")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
-"times": PackedFloat32Array(6),
+"times": PackedFloat32Array(14),
 "transitions": PackedFloat32Array(1),
 "values": [{
 "args": [],
@@ -113,13 +123,13 @@ tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
 tracks/4/path = NodePath("Camera2D:position")
-tracks/4/interp = 2
-tracks/4/loop_wrap = true
+tracks/4/interp = 1
+tracks/4/loop_wrap = false
 tracks/4/keys = {
-"times": PackedFloat32Array(13.7, 16),
-"transitions": PackedFloat32Array(1, 1),
+"times": PackedFloat32Array(0, 6, 8, 21, 23.5),
+"transitions": PackedFloat32Array(1, -2, 1, -2, 1),
 "update": 0,
-"values": [Vector2(960, 540), Vector2(960, 1620)]
+"values": [Vector2(960, -540), Vector2(960, -540), Vector2(960, 540), Vector2(960, 540), Vector2(960, 1620)]
 }
 tracks/5/type = "method"
 tracks/5/imported = false
@@ -128,7 +138,7 @@ tracks/5/path = NodePath("Jan")
 tracks/5/interp = 1
 tracks/5/loop_wrap = true
 tracks/5/keys = {
-"times": PackedFloat32Array(2, 4, 6, 8, 10, 11, 11.5),
+"times": PackedFloat32Array(10, 12, 14, 16, 18, 19, 19.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "values": [{
 "args": [],
@@ -160,7 +170,7 @@ tracks/6/path = NodePath("Janek")
 tracks/6/interp = 1
 tracks/6/loop_wrap = true
 tracks/6/keys = {
-"times": PackedFloat32Array(2, 4, 6, 8, 10, 11, 11.5),
+"times": PackedFloat32Array(10, 12, 14, 16, 18, 19, 19.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "values": [{
 "args": [],
@@ -185,6 +195,178 @@ tracks/6/keys = {
 "method": &"enter_pipe"
 }]
 }
+tracks/7/type = "method"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Marius")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(0, 8.5, 12, 14, 16, 18, 19, 19.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"values": [{
+"args": [],
+"method": &"face_left"
+}, {
+"args": [],
+"method": &"play_drink"
+}, {
+"args": [],
+"method": &"play_drip"
+}, {
+"args": [],
+"method": &"play_surprised"
+}, {
+"args": [],
+"method": &"play_drink"
+}, {
+"args": [],
+"method": &"play_drip"
+}, {
+"args": [],
+"method": &"jump_into_pipe"
+}, {
+"args": [],
+"method": &"enter_pipe"
+}]
+}
+tracks/8/type = "method"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Paul")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"times": PackedFloat32Array(0, 10, 12, 14, 16, 18, 19, 19.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"values": [{
+"args": [],
+"method": &"face_left"
+}, {
+"args": [],
+"method": &"play_drink"
+}, {
+"args": [],
+"method": &"play_drip"
+}, {
+"args": [],
+"method": &"play_surprised"
+}, {
+"args": [],
+"method": &"play_drink"
+}, {
+"args": [],
+"method": &"play_drip"
+}, {
+"args": [],
+"method": &"jump_into_pipe"
+}, {
+"args": [],
+"method": &"enter_pipe"
+}]
+}
+tracks/9/type = "method"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Mikka")
+tracks/9/interp = 1
+tracks/9/loop_wrap = true
+tracks/9/keys = {
+"times": PackedFloat32Array(0, 9, 12, 14, 16, 18, 19, 19.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"values": [{
+"args": [],
+"method": &"face_left"
+}, {
+"args": [],
+"method": &"play_drink"
+}, {
+"args": [],
+"method": &"play_drip"
+}, {
+"args": [],
+"method": &"play_surprised"
+}, {
+"args": [],
+"method": &"play_drink"
+}, {
+"args": [],
+"method": &"play_drip"
+}, {
+"args": [],
+"method": &"jump_into_pipe"
+}, {
+"args": [],
+"method": &"enter_pipe"
+}]
+}
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath("Simon")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(0, 10.5, 12, 14, 16, 18, 19, 19.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"values": [{
+"args": [],
+"method": &"face_left"
+}, {
+"args": [],
+"method": &"play_drink"
+}, {
+"args": [],
+"method": &"play_drip"
+}, {
+"args": [],
+"method": &"play_surprised"
+}, {
+"args": [],
+"method": &"play_drink"
+}, {
+"args": [],
+"method": &"play_drip"
+}, {
+"args": [],
+"method": &"jump_into_pipe"
+}, {
+"args": [],
+"method": &"enter_pipe"
+}]
+}
+tracks/11/type = "value"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("IntroSky/LogoContainer:modulate")
+tracks/11/interp = 1
+tracks/11/loop_wrap = false
+tracks/11/keys = {
+"times": PackedFloat32Array(0, 0.6, 2, 5.2, 6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_AppIconBorder"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 1)
+border_width_left = 10
+border_width_top = 10
+border_width_right = 10
+border_width_bottom = 10
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 42
+corner_radius_top_right = 42
+corner_radius_bottom_right = 42
+corner_radius_bottom_left = 42
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 32
+shadow_offset = Vector2(0, 12)
+anti_aliasing = false
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_intro2"]
 _data = {
@@ -195,14 +377,79 @@ _data = {
 script = ExtResource("1_intro")
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=833150356]
+offset_top = -1080.0
 offset_right = 1920.0
 offset_bottom = 1080.0
 color = Color(0.34902, 0.580392, 0.988235, 1)
 
+[node name="IntroSky" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_top = -1080.0
+offset_right = 1920.0
+offset_bottom = 0.0
+
+[node name="LogoContainer" type="Control" parent="IntroSky"]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -960.0
+offset_top = -280.0
+offset_right = 960.0
+offset_bottom = 280.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(960, 280)
+
+[node name="VBox" type="VBoxContainer" parent="IntroSky/LogoContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 28
+alignment = 1
+
+[node name="Center" type="CenterContainer" parent="IntroSky/LogoContainer/VBox"]
+layout_mode = 2
+
+[node name="IconFrame" type="PanelContainer" parent="IntroSky/LogoContainer/VBox/Center"]
+custom_minimum_size = Vector2(324, 324)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_AppIconBorder")
+
+[node name="AppIcon" type="TextureRect" parent="IntroSky/LogoContainer/VBox/Center/IconFrame"]
+texture_filter = 1
+custom_minimum_size = Vector2(300, 300)
+layout_mode = 2
+texture = ExtResource("14_icon")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SubtitleLabel" type="Label" parent="IntroSky/LogoContainer/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("13_font")
+theme_override_font_sizes/font_size = 56
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
+theme_override_constants/outline_size = 14
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 4
+theme_override_constants/shadow_offset_y = 4
+text = "AJ präsentiert"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1146296015]
-position = Vector2(960, 540)
+position = Vector2(960, -540)
 
 [node name="CloudSpawner" parent="." unique_id=1218386165 instance=ExtResource("5_clouds")]
+
 
 [node name="TileMap" type="TileMap" parent="." unique_id=307531185]
 scale = Vector2(4, 4)
@@ -246,12 +493,85 @@ position = Vector2(439, 960)
 [node name="Janek" parent="." instance=ExtResource("8_char_janek")]
 position = Vector2(276, 960)
 
+[node name="Marius" parent="." instance=ExtResource("9_char_marius")]
+position = Vector2(1133, 960)
+
+[node name="Paul" parent="." instance=ExtResource("10_char_paul")]
+position = Vector2(1296, 960)
+
+[node name="Mikka" parent="." instance=ExtResource("11_char_mikka")]
+position = Vector2(1459, 960)
+
+[node name="Simon" parent="." instance=ExtResource("12_char_simon")]
+position = Vector2(1622, 960)
+
 [node name="StartMenu" parent="." unique_id=239256272 instance=ExtResource("6_startmenu")]
 offset_top = 1080.0
 offset_right = 1920.0
 offset_bottom = 2160.0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=593830490]
-libraries/ = SubResource("AnimationLibrary_intro2")
+libraries = {
+&"": SubResource("AnimationLibrary_intro2")
+}
+
+[node name="SkipLayer" type="CanvasLayer" parent="."]
+layer = 50
+
+[node name="SkipContainer" type="MarginContainer" parent="SkipLayer"]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -80.0
+offset_right = -30.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="SkipButton" type="Button" parent="SkipLayer/SkipContainer"]
+layout_mode = 2
+mouse_default_cursor_shape = 2
+focus_mode = 0
+theme_override_styles/focus = SubResource("StyleBoxEmpty_skip")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_skip")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_skip")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_skip")
+theme_override_styles/normal = SubResource("StyleBoxEmpty_skip")
+flat = true
+
+[node name="HBox" type="HBoxContainer" parent="SkipLayer/SkipContainer/SkipButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="SkipLabel" type="Label" parent="SkipLayer/SkipContainer/SkipButton/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("13_font")
+theme_override_font_sizes/font_size = 28
+text = "Überspringen"
+vertical_alignment = 1
+
+[node name="ChevronIcon" type="TextureRect" parent="SkipLayer/SkipContainer/SkipButton/HBox"]
+custom_minimum_size = Vector2(20, 22)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("15_chevron")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
 
 [connection signal="animation_finished" from="AnimationPlayer" to="." method="_on_animation_player_animation_finished"]

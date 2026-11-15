@@ -1,0 +1,238 @@
+[gd_scene load_steps=0 format=3 uid="uid://c3q8f87v6y87g"]
+
+[ext_resource type="Script" path="res://scripts/GameSetup.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="2_btn"]
+[ext_resource type="Texture2D" path="res://resources/dropdown_arrow_white.svg" id="3_arrow_white"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
+[ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="4_tileset"]
+[ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="bg_script"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PixelBackButton.tscn" id="5_back"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/icon_quiz_white.svg" id="6_quiz_icon"]
+[ext_resource type="Texture2D" path="res://assets/ui/icons/icon_crown_white.svg" id="7_crown_icon"]
+[ext_resource type="PackedScene" path="res://scenes/ui/SaveGameModal.tscn" id="8_save_modal"]
+[ext_resource type="PackedScene" uid="uid://b2x7m8p9q4k1s" path="res://scenes/ui/SecondaryButton.tscn" id="9_sec_btn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Settings"]
+bg_color = Color(0.08, 0.09, 0.15, 0.92)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.95, 0.8, 0.25, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 16
+shadow_offset = Vector2(0, 6)
+
+[node name="GameSetup" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_theme")
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="BackgroundTileMap" type="TileMap" parent="."]
+script = ExtResource("bg_script")
+scale = Vector2(4, 4)
+tile_set = ExtResource("4_tileset")
+format = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(760, 0)
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="TitleBox" type="CenterContainer" parent="CenterContainer/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CenterContainer/VBox/TitleBox"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+theme_type_variation = &"H1"
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+text = "SPIELOPTIONEN"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SettingsPanel" type="PanelContainer" parent="CenterContainer/VBox"]
+custom_minimum_size = Vector2(760, 410)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_Settings")
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/VBox/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="SettingsList" type="VBoxContainer" parent="CenterContainer/VBox/SettingsPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 22
+
+[node name="MinigamesRow" type="HBoxContainer" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/MinigamesRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"H2"
+text = "Minispiel Felder:"
+
+[node name="MinigamesOption" type="OptionButton" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/MinigamesRow"]
+custom_minimum_size = Vector2(130, 60)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 28
+theme_override_constants/arrow_margin = 8
+theme_override_icons/arrow = ExtResource("3_arrow_white")
+alignment = 1
+selected = 3
+item_count = 4
+popup/item_0/text = "12"
+popup/item_0/id = 12
+popup/item_1/text = "16"
+popup/item_1/id = 16
+popup/item_2/text = "20"
+popup/item_2/id = 20
+popup/item_3/text = "24"
+popup/item_3/id = 24
+
+[node name="HSeparator1" type="HSeparator" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TeamModeRow" type="HBoxContainer" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/TeamModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"H2"
+text = "Teamerstellung:"
+
+[node name="ToggleContainer" type="HBoxContainer" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/TeamModeRow"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnQuizRanking" type="Button" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/TeamModeRow/ToggleContainer"]
+custom_minimum_size = Vector2(240, 58)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 22
+icon = ExtResource("6_quiz_icon")
+expand_icon = true
+text = "Quiz-Ranking"
+
+[node name="BtnManual" type="Button" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/TeamModeRow/ToggleContainer"]
+custom_minimum_size = Vector2(240, 58)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 22
+icon = ExtResource("7_crown_icon")
+expand_icon = true
+text = "Manuell"
+
+[node name="TeamModeDesc" type="Label" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+modulate = Color(1, 0.85, 0.4, 1)
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Teams werden anhand der Punkte im Allgemeinwissensquiz gebildet."
+autowrap_mode = 2
+
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="QuizRow" type="HBoxContainer" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/QuizRow"]
+layout_mode = 2
+theme_type_variation = &"H2"
+text = "Quiz Fragen:"
+
+[node name="QuizHintLabel" type="Label" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/QuizRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.75, 0.3, 1)
+theme_override_font_sizes/font_size = 18
+text = "(wird übersprungen)"
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/QuizRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="QuizOption" type="OptionButton" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/QuizRow"]
+custom_minimum_size = Vector2(130, 60)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 28
+theme_override_constants/arrow_margin = 8
+theme_override_icons/arrow = ExtResource("3_arrow_white")
+alignment = 1
+selected = 1
+item_count = 5
+popup/item_0/text = "1"
+popup/item_0/id = 1
+popup/item_1/text = "5"
+popup/item_1/id = 5
+popup/item_2/text = "8"
+popup/item_2/id = 8
+popup/item_3/text = "12"
+popup/item_3/id = 12
+popup/item_4/text = "15"
+popup/item_4/id = 15
+
+[node name="ButtonsRow" type="HBoxContainer" parent="CenterContainer/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="LoadGameButton" parent="CenterContainer/VBox/ButtonsRow" instance=ExtResource("9_sec_btn")]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SPIEL LADEN"
+
+[node name="CreateGameButton" parent="CenterContainer/VBox/ButtonsRow" instance=ExtResource("2_btn")]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SPIEL ERSTELLEN"
+
+[node name="PixelBackButton" parent="." instance=ExtResource("5_back")]
+layout_mode = 0
+
+[node name="SaveGameModal" parent="." instance=ExtResource("8_save_modal")]
+visible = false
+layout_mode = 1

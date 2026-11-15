@@ -10,12 +10,38 @@ extends CanvasLayer
 @onready var sfx_mute_btn = $SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/SFXRow/SFXMuteButton
 @onready var sfx_slider = $SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/SFXRow/SFXSlider
 @onready var show_qr_button = $SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/ShowQRButton
+@onready var manage_saves_button = get_node_or_null("SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/ManageSavesButton")
+@onready var main_menu_button = $SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/MainMenuButton
+@onready var save_game_modal = get_node_or_null("SaveGameModal")
+
+@onready var confirm_overlay = $ConfirmOverlay
+@onready var confirm_message = $ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/ConfirmMessage
+@onready var confirm_btn = $ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/ConfirmButton
+@onready var cancel_btn = $ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer/CancelButton
 
 @onready var qr_overlay = $QROverlay
 @onready var qr_instruction_label = $QROverlay/CenterContainer/VBoxContainer/InstructionLabel
 @onready var qr_texture_rect = $QROverlay/CenterContainer/VBoxContainer/CenterBox/QRCodeRect
 @onready var close_qr_button = $QROverlay/CenterContainer/VBoxContainer/CloseQRButton
 @onready var qr_http_request = $QRHTTPRequest
+
+func hide_gear_button():
+	gear_button.visible = false
+
+func show_gear_button():
+	gear_button.visible = true
+
+func _update_gear_visibility():
+	if not is_inside_tree():
+		return
+	var tree = get_tree()
+	if tree == null:
+		return
+	var cur = tree.current_scene
+	if cur != null and cur.name == "IntroSequence":
+		hide_gear_button()
+	else:
+		show_gear_button()
 
 func _ready():
 	overlay.visible = false
@@ -25,9 +51,14 @@ func _ready():
 	gear_button.pressed.connect(_on_gear_pressed)
 	close_button.pressed.connect(_on_close_pressed)
 	show_qr_button.pressed.connect(_on_show_qr_pressed)
+	if manage_saves_button:
+		manage_saves_button.pressed.connect(_on_manage_saves_pressed)
 	close_qr_button.pressed.connect(_on_close_qr_pressed)
+	main_menu_button.pressed.connect(_on_main_menu_pressed)
 	
-	qr_http_request.request_completed.connect(_on_qr_request_completed)
+	confirm_overlay.visible = false
+	confirm_btn.pressed.connect(_on_confirm_return_pressed)
+	cancel_btn.pressed.connect(_on_cancel_confirm_pressed)
 	
 	music_mute_btn.pressed.connect(_on_music_mute_pressed)
 	sfx_mute_btn.pressed.connect(_on_sfx_mute_pressed)
@@ -36,22 +67,115 @@ func _ready():
 	sfx_slider.value_changed.connect(_on_sfx_slider_changed)
 	
 	_update_ui_state()
+	_connect_buttons_sfx(self)
+	
+	get_tree().tree_changed.connect(_update_gear_visibility)
+	_update_gear_visibility()
+
+func _connect_buttons_sfx(node: Node):
+	if node is BaseButton:
+		node.pressed.connect(func(): AudioManager.play_sfx("button_press"))
+	for child in node.get_children():
+		_connect_buttons_sfx(child)
 
 func _on_gear_pressed():
-	AudioManager.play_sfx("settings_open")
 	overlay.visible = true
+	confirm_overlay.visible = false
+	
+	var current_scene_name = ""
+	if get_tree().current_scene:
+		current_scene_name = get_tree().current_scene.name
 	
 	# Hide QR button on Main screen (Lobby)
-	var current_scene_name = get_tree().current_scene.name
 	if current_scene_name == "Main":
 		show_qr_button.hide()
 	else:
 		show_qr_button.show()
 		
+	# Zeige "Zurück zum Hauptmenü" auf dem MainBoard und während Minispielen
+	if _can_show_main_menu_button():
+		main_menu_button.show()
+	else:
+		main_menu_button.hide()
+		
+	if manage_saves_button:
+		if current_scene_name == "GameSetup" or current_scene_name == "Main":
+			manage_saves_button.hide()
+		else:
+			manage_saves_button.show()
+		
 	_update_ui_state()
+
+func _is_in_minigame() -> bool:
+	if not is_inside_tree():
+		return false
+	var cur = get_tree().current_scene
+	if cur == null:
+		return false
+	var path = cur.scene_file_path
+	if path.begins_with("res://scenes/minigames/"):
+		return true
+	if NetworkManager.current_minigame_index != -1:
+		return true
+	return false
+
+func _can_show_main_menu_button() -> bool:
+	var cur = get_tree().current_scene
+	if cur == null:
+		return false
+	var cur_name = cur.name
+	if cur_name == "StartMenu" or cur_name == "IntroSequence":
+		return false
+	if cur_name == "MainBoard" or _is_in_minigame():
+		return true
+	return false
+
+func _on_manage_saves_pressed():
+	overlay.visible = false
+	if save_game_modal:
+		save_game_modal.open()
+
+func _on_main_menu_pressed():
+	if _is_in_minigame():
+		overlay.visible = false
+		confirm_message.text = "Der Fortschritt dieses Minispiels wird gelöscht!\n\nMöchtest du wirklich zum Hauptmenü zurückkehren?"
+		confirm_overlay.visible = true
+	else:
+		_execute_return_to_main_menu()
+
+func _on_cancel_confirm_pressed():
+	confirm_overlay.visible = false
+	overlay.visible = true
+
+func _on_confirm_return_pressed():
+	confirm_overlay.visible = false
+	overlay.visible = false
+	
+	# Minispiel sauber abbrechen (nur dekrementieren, falls das Spiel abgebrochen wurde und noch nicht gewertet ist)
+	if NetworkManager.current_turn_number > 0 and NetworkManager.current_minigame_index != -1:
+		if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+			if not NetworkManager.is_replaying_minigame:
+				NetworkManager.current_turn_number -= 1
+	NetworkManager.is_replaying_minigame = false
+	NetworkManager.current_minigame_index = -1
+	NetworkManager.broadcast({
+		"type": "state_change",
+		"state": "waiting"
+	})
+	
+	_execute_return_to_main_menu()
+
+func _execute_return_to_main_menu():
+	overlay.visible = false
+	confirm_overlay.visible = false
+	AudioManager.stop_music()
+	if SaveManager and NetworkManager.computed_teams.size() > 0:
+		SaveManager.auto_save()
+	get_tree().change_scene_to_file("res://scenes/StartMenu.tscn")
 
 func _on_close_pressed():
 	overlay.visible = false
+	confirm_overlay.visible = false
 
 func _on_music_mute_pressed():
 	AudioManager.toggle_music_mute()
@@ -85,7 +209,6 @@ func _update_ui_state():
 	sfx_slider.set_value_no_signal(AudioManager.volume_sfx)
 
 func _on_show_qr_pressed():
-	AudioManager.play_sfx("settings_open")
 	overlay.visible = false
 	qr_overlay.visible = true
 	_generate_qr_code()
@@ -97,19 +220,13 @@ func _generate_qr_code():
 	var ip = NetworkManager.get_local_ip()
 	qr_instruction_label.text = "Scanne den QR Code!\nLokale IP: " + ip
 	
-	var random_timestamp = str(Time.get_ticks_msec())
-	var join_url = "http://" + ip + ":8000/?ip=" + ip + "&nocache=" + random_timestamp
-	var api_url = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + join_url.uri_encode()
-	qr_http_request.request(api_url)
+	if not NetworkManager.qr_code_ready.is_connected(_on_qr_ready):
+		NetworkManager.qr_code_ready.connect(_on_qr_ready)
+		
+	var tex = NetworkManager.get_or_request_qr_code(qr_http_request)
+	if tex != null:
+		qr_texture_rect.texture = tex
 
-func _on_qr_request_completed(result, response_code, headers, body):
-	if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
-		var image = Image.new()
-		var error = image.load_png_from_buffer(body)
-		if error == OK:
-			var texture = ImageTexture.create_from_image(image)
-			qr_texture_rect.texture = texture
-		else:
-			print("Fehler beim Laden des QR PNGs.")
-	else:
-		print("Fehler beim Abrufen des QR Codes. HTTP Code: ", response_code)
+func _on_qr_ready(texture: ImageTexture):
+	if is_instance_valid(qr_texture_rect):
+		qr_texture_rect.texture = texture

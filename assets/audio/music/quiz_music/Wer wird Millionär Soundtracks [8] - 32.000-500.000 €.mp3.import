@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://crhbweaa2tvew"
+path="res://.godot/imported/Wer wird Millionär Soundtracks [8] - 32.000-500.000 €.mp3-3d1cb9d83c9b68f58651897a29b95e3c.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/quiz_music/Wer wird Millionär Soundtracks [8] - 32.000-500.000 €.mp3"
+dest_files=["res://.godot/imported/Wer wird Millionär Soundtracks [8] - 32.000-500.000 €.mp3-3d1cb9d83c9b68f58651897a29b95e3c.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

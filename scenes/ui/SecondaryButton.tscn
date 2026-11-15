@@ -1,0 +1,8 @@
+[gd_scene load_steps=0 format=3 uid="uid://b2x7m8qaq4k1s"]
+
+[node name="SecondaryButton" type="Button"]
+custom_minimum_size = Vector2(0, 60)
+offset_right = 8.0
+offset_bottom = 8.0
+theme_type_variation = &"SecondaryButton"
+text = "Aktion"

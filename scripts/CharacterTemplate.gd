@@ -11,9 +11,13 @@ var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 @export var is_in_cutscene: bool = true
 @export var character_name: String = "Cedric"
 
+signal pipe_entered
+
 var last_position: Vector2
 var is_getting_piped: bool = false
+var pipe_speed: float = 120.0
 var pipe_target_y: float = 0.0
+var mute_sfx: bool = false
 
 func _ready():
 	last_position = global_position
@@ -57,13 +61,13 @@ func _physics_process(delta):
 	# Wenn wir gerade in die Röhre gezogen werden
 	if is_getting_piped:
 		# Bewege stetig nach unten
-		global_position.y += 100 * delta # Konstante Geschwindigkeit
+		global_position.y += pipe_speed * delta # Konstante Geschwindigkeit
 		
 		# Wenn tief genug in der Röhre, unsichtbar machen und stoppen
 		if global_position.y >= pipe_target_y:
 			visible = false
 			is_getting_piped = false
-			# Hier könnte man auch queue_free() aufrufen, wenn der Char nicht mehr gebraucht wird
+			pipe_entered.emit()
 		return
 
 	# Spiel-Logik (Jump and Run)
@@ -118,14 +122,15 @@ func _physics_process(delta):
 # --- Funktionen für den AnimationPlayer in der Intro-Szene ---
 var is_playing_special: bool = false
 
-func play_drink():
+func play_drink(with_sfx: bool = true):
 	is_playing_special = true
 	animated_sprite.play("drink")
-	AudioManager.play_sfx("drink")
+	if with_sfx and not mute_sfx:
+		AudioManager.play_sfx("drink")
 
 func play_drip():
-	drip_sprite.visible = true
-	drip_sprite.play("drip")
+	# Drip-Animation deaktiviert
+	pass
 	
 func _on_drip_animation_finished():
 	drip_sprite.visible = false
@@ -134,10 +139,11 @@ func play_surprised():
 	is_playing_special = true
 	animated_sprite.play("surprised")
 
-func play_jump():
+func play_jump(with_sfx: bool = true):
 	is_playing_special = true
 	animated_sprite.play("jump")
-	AudioManager.play_sfx("jump")
+	if with_sfx and not mute_sfx:
+		AudioManager.play_sfx("jump")
 
 func face_left():
 	animated_sprite.flip_h = true
@@ -162,6 +168,11 @@ func jump_to_target(target_global_pos: Vector2, arc_height: float = 150.0):
 	AudioManager.play_sfx("jump")
 	
 	var displacement_x = target_global_pos.x - global_position.x
+	if displacement_x < 0:
+		face_left()
+	elif displacement_x > 0:
+		face_right()
+	
 	# Höchster Punkt des Sprungs: min(start_y, ziel_y) - arc_height
 	var peak_y = min(global_position.y, target_global_pos.y) - arc_height
 	
@@ -194,19 +205,38 @@ func jump_into_pipe(pipe_name: String = "Pipe", arc_height: float = 120.0):
 		# Fallback falls keine Röhre gefunden wurde
 		jump_on_pipe(1.3, 0.6)
 
-func enter_pipe(target_depth_y: float = 180.0):
-	# Wir warten ganz kurz ab, bis Cedric auch wirklich physisch wieder auf dem Boden angekommen ist.
-	# Fallback: Maximal 1 Sekunde warten, falls is_on_floor() fehlschlägt.
-	var timeout = 0.0
-	while not is_on_floor() and timeout < 1.0:
-		await get_tree().process_frame
-		timeout += get_process_delta_time()
+func enter_pipe(target_depth_y: float = 180.0, speed: float = 120.0, wait_for_floor: bool = true):
+	pipe_speed = speed
+	
+	if wait_for_floor:
+		# Wir warten ganz kurz ab, bis Cedric auch wirklich physisch wieder auf dem Boden angekommen ist.
+		# Fallback: Maximal 2.0 Sekunden warten, falls is_on_floor() fehlschlägt.
+		var timeout = 0.0
+		while not is_on_floor() and timeout < 2.0:
+			await get_tree().process_frame
+			timeout += get_process_delta_time()
+			
+		# Richte den Charakter exakt auf die Mitte der Röhre aus, falls eine Röhre in der Nähe ist
+		var pipe = get_parent().find_child("Pipe")
+		if pipe and abs(global_position.x - pipe.global_position.x) < 80.0:
+			global_position.x = pipe.global_position.x
 		
+	velocity = Vector2.ZERO
+	
+	# Namenslabel über dem Kopf sanft ausblenden
+	for child in get_children():
+		if child is Label:
+			var tw = create_tween()
+			tw.tween_property(child, "modulate:a", 0.0, 0.2)
+			
+	drip_sprite.visible = false
 	is_getting_piped = true
 	is_playing_special = true
 	# Spiele Idle-Animation, stoppe sie aber sofort (frame 0 bleibt stehen)
 	animated_sprite.play("idle") 
 	animated_sprite.stop()
+	
+	AudioManager.play_sfx("super-mario-pipe")
 	
 	# Die Pipe selbst wurde auf z_index = 1 gesetzt.
 	# Cedric bleibt auf z_index = 0, dadurch rutscht er in die Röhre (dahinter), aber bleibt vor dem blauen Hintergrund!

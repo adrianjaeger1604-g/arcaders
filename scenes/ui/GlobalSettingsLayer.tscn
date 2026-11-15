@@ -1,7 +1,25 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/GlobalSettingsLayer.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/ui/shared/settings_gear.png" id="2_gear"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
+[ext_resource type="PackedScene" uid="uid://70an665sj0b1" path="res://scenes/ui/SaveGameModal.tscn" id="4_save_modal"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_settings_modal"]
+bg_color = Color(0.1, 0.12, 0.19, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.95, 0.8, 0.25, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.85)
+shadow_size = 28
+shadow_offset = Vector2(0, 10)
+anti_aliasing = false
 
 [node name="GlobalSettingsLayer" type="CanvasLayer"]
 layer = 100
@@ -20,8 +38,10 @@ theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
 
 [node name="SettingsButton" type="TextureButton" parent="MarginContainer"]
+visible = false
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
+mouse_default_cursor_shape = 2
 texture_normal = ExtResource("2_gear")
 ignore_texture_size = true
 stretch_mode = 5
@@ -33,7 +53,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.8)
+color = Color(0.04, 0.05, 0.08, 0.92)
+theme = ExtResource("3_theme")
 
 [node name="CenterContainer" type="CenterContainer" parent="SettingsOverlay"]
 layout_mode = 1
@@ -44,15 +65,16 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="SettingsOverlay/CenterContainer"]
-custom_minimum_size = Vector2(500, 300)
+custom_minimum_size = Vector2(650, 620)
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings_modal")
 
 [node name="MarginContainer" type="MarginContainer" parent="SettingsOverlay/CenterContainer/PanelContainer"]
 layout_mode = 2
-theme_override_constants/margin_left = 30
-theme_override_constants/margin_top = 30
-theme_override_constants/margin_right = 30
-theme_override_constants/margin_bottom = 30
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 36
 
 [node name="VBoxContainer" type="VBoxContainer" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer"]
 layout_mode = 2
@@ -62,63 +84,107 @@ alignment = 1
 [node name="Title" type="Label" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"H2"
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
 text = "EINSTELLUNGEN"
 horizontal_alignment = 1
 
 [node name="MusicRow" type="HBoxContainer" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 15
+theme_override_constants/separation = 16
 
 [node name="MusicMuteButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/MusicRow"]
-custom_minimum_size = Vector2(60, 60)
+custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
-text = "🔊"
+mouse_default_cursor_shape = 2
+text = ""
 
 [node name="Label" type="Label" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/MusicRow"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 28
 text = "Musik"
+vertical_alignment = 1
 
 [node name="MusicSlider" type="HSlider" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/MusicRow"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(270, 36)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 4
+mouse_default_cursor_shape = 2
 min_value = -40.0
 max_value = 10.0
 step = 1.0
 
 [node name="SFXRow" type="HBoxContainer" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 15
+theme_override_constants/separation = 16
 
 [node name="SFXMuteButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/SFXRow"]
-custom_minimum_size = Vector2(60, 60)
+custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
-text = "🔊"
+mouse_default_cursor_shape = 2
+text = ""
 
 [node name="Label" type="Label" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/SFXRow"]
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 28
 text = "SFX"
+vertical_alignment = 1
 
 [node name="SFXSlider" type="HSlider" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/SFXRow"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(270, 36)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 4
+mouse_default_cursor_shape = 2
 min_value = -40.0
 max_value = 10.0
 step = 1.0
 
-[node name="ShowQRButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
+[node name="PreButtonSpacer" type="Control" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
+
+[node name="ShowQRButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 24
 text = "QR-CODE ANZEIGEN"
 
-[node name="CloseSettingsButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
+[node name="ManageSavesButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 24
+text = "SPIELSTÄNDE (SPEICHERN / LADEN)"
+
+[node name="MainMenuButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 24
+text = "ZURÜCK ZUM HAUPTMENÜ"
+
+[node name="ButtonSpacer" type="Control" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+
+[node name="CloseSettingsButton" type="Button" parent="SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 24
 text = "SCHLIESSEN"
 
 [node name="QROverlay" type="ColorRect" parent="."]
@@ -129,7 +195,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.823529)
+color = Color(0.04, 0.05, 0.08, 0.92)
+theme = ExtResource("3_theme")
 
 [node name="CenterContainer" type="CenterContainer" parent="QROverlay"]
 layout_mode = 1
@@ -147,6 +214,9 @@ alignment = 1
 [node name="InstructionLabel" type="Label" parent="QROverlay/CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_type_variation = &"H3"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
 text = "Scanne den QR Code!
 Lokale IP: "
 horizontal_alignment = 1
@@ -165,9 +235,98 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="CloseQRButton" type="Button" parent="QROverlay/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(280, 50)
 layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 24
 text = "ZURÜCK"
 
 [node name="QRHTTPRequest" type="HTTPRequest" parent="."]
+
+[node name="ConfirmOverlay" type="ColorRect" parent="."]
+visible = false
+z_index = 12
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.08, 0.94)
+theme = ExtResource("3_theme")
+
+[node name="CenterContainer" type="CenterContainer" parent="ConfirmOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="ConfirmOverlay/CenterContainer"]
+custom_minimum_size = Vector2(680, 380)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings_modal")
+
+[node name="MarginContainer" type="MarginContainer" parent="ConfirmOverlay/CenterContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 36
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="ConfirmTitle" type="Label" parent="ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"H2"
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+text = "ZUM HAUPTMENÜ?"
+horizontal_alignment = 1
+
+[node name="ConfirmMessage" type="Label" parent="ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(580, 0)
+layout_mode = 2
+theme_type_variation = &"H3"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 24
+text = "Der Fortschritt dieses Minispiels wird gelöscht!
+
+Möchtest du wirklich zum Hauptmenü zurückkehren?"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(240, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 22
+text = "ABBRECHEN"
+
+[node name="ConfirmButton" type="Button" parent="ConfirmOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(260, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 22
+text = "JA, ZUM MENÜ"
+
+[node name="SaveGameModal" parent="." instance=ExtResource("4_save_modal")]
+visible = false
+z_index = 20
+
+
+
 

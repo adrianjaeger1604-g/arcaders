@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://ctal7bi1l7e17" path="res://assets/characters/cedric/jump/spr_cedric_jump.png" id="7_yyy"]
 [ext_resource type="Texture2D" uid="uid://cwgwbbly5v2w0" path="res://assets/characters/cedric/drink/spr_cedric_drink_1.png" id="8_yyy"]
 [ext_resource type="Texture2D" uid="uid://ci7rbtv743idn" path="res://assets/characters/cedric/drink/spr_cedric_drink_2.png" id="9_yyy"]
-[ext_resource type="Texture2D" uid="uid://biaj56lb0od1j" path="res://assets/characters/mikka/surprised/spr_cedric_surprised.png" id="10_dvsku"]
+[ext_resource type="Texture2D" uid="uid://cw6kijkmbf71r" path="res://assets/characters/cedric/surprised/spr_cedric_surprised.png" id="10_dvsku"]
 [ext_resource type="Texture2D" uid="uid://c5m4xik5adygm" path="res://assets/characters/sprites/drink_drip/spr_drink_drip_1.png" id="10_zzz"]
 [ext_resource type="Texture2D" uid="uid://x6wxoq0vykuj" path="res://assets/characters/sprites/drink_drip/spr_drink_drip_2.png" id="11_zzz"]
 [ext_resource type="Texture2D" uid="uid://s6kn3x2wh5s1" path="res://assets/characters/sprites/drink_drip/spr_drink_drip_3.png" id="12_zzz"]

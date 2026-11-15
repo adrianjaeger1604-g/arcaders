@@ -3,9 +3,9 @@
 [ext_resource type="Script" path="res://scripts/minigames/QuizParticipantCard.gd" id="1_card"]
 
 [node name="QuizParticipantCard" type="Button"]
-custom_minimum_size = Vector2(200, 220)
-offset_right = 200.0
-offset_bottom = 220.0
+custom_minimum_size = Vector2(190, 180)
+offset_right = 190.0
+offset_bottom = 180.0
 script = ExtResource("1_card")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
@@ -15,16 +15,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 mouse_filter = 2
 
 [node name="OuterVBox" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 10
 alignment = 1
 
 [node name="CharAndNameBox" type="VBoxContainer" parent="MarginContainer/OuterVBox"]
@@ -37,21 +37,38 @@ alignment = 1
 layout_mode = 2
 mouse_filter = 2
 alignment = 1
-custom_minimum_size = Vector2(0, 70)
+custom_minimum_size = Vector2(0, 64)
 
 [node name="NameLabel" type="Label" parent="MarginContainer/OuterVBox/CharAndNameBox"]
-custom_minimum_size = Vector2(180, 0)
+custom_minimum_size = Vector2(174, 0)
 layout_mode = 2
 theme_type_variation = &"H3"
 text = "Player Name"
 horizontal_alignment = 1
-autowrap_mode = 2
+clip_text = true
+text_overrun_behavior = 3
 
-[node name="AnswerLabel" type="Label" parent="MarginContainer/OuterVBox"]
-visible = false
-custom_minimum_size = Vector2(180, 0)
+[node name="AnswerHBox" type="HBoxContainer" parent="MarginContainer/OuterVBox"]
 layout_mode = 2
-theme_type_variation = &""
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="StatusIcon" type="TextureRect" parent="MarginContainer/OuterVBox/AnswerHBox"]
+visible = false
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
+
+[node name="AnswerLabel" type="Label" parent="MarginContainer/OuterVBox/AnswerHBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
 text = "Antwort"
 horizontal_alignment = 1
 autowrap_mode = 2
