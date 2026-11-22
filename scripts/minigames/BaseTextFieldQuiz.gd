@@ -25,7 +25,7 @@ var quiz_instruction = "Lest die Frage und tippt die Antwort auf dem Handy ein. 
 var question_pool = []
 var max_rounds = 7
 
-var music_track = "video_game_quiz"
+var music_track = "quiz"
 var is_round_open = false
 var current_round = 0
 
@@ -39,6 +39,7 @@ var pending_points = {}
 var selected_questions = []
 
 var sudden_death = false
+var deathmatch_teams: Array = []
 
 func _ready():
 	AudioManager.play_random_quiz_music()
@@ -103,7 +104,7 @@ func _on_start_game_pressed():
 	if has_node("CenterContainer/VBoxContainer"):
 		$CenterContainer/VBoxContainer.add_theme_constant_override("separation", 12)
 	if pixel_back_btn:
-		pixel_back_btn.visible = false
+		pixel_back_btn.visible = true
 	start_game_btn.visible = false
 	if instruction_container:
 		instruction_container.visible = false
@@ -142,10 +143,11 @@ func start_quiz_question():
 	question_label.text = question_text
 	
 	if sudden_death:
-		round_label.text = "SUDDEN DEATH!"
-		round_label.add_theme_color_override("font_color", Color.RED)
+		round_label.text = "DEATHMATCH!"
+		round_label.add_theme_color_override("font_color", Color(1.0, 0.28, 0.28))
 	else:
 		round_label.text = "Runde %d / %d" % [current_round + 1, max_rounds]
+		round_label.remove_theme_color_override("font_color")
 	
 	# Lösung unsichtbar halten, aber im Layout belassen gegen Springen
 	answer_label.visible = true
@@ -194,15 +196,29 @@ func start_quiz_question():
 		card.pressed.connect(self._on_answer_button_pressed.bind(card))
 		card.disabled = true # Gamemaster kann noch nicht klicken
 		
+		# Im Deathmatch: Nicht-teilnehmende Teams optisch dimmen
+		if sudden_death and not _is_team_in_deathmatch(team):
+			card.modulate = Color(0.4, 0.4, 0.4, 0.35)
+		
 	close_round_btn.visible = true
 	next_round_btn.visible = false
 	
-	# Sende allen Handys den Befehl, in die Quiz-Ansicht zu wechseln
-	NetworkManager.broadcast({
-		"type": "state_change",
-		"state": "quiz",
-		"question": question_text
-	})
+	# Sende Handys den Befehl (im Deathmatch nur aktiven Teams die Frage zeigen!)
+	for p_id in NetworkManager.player_sessions.keys():
+		var team = _get_team_for_player(p_id)
+		if sudden_death and not _is_team_in_deathmatch(team):
+			NetworkManager.send_to_player(p_id, {
+				"type": "state_change",
+				"state": "inactive",
+				"title": "DEATHMATCH",
+				"message": "Deathmatch! Nur die führenden Teams spielen um den Sieg."
+			})
+		else:
+			NetworkManager.send_to_player(p_id, {
+				"type": "state_change",
+				"state": "quiz",
+				"question": question_text
+			})
 	
 	# Sende jedem Spieler seinen aktuellen In-Game Team-Score separat zu
 	for p_id in NetworkManager.player_sessions.keys():
@@ -255,6 +271,9 @@ func _on_message_received(player_id, data):
 		var team: Variant = _get_team_for_player(player_id)
 		if team == null:
 			return
+			
+		if sudden_death and not _is_team_in_deathmatch(team):
+			return # Inaktives Team darf im Deathmatch nicht teilnehmen!
 			
 		var team_color = team["color"]
 		
@@ -393,7 +412,25 @@ func _update_score_label():
 		hbox.add_child(score_lbl)
 		
 		badge.add_child(hbox)
+		
+		# Im Deathmatch: Nicht-teilnehmende Teams werden oben im Punktestand ausgegraut!
+		if sudden_death and not _is_team_in_deathmatch(team):
+			badge.modulate = Color(0.4, 0.4, 0.4, 0.45)
+		else:
+			badge.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			
 		score_container.add_child(badge)
+
+func _is_team_in_deathmatch(team: Variant) -> bool:
+	if not sudden_death:
+		return true
+	if team == null:
+		return false
+	var t_col = team.get("color", Color.BLACK)
+	for dt in deathmatch_teams:
+		if dt.get("color", Color.WHITE) == t_col:
+			return true
+	return false
 
 func _on_next_round_pressed():
 	# Punkte verrechnen
@@ -431,10 +468,12 @@ func _check_winner():
 		print("Quiz beendet! Gewinner ist ", winner["name"])
 		_end_minigame(winner)
 	else:
-		# Unentschieden -> Sudden Death
-		print("Unentschieden! Sudden Death gestartet.")
+		# Unentschieden -> Deathmatch
+		print("Unentschieden! Deathmatch gestartet.")
 		sudden_death = true
+		deathmatch_teams = winning_teams.duplicate()
 		max_rounds += 1 # Eine weitere Runde hinzufügen
+		_update_score_label()
 		start_quiz_question()
 
 func _end_minigame(winning_team: Variant):
@@ -444,6 +483,20 @@ func _end_minigame(winning_team: Variant):
 	score_label.visible = false
 	if score_container:
 		score_container.visible = false
+		
+	var max_score_possible = 1
+	var best_score = 0
+	for team in NetworkManager.computed_teams:
+		var s = team_scores.get(team["color"], 0)
+		if s > max_score_possible:
+			max_score_possible = s
+		if s > best_score:
+			best_score = s
+	max_score_possible = max(1, max_score_possible)
+	
+	var actual_rise_duration: float = 0.0
+	if best_score > 0 and max_score_possible > 0:
+		actual_rise_duration = clampf(MinigameResultHelper.RISE_DURATION * (float(best_score) / float(max_score_possible)), 0.6, MinigameResultHelper.RISE_DURATION)
 	
 	if winning_team != null and typeof(winning_team) == TYPE_DICTIONARY and not winning_team.is_empty():
 		round_label.text = "Gewinner: " + winning_team["name"] + "!"
@@ -451,7 +504,7 @@ func _end_minigame(winning_team: Variant):
 		round_label.modulate.a = 0.0
 		
 		var title_tween = create_tween()
-		title_tween.tween_interval(MinigameResultHelper.RISE_DURATION + 0.1)
+		title_tween.tween_interval(actual_rise_duration + 0.1)
 		title_tween.tween_callback(func():
 			AudioManager.play_sfx("confetti-pop-sound-effect")
 			if winning_team.has("players"):
@@ -496,17 +549,8 @@ func _end_minigame(winning_team: Variant):
 		child.queue_free()
 		
 	var sorted_teams = []
-	var max_score_possible = 1
-	var best_score = 0
 	for team in NetworkManager.computed_teams:
 		sorted_teams.append(team)
-		var s = team_scores.get(team["color"], 0)
-		if s > max_score_possible:
-			max_score_possible = s
-		if s > best_score:
-			best_score = s
-			
-	max_score_possible = max(1, max_score_possible)
 	
 	var cols = 2 if sorted_teams.size() > 1 else 1
 	answers_list.columns = cols
@@ -527,8 +571,9 @@ func _end_minigame(winning_team: Variant):
 			scroll_container.custom_minimum_size.y = clamp(needed_h, 220, 560)
 		scroll_container.scroll_vertical = 0
 	
-	# Aufsteigender Spannungs-Sound synchron zu den Balken
-	AudioManager.play_rising_sfx(MinigameResultHelper.RISE_DURATION)
+	# Aufsteigender Spannungs-Sound synchron zu den Balken (nur so lange, wie der Sieger-Balken steigt)
+	if actual_rise_duration > 0.0:
+		AudioManager.play_rising_sfx(actual_rise_duration)
 	
 	var i = 0
 	for team in sorted_teams:
@@ -705,7 +750,14 @@ func _on_client_reconnected(p_id: int, p_name: String):
 	
 	# Wenn die Runde gerade offen ist, schicke ihm die Frage.
 	# Andernfalls schicke ihn in den Warten-Zustand.
-	if is_round_open and current_round < selected_questions.size():
+	if sudden_death and not _is_team_in_deathmatch(team):
+		NetworkManager.send_to_player(p_id, {
+			"type": "state_change",
+			"state": "inactive",
+			"title": "DEATHMATCH",
+			"message": "Deathmatch! Nur die führenden Teams spielen um den Sieg."
+		})
+	elif is_round_open and current_round < selected_questions.size():
 		var question_dict = selected_questions[current_round]
 		NetworkManager.send_to_player(p_id, {
 			"type": "state_change",

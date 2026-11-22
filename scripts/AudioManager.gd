@@ -67,7 +67,8 @@ func toggle_sfx_mute():
 	"bye_bye": 1.5,             # K.O. Sprach-Clip ("Bye Bye!") (+1.5 dB)
 	"hit": 1.5,                 # Treffer-Sound beim Angriff (+1.5 dB)
 	"missed_punch": 1.5,        # Verfehlter Schlag Whoosh (+1.5 dB)
-	"minecraft_walking": 2.0    # Minecraft Schritt-Geräusche beim Laufen (+2.0 dB)
+	"minecraft_walking": 2.0,   # Minecraft Schritt-Geräusche beim Laufen (+2.0 dB)
+	"block_break": 1.5          # Eisblock / Block zerstören Sound (+1.5 dB)
 }
 
 var tracks = {
@@ -102,7 +103,8 @@ var sfx_tracks = {
 	"bye_bye": preload("res://assets/audio/sfx/bye_bye.mp3"),
 	"hit": preload("res://assets/audio/sfx/hit.mp3"),
 	"missed_punch": preload("res://assets/audio/sfx/missed_punch.mp3"),
-	"minecraft_walking": preload("res://assets/audio/sfx/minecraft_walking.mp3")
+	"minecraft_walking": preload("res://assets/audio/sfx/minecraft_walking.mp3"),
+	"block_break": preload("res://assets/audio/sfx/block_break.mp3")
 }
 
 var player_a: AudioStreamPlayer
@@ -170,7 +172,8 @@ func _ready():
 		"bye_bye": "res://assets/audio/sfx/bye_bye.mp3",
 		"hit": "res://assets/audio/sfx/hit.mp3",
 		"missed_punch": "res://assets/audio/sfx/missed_punch.mp3",
-		"minecraft_walking": "res://assets/audio/sfx/minecraft_walking.mp3"
+		"minecraft_walking": "res://assets/audio/sfx/minecraft_walking.mp3",
+		"block_break": "res://assets/audio/sfx/block_break.mp3"
 	}
 	for s_name in extra_sfx:
 		if not sfx_tracks.has(s_name) or sfx_tracks[s_name] == null:
@@ -379,7 +382,7 @@ func play_random_mainboard_music(fade_duration: float = 0.5):
 
 func play_music(track_name: String, fade_duration: float = 0.5, start_from_sec: float = 0.0, volume_offset_db: float = 0.0):
 	# Quiz-Aliase automatisch an zufällige Quiz-Musik weiterleiten
-	if track_name in ["quiz", "quiz_music", "qualifikationsquiz", "video_game_quiz", "videospiel_quiz", "hexagon", "bet_buddy", "bet_buddy_extreme"]:
+	if track_name in ["quiz", "quiz_music", "qualifikationsquiz", "hexagon", "bet_buddy", "bet_buddy_extreme", "schmierig"]:
 		play_random_quiz_music(fade_duration)
 		return
 		
@@ -576,11 +579,11 @@ func play_rising_sfx(duration: float = 3.0, start_hz: float = 180.0, end_hz: flo
 	return asp
 
 func play_character_sfx(character_name: String, action: String = ""):
-	if sfx_muted or character_name == "" or character_name == "unknown":
+	if sfx_muted:
 		return
 		
 	var formatted_name = character_name.to_lower().strip_edges()
-	if formatted_name == "cedi":
+	if formatted_name == "" or formatted_name == "unknown" or formatted_name == "cedi":
 		formatted_name = "cedric"
 		
 	var base_name = formatted_name

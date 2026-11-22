@@ -31,6 +31,16 @@ func _ready():
 	AudioManager.play_music("intro")
 	_connect_buttons_sfx(self)
 	
+	var bg_tilemap = get_node_or_null("BackgroundTileMap")
+	if bg_tilemap:
+		bg_tilemap.visible = false
+	var gameplay_bg = get_node_or_null("GameplayBG")
+	if gameplay_bg:
+		if not gameplay_bg.texture:
+			gameplay_bg.texture = load("res://assets/quiz/qualifikationsquiz_bg.jpg")
+		gameplay_bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		gameplay_bg.visible = true
+	
 	_load_players()
 	
 	# Anzahl Teams ergibt sich strikt aus 2er-Teams (keine 3er-Teams möglich)
@@ -366,7 +376,7 @@ func _update_selection_styles():
 	if selected_slot != null:
 		var sel_p = team_slots[selected_slot["team"]][selected_slot["slot"]]
 		var p_name = sel_p.get("name", "Spieler") if sel_p != null else "Spieler"
-		status_label.text = "'%s' ausgewählt — klicke auf einen anderen Spieler zum Tauschen!" % p_name
+		status_label.text = "'%s' ausgewählt: Klicke auf einen anderen Spieler zum Tauschen!" % p_name
 		status_label.modulate = Color(1.0, 0.9, 0.35, 1.0)
 		status_label.visible = true
 	else:
@@ -497,7 +507,7 @@ func _create_slot_row(player, t_idx: int, s_idx: int) -> PlayerSlotRow:
 		empty_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		empty_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		empty_lbl.text = "— Freier Platz (Hierhin ziehen) —"
+		empty_lbl.text = "Freier Platz (Hierhin ziehen)"
 		empty_lbl.add_theme_font_size_override("font_size", 17)
 		empty_lbl.add_theme_color_override("font_color", Color(0.65, 0.7, 0.8, 0.6))
 		hbox.add_child(empty_lbl)

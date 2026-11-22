@@ -82,7 +82,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="SettingsPanel" type="PanelContainer" parent="CenterContainer/VBox"]
-custom_minimum_size = Vector2(760, 410)
+custom_minimum_size = Vector2(760, 520)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_Settings")
 
@@ -144,19 +144,21 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="BtnQuizRanking" type="Button" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/TeamModeRow/ToggleContainer"]
-custom_minimum_size = Vector2(240, 58)
+custom_minimum_size = Vector2(170, 36)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 22
+theme_type_variation = &"SmallPrimaryButton"
+theme_override_font_sizes/font_size = 16
 icon = ExtResource("6_quiz_icon")
 expand_icon = true
 text = "Quiz-Ranking"
 
 [node name="BtnManual" type="Button" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/TeamModeRow/ToggleContainer"]
-custom_minimum_size = Vector2(240, 58)
+custom_minimum_size = Vector2(170, 36)
 layout_mode = 2
 mouse_default_cursor_shape = 2
-theme_override_font_sizes/font_size = 22
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 16
 icon = ExtResource("7_crown_icon")
 expand_icon = true
 text = "Manuell"
@@ -216,18 +218,64 @@ popup/item_3/id = 12
 popup/item_4/text = "15"
 popup/item_4/id = 15
 
+[node name="HSeparator3" type="HSeparator" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="QuizAnonRow" type="HBoxContainer" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+layout_mode = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/QuizAnonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"H2"
+text = "Quiz Anonym:"
+
+[node name="ToggleContainer" type="HBoxContainer" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/QuizAnonRow"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BtnAnonOff" type="Button" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/QuizAnonRow/ToggleContainer"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"SmallPrimaryButton"
+theme_override_font_sizes/font_size = 16
+text = "Aus"
+
+[node name="BtnAnonOn" type="Button" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList/QuizAnonRow/ToggleContainer"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 16
+text = "An"
+
+[node name="QuizAnonDesc" type="Label" parent="CenterContainer/VBox/SettingsPanel/MarginContainer/SettingsList"]
+modulate = Color(1, 0.85, 0.4, 1)
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Aus: Spielernamen und Charaktere sind beim Aufdecken der Antworten sichtbar."
+autowrap_mode = 2
+
 [node name="ButtonsRow" type="HBoxContainer" parent="CenterContainer/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
 [node name="LoadGameButton" parent="CenterContainer/VBox/ButtonsRow" instance=ExtResource("9_sec_btn")]
+custom_minimum_size = Vector2(370, 64)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 32
 text = "SPIEL LADEN"
 
 [node name="CreateGameButton" parent="CenterContainer/VBox/ButtonsRow" instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(370, 64)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 32
 text = "SPIEL ERSTELLEN"
 
 [node name="PixelBackButton" parent="." instance=ExtResource("5_back")]

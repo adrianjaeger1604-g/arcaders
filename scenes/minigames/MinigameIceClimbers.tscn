@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/PixelBackButton.tscn" id="4_back"]
 [ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="5_tileset"]
 [ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="6_bg"]
+[ext_resource type="PackedScene" uid="uid://c6v2n7m9q1k4w" path="res://scenes/ui/MinigameWinnerOverlay.tscn" id="7_winner_overlay"]
 
 [sub_resource type="Gradient" id="Gradient_snow"]
 colors = PackedColorArray(0.9, 0.96, 1, 0.85, 0.7, 0.85, 1, 0)
@@ -37,22 +38,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.062745, 0.109804, 0.188235, 1)
-
-[node name="StarField" type="CPUParticles2D" parent="SkyBackgroundLayer"]
-position = Vector2(960, 540)
-emitting = false
-amount = 100
-lifetime = 5.0
-preprocess = 3.0
-emission_shape = 3
-emission_rect_extents = Vector2(960, 540)
-gravity = Vector2(0, 0)
-initial_velocity_min = 0.0
-initial_velocity_max = 0.0
-scale_amount_min = 2.0
-scale_amount_max = 4.5
-color = Color(1, 1, 1, 0.85)
+color = Color(0, 0, 0, 1)
 
 [node name="World" type="Node2D" parent="."]
 
@@ -78,36 +64,41 @@ color_ramp = SubResource("Gradient_snow")
 [node name="Platforms" type="Node2D" parent="World"]
 
 [node name="Players" type="Node2D" parent="World"]
+z_index = 10
 
 [node name="FX" type="Node2D" parent="World"]
+z_index = 15
 
-[node name="LeftWallColumn" type="ColorRect" parent="World"]
-offset_left = -200.0
+[node name="LeftOuterBlack" type="ColorRect" parent="World"]
+offset_left = -1000.0
+offset_top = -200000.0
+offset_right = 0.0
+offset_bottom = 2000.0
+color = Color(0, 0, 0, 1)
+
+[node name="LeftWallColumn" type="TextureRect" parent="World"]
+texture_filter = 1
+texture_repeat = 2
 offset_top = -200000.0
 offset_right = 120.0
 offset_bottom = 2000.0
-color = Color(0.08, 0.18, 0.32, 1)
+stretch_mode = 1
 
-[node name="LeftWallBorder" type="ColorRect" parent="World"]
-offset_left = 115.0
-offset_top = -200000.0
-offset_right = 120.0
-offset_bottom = 2000.0
-color = Color(0.45, 0.75, 0.95, 0.8)
-
-[node name="RightWallColumn" type="ColorRect" parent="World"]
+[node name="RightWallColumn" type="TextureRect" parent="World"]
+texture_filter = 1
+texture_repeat = 2
 offset_left = 1800.0
 offset_top = -200000.0
-offset_right = 2200.0
+offset_right = 1920.0
 offset_bottom = 2000.0
-color = Color(0.08, 0.18, 0.32, 1)
+stretch_mode = 1
 
-[node name="RightWallBorder" type="ColorRect" parent="World"]
-offset_left = 1800.0
+[node name="RightOuterBlack" type="ColorRect" parent="World"]
+offset_left = 1920.0
 offset_top = -200000.0
-offset_right = 1805.0
+offset_right = 3000.0
 offset_bottom = 2000.0
-color = Color(0.45, 0.75, 0.95, 0.8)
+color = Color(0, 0, 0, 1)
 
 [node name="IntroBackground" type="Control" parent="."]
 layout_mode = 1
@@ -146,7 +137,7 @@ grow_vertical = 2
 [node name="VBox" type="VBoxContainer" parent="IntroContainer"]
 custom_minimum_size = Vector2(1040, 0)
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 48
 
 [node name="Title" type="Label" parent="IntroContainer/VBox"]
 layout_mode = 2
@@ -166,9 +157,9 @@ vertical_scroll_mode = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_bottom = 0
 
 [node name="Instruction" type="Label" parent="IntroContainer/VBox/ScrollArea/InstructionContainer"]
 layout_mode = 2
@@ -181,11 +172,13 @@ Alle Spieler treten gleichzeitig mit ihrem Charakter an und klettern um die Wett
 2. Steuerung in Echtzeit über dein Handy:
 Steuere deinen Charakter live mit dem Joystick nach links und rechts und katapultiere dich mit dem Sprung-Button über die Plattformen.
 
-3. Endlos nach oben – Wer fällt, scheidet aus!
-Sobald ein Kletterer weit oben ankommt, zieht der Bildschirm nach oben nach.
-Wer unten aus dem Bildschirmrand fällt, scheidet sofort aus!
+3. Erst Testen, dann Klettern:
+Im Testraum könnt ihr euch warmspringen und Eisblöcke von unten zerschlagen. Klickt unten auf den Button \"SPIEL STARTEN\", um das echte Rennen zu beginnen!
 
-4. Letztes überlebendes Team gewinnt:
+4. Endlos nach oben: Wer fällt, scheidet aus!
+Im echten Spiel zieht die Kamera nach oben nach. Wer unten aus dem Bildschirmrand fällt, scheidet sofort aus!
+
+5. Letztes überlebendes Team gewinnt:
 Kämpft euch plattformweise nach oben. Das letzte noch stehende Team gewinnt!"
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -194,14 +187,16 @@ autowrap_mode = 2
 custom_minimum_size = Vector2(360, 60)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "SPIEL STARTEN"
+text = "STEUERUNG TESTEN"
 
-[node name="PixelBackButton" parent="." instance=ExtResource("4_back")]
-layout_mode = 1
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 104.0
-offset_bottom = 104.0
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="PixelBackButton" parent="UILayer" instance=ExtResource("4_back")]
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 78.0
+offset_bottom = 78.0
 
 [node name="HUD" type="CanvasLayer" parent="."]
 layer = 1
@@ -263,67 +258,5 @@ text = "READY..."
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TeamSidebar" type="MarginContainer" parent="HUD"]
-anchors_preset = 11
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -260.0
-offset_top = 80.0
-offset_right = -20.0
-offset_bottom = -30.0
-grow_horizontal = 0
-grow_vertical = 2
-
-[node name="VBox" type="VBoxContainer" parent="HUD/TeamSidebar"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="VictoryOverlay" type="CenterContainer" parent="HUD"]
-visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = ExtResource("3_theme")
-
-[node name="ColorRect" type="ColorRect" parent="HUD/VictoryOverlay"]
-custom_minimum_size = Vector2(1920, 1080)
-layout_mode = 2
-color = Color(0.04, 0.08, 0.14, 0.88)
-
-[node name="VBox" type="VBoxContainer" parent="HUD/VictoryOverlay"]
-custom_minimum_size = Vector2(800, 0)
-layout_mode = 2
-theme_override_constants/separation = 28
-
-[node name="VictoryTitle" type="Label" parent="HUD/VictoryOverlay/VBox"]
-layout_mode = 2
-theme_type_variation = &"H1"
-theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 0.95)
-theme_override_constants/outline_size = 12
-theme_override_font_sizes/font_size = 72
-text = "SIEGER: TEAM 1!"
-horizontal_alignment = 1
-
-[node name="VictorySubtitle" type="Label" parent="HUD/VictoryOverlay/VBox"]
-layout_mode = 2
-theme_type_variation = &"H3"
-theme_override_colors/font_color = Color(0.85, 0.94, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "Das Team hat die eisige Bergspitze bezwungen!"
-horizontal_alignment = 1
-
-[node name="Spacer" type="Control" parent="HUD/VictoryOverlay/VBox"]
-custom_minimum_size = Vector2(0, 10)
-layout_mode = 2
-
-[node name="ReturnButton" parent="HUD/VictoryOverlay/VBox" instance=ExtResource("2_btn")]
-custom_minimum_size = Vector2(280, 56)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 32
-text = "WEITER"
+[node name="MinigameWinnerOverlay" parent="HUD" instance=ExtResource("7_winner_overlay")]
 

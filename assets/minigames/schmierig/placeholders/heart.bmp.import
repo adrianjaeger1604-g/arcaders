@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dko27o7sjkubx"
-path="res://.godot/imported/video_game_quiz_thumbnail.png-db86eee06b5b7ef603bf4c307ea678cb.ctex"
+uid="uid://cciivm1oqkvo8"
+path="res://.godot/imported/heart.bmp-d3f6bda5d073e2f98c7a08df48992f12.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/minigames/video_game_quiz/video_game_quiz_thumbnail.png"
-dest_files=["res://.godot/imported/video_game_quiz_thumbnail.png-db86eee06b5b7ef603bf4c307ea678cb.ctex"]
+source_file="res://assets/minigames/schmierig/placeholders/heart.bmp"
+dest_files=["res://.godot/imported/heart.bmp-d3f6bda5d073e2f98c7a08df48992f12.ctex"]
 
 [params]
 

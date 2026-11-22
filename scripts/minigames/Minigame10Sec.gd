@@ -99,7 +99,7 @@ func _on_start_pressed():
 	if gameplay_dim:
 		gameplay_dim.visible = true
 	if pixel_back_btn:
-		pixel_back_btn.visible = false
+		pixel_back_btn.visible = true
 		
 	# UI-Wechsel auf In-Game Board
 	title_label.text = "10 Sekunden Minispiel"
@@ -184,7 +184,7 @@ func _on_close_pressed():
 		return
 	is_round_open = false
 	close_btn.visible = false
-	back_btn.visible = true
+	back_btn.visible = false
 	title_label.text = "Ergebnis"
 	
 	# Handys in den Warten-Zustand versetzen
@@ -205,6 +205,7 @@ func _on_close_pressed():
 		status_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
 		status_label.visible = true
 		status_label.modulate.a = 1.0
+		back_btn.visible = true
 		return
 		
 	# Besten Spieler ermitteln (am nächsten an 10.0s)
@@ -235,8 +236,19 @@ func _on_close_pressed():
 	result_list.add_theme_constant_override("v_separation", 16)
 	result_list.add_theme_constant_override("h_separation", 36 if is_two_cols else 20)
 	
-	# Aufsteigender Spannungs-Sound synchron zu den Balken
-	AudioManager.play_rising_sfx(MinigameResultHelper.RISE_DURATION)
+	# Tatsächliche Dauer für den Anstieg der Balken ermitteln (synchron zum besten/weitesten Balken)
+	var max_active_time = max(best_time, 0.0)
+	for pid in player_times:
+		if player_times[pid] > max_active_time:
+			max_active_time = player_times[pid]
+			
+	var actual_rise_duration: float = 0.0
+	if max_active_time > 0.0 and max_scale_time > 0.0:
+		actual_rise_duration = clampf(MinigameResultHelper.RISE_DURATION * (max_active_time / max_scale_time), 0.6, MinigameResultHelper.RISE_DURATION)
+	
+	# Aufsteigender Spannungs-Sound synchron zu den Balken (nur so lange, wie der weiteste Balken steigt)
+	if actual_rise_duration > 0.0:
+		AudioManager.play_rising_sfx(actual_rise_duration)
 	
 	for p_data in all_players:
 		_create_result_bar(p_data, is_two_cols, max_scale_time, best_player_id)
@@ -268,7 +280,7 @@ func _on_close_pressed():
 		status_label.visible = true
 		
 		var win_tween = create_tween()
-		win_tween.tween_interval(MinigameResultHelper.RISE_DURATION + 0.1)
+		win_tween.tween_interval(actual_rise_duration + 0.1)
 		win_tween.tween_callback(func():
 			AudioManager.play_sfx("confetti-pop-sound-effect")
 			if winning_team.has("players"):
@@ -277,13 +289,16 @@ func _on_close_pressed():
 						AudioManager.play_character_sfx(p["character"], "win")
 		)
 		win_tween.tween_property(status_label, "modulate:a", 1.0, 0.4)
+		win_tween.tween_callback(func():
+			back_btn.visible = true
+		)
 		
 		# Punkte vergeben (+2 bzw. +3 wenn Wähler-Team)
-		if NetworkManager.current_minigame_index != -1:
-			var points = 2
-			if NetworkManager.current_selecting_team_color == winning_team["color"]:
-				points = 3
+		var points = 2
+		if NetworkManager.current_selecting_team_color == winning_team["color"]:
+			points = 3
 			
+		if NetworkManager.current_minigame_index != -1:
 			NetworkManager.minigame_winners[NetworkManager.current_minigame_index] = {
 				"color": winning_team["color"],
 				"points": points,
@@ -301,6 +316,7 @@ func _on_close_pressed():
 		status_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 		status_label.modulate.a = 1.0
 		status_label.visible = true
+		back_btn.visible = true
 
 func _create_result_bar(p_data: Dictionary, is_two_cols: bool, max_scale_time: float, best_player_id: int):
 	var pid = p_data["id"]
@@ -454,7 +470,8 @@ func _on_back_pressed():
 			if not NetworkManager.is_replaying_minigame:
 				NetworkManager.current_turn_number -= 1
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")

@@ -104,7 +104,8 @@ func build_save_data(is_autosave: bool = false, custom_name: String = "") -> Dic
 		"settings": {
 			"quiz_questions_count": NetworkManager.quiz_questions_count,
 			"minigames_count": NetworkManager.minigames_count,
-			"team_assignment_mode": NetworkManager.team_assignment_mode
+			"team_assignment_mode": NetworkManager.team_assignment_mode,
+			"quiz_anonymous_answers": NetworkManager.quiz_anonymous_answers
 		},
 		
 		"board_state": {
@@ -325,6 +326,7 @@ func load_game(filepath: String) -> bool:
 	NetworkManager.quiz_questions_count = int(settings.get("quiz_questions_count", 5))
 	NetworkManager.minigames_count = int(settings.get("minigames_count", 24))
 	NetworkManager.team_assignment_mode = str(settings.get("team_assignment_mode", "quiz_ranking"))
+	NetworkManager.quiz_anonymous_answers = bool(settings.get("quiz_anonymous_answers", false))
 	
 	# 2. Board State wiederherstellen
 	var board_state = data.get("board_state", {})

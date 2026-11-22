@@ -46,7 +46,7 @@ grow_vertical = 2
 [node name="VBox" type="VBoxContainer" parent="CenterContainer"]
 custom_minimum_size = Vector2(1040, 0)
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 48
 
 [node name="Title" type="Label" parent="CenterContainer/VBox"]
 layout_mode = 2
@@ -57,8 +57,8 @@ horizontal_alignment = 1
 
 [node name="InstructionContainer" type="MarginContainer" parent="CenterContainer/VBox"]
 layout_mode = 2
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_bottom = 0
 
 [node name="Instruction" type="Label" parent="CenterContainer/VBox/InstructionContainer"]
 custom_minimum_size = Vector2(900, 0)

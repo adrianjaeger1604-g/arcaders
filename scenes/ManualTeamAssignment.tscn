@@ -5,6 +5,7 @@
 [ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
 [ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="4_tileset"]
 [ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="bg_script"]
+[ext_resource type="Texture2D" uid="uid://65b8hd71s8u6" path="res://assets/quiz/qualifikationsquiz_bg.jpg" id="5_bg_tex"]
 
 [node name="ManualTeamAssignment" type="Control"]
 layout_mode = 3
@@ -31,6 +32,29 @@ script = ExtResource("bg_script")
 scale = Vector2(4, 4)
 tile_set = ExtResource("4_tileset")
 format = 2
+
+[node name="GameplayBG" type="TextureRect" parent="."]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_bg_tex")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="GameplayDim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.03, 0.02, 0.45)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1

@@ -19,6 +19,16 @@ func _ready():
 	next_phase_btn.pressed.connect(_on_next_phase_pressed)
 	_connect_buttons_sfx(self)
 	
+	var bg_tilemap = get_node_or_null("BackgroundTileMap")
+	if bg_tilemap:
+		bg_tilemap.visible = false
+	var gameplay_bg = get_node_or_null("GameplayBG")
+	if gameplay_bg:
+		if not gameplay_bg.texture:
+			gameplay_bg.texture = load("res://assets/quiz/qualifikationsquiz_bg.jpg")
+		gameplay_bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		gameplay_bg.visible = true
+	
 	# Hoechste Punktzahl der Runde bestimmt den vollen Balken
 	var actual_max_score = 0
 	for p_id in NetworkManager.player_sessions:
@@ -83,10 +93,10 @@ func _create_player_bar(p_data: Dictionary, index: int):
 	# Create a container for the row
 	var row = HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 16 if is_two_cols else 20)
+	row.add_theme_constant_override("separation", 10 if is_two_cols else 12)
 	
-	var left_box_w = 180 if is_two_cols else 240
-	var bar_w = 280 if is_two_cols else 400
+	var left_box_w = 110 if is_two_cols else 130
+	var bar_w = 320 if is_two_cols else 460
 	
 	# Left Content (Name + Character)
 	var left_box = HBoxContainer.new()
@@ -122,11 +132,13 @@ func _create_player_bar(p_data: Dictionary, index: int):
 	# Name Label (direkt unter dem Charakter, wird bei Überlänge mit '...' auspunktiert)
 	var name_label = Label.new()
 	name_label.text = p_name
-	name_label.add_theme_font_size_override("font_size", 20 if is_two_cols else 24)
+	name_label.add_theme_font_size_override("font_size", 18 if is_two_cols else 22)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.custom_minimum_size = Vector2(left_box_w, 0)
 	name_label.clip_text = true
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	name_label.add_theme_constant_override("outline_size", 6)
 	char_name_vbox.add_child(name_label)
 	
 	left_box.add_child(char_name_vbox)
@@ -138,6 +150,8 @@ func _create_player_bar(p_data: Dictionary, index: int):
 	var bar = bar_data["bar"]
 	var score_label = bar_data["label"]
 	score_label.text = "0 Punkte"
+	score_label.add_theme_color_override("font_outline_color", Color(0.04, 0.04, 0.06, 0.96))
+	score_label.add_theme_constant_override("outline_size", 6)
 	row.add_child(bar_data["container"])
 	
 	# Symmetrischer Ausgleichs-Spacer rechts NUR bei 1 Spalte
@@ -186,68 +200,16 @@ func _get_bar_color(p_data: Dictionary) -> Color:
 
 # Ermittelt den Asset-Ordnernamen (z.B. "cedric") aus der Idle-Textur des Charakters
 func _get_sprite_base(character_name: String) -> String:
-	var tex = NetworkManager.character_textures.get(character_name)
-	if tex == null:
-		return ""
-	var file = tex.resource_path.get_file().get_basename() # spr_cedric_idle_1
-	return file.trim_prefix("spr_").get_slice("_idle", 0)
+	return MinigameResultHelper.get_sprite_base(character_name)
 
 func _load_idle_frames(base: String) -> Array:
-	var frames = []
-	var n = 1
-	while true:
-		var path = "res://assets/characters/%s/idle/spr_%s_idle_%d.png" % [base, base, n]
-		if not ResourceLoader.exists(path):
-			break
-		frames.append(load(path))
-		n += 1
-	return frames
+	return MinigameResultHelper.load_idle_frames(base)
 
 func _load_drink_frames(base: String) -> Array:
-	var frames = []
-	var n = 1
-	while true:
-		var path = "res://assets/characters/%s/drink/spr_%s_drink_%d.png" % [base, base, n]
-		if not ResourceLoader.exists(path):
-			break
-		frames.append(load(path))
-		n += 1
-	return frames
+	return MinigameResultHelper.load_drink_frames(base)
 
 func _celebrate_winner(char_icon: TextureRect, character_name: String):
-	var base = _get_sprite_base(character_name)
-	var drink_frames = _load_drink_frames(base)
-	if drink_frames.is_empty():
-		drink_frames = _load_idle_frames(base)
-	if drink_frames.is_empty() and char_icon.texture:
-		drink_frames = [char_icon.texture]
-	var jump_path = "res://assets/characters/%s/jump/spr_%s_jump.png" % [base, base]
-	if ResourceLoader.exists(jump_path):
-		char_icon.texture = load(jump_path)
-	
-	# Einmal kurz springen (angepasste Sprunghöhe, damit der Charakter im Sichtbereich bleibt)
-	var jump = create_tween()
-	jump.tween_property(char_icon, "position:y", -22.0, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	jump.tween_property(char_icon, "position:y", 0.0, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	await jump.finished
-	
-	if not is_instance_valid(char_icon):
-		return
-		
-	# Danach Drink-Animation in Endlosschleife
-	if not drink_frames.is_empty():
-		char_icon.texture = drink_frames[0]
-	if drink_frames.size() > 1:
-		var timer = Timer.new()
-		timer.wait_time = 0.5
-		timer.autostart = true
-		var frame_idx = [0]
-		timer.timeout.connect(func():
-			if is_instance_valid(char_icon):
-				frame_idx[0] = (frame_idx[0] + 1) % drink_frames.size()
-				char_icon.texture = drink_frames[frame_idx[0]]
-		)
-		char_icon.add_child(timer)
+	MinigameResultHelper.celebrate_winner(char_icon, character_name)
 
 func _show_winner_title():
 	AudioManager.play_sfx("confetti-pop-sound-effect")

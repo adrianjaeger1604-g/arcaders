@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/minigames/MinigameBetBuddyExtreme.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="2_btn"]
@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/icons/pixel/star.svg" id="9_star"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/pixel/dice.svg" id="10_dice"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/pixel/hourglass.svg" id="11_hourglass"]
+[ext_resource type="PackedScene" uid="uid://c6v2n7m9q1k4w" path="res://scenes/ui/MinigameWinnerOverlay.tscn" id="12_winner_overlay"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TimerBg"]
 bg_color = Color(0.06, 0.08, 0.12, 0.95)
@@ -84,7 +85,7 @@ grow_vertical = 2
 [node name="VBox" type="VBoxContainer" parent="IntroContainer"]
 custom_minimum_size = Vector2(1040, 0)
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 48
 
 [node name="Title" type="Label" parent="IntroContainer/VBox"]
 layout_mode = 2
@@ -104,9 +105,9 @@ vertical_scroll_mode = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_bottom = 0
 
 [node name="Instruction" type="Label" parent="IntroContainer/VBox/ScrollArea/InstructionContainer"]
 layout_mode = 2
@@ -124,14 +125,14 @@ Wichtig: Während der Wettphase darf im Team NICHT gesprochen oder sich abgespro
 Der Game Master deckt alle Gebote auf. Die Person mit dem höchsten Gebot muss antreten und aufzählen!
 Gibt es einen Gleichstand beim Höchstgebot, entscheidet das Los direkt im Spiel!
 
-4. Die Aufzählung – 10 Sekunden pro Begriff:
+4. Die Aufzählung: 10 Sekunden pro Begriff:
 Beim Aufzählen läuft unerbittlich ein 10-Sekunden-Timer!
-Wird innerhalb von 10 Sekunden kein neuer gültiger Begriff genannt, ist die Runde verloren.
-Jeder richtige Begriff zählt den Zähler um -1 herunter und setzt den Timer wieder auf 10 Sekunden zurück.
+Jeder richtige Begriff zählt den Zähler um 1 herunter und setzt den Timer wieder auf 10 Sekunden zurück.
 
-5. Punkte & Spielziel:
-• Geschafft: Wird der Zähler auf 0 heruntergezählt, erhält das Team +1 Punkt!
-• Aufgeben oder Zeit abgelaufen: Das Team erhält -1 Punkt (Minuspunkte sind möglich!).
+5. Scheitern, Übernahme & Punkte:
+• Scheitert ein Team (Zeit abgelaufen oder Aufgeben), gibt es KEINEN Minuspunkt!
+• Das nächste Team mit dem nächsthöchsten Gebot übernimmt sofort und muss nur noch die verbleibenden Begriffe aufzählen. Jedes Team kann pro Runde maximal einmal antreten.
+• Welches Team die Begriffe letztlich vollendet, erhält +1 Punkt!
 • Welches Team zuerst 3 In-Game-Punkte erreicht, gewinnt das Minispiel!"
 horizontal_alignment = 1
 autowrap_mode = 2
@@ -319,18 +320,21 @@ alignment = 1
 theme_override_constants/separation = 12
 
 [node name="BtnHitMinus" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/CounterCard/VBox/Buttons"]
-custom_minimum_size = Vector2(240, 52)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
-theme_override_font_sizes/font_size = 19
+theme_type_variation = &"SmallPrimaryButton"
+theme_override_font_sizes/font_size = 16
 text = "Treffer (-1)  [Leertaste]"
 
 [node name="BtnUndoPlus" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/CounterCard/VBox/Buttons"]
-custom_minimum_size = Vector2(150, 52)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
+size_flags_horizontal = 3
 focus_mode = 0
-theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 16
 text = "+1 Korrektur"
 
 [node name="TimerCard" type="PanelContainer" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox"]
@@ -383,12 +387,12 @@ value = 10.0
 show_percentage = false
 
 [node name="BtnTogglePause" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/CounterAndTimerBox/TimerCard/VBox"]
-custom_minimum_size = Vector2(210, 44)
+custom_minimum_size = Vector2(170, 36)
 layout_mode = 2
 size_flags_horizontal = 4
 focus_mode = 0
-theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 17
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 16
 text = "Timer Pausieren"
 
 [node name="HSeparator" type="HSeparator" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox"]
@@ -406,7 +410,7 @@ layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"DangerButton"
 theme_override_font_sizes/font_size = 20
-text = "Aufgeben (-1 Punkt)"
+text = "Aufgeben"
 
 [node name="BtnSuccess" type="Button" parent="GameMargin/GameContainer/ActionArea/ChallengeBox/VBox/ChallengeActions"]
 custom_minimum_size = Vector2(260, 52)
@@ -453,5 +457,9 @@ text = "NÄCHSTE RUNDE STARTEN"
 layout_mode = 0
 offset_left = 14.0
 offset_top = 14.0
-offset_right = 64.0
-offset_bottom = 64.0
+offset_right = 78.0
+offset_bottom = 78.0
+
+[node name="MinigameWinnerOverlay" parent="." instance=ExtResource("12_winner_overlay")]
+visible = false
+layout_mode = 1

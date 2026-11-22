@@ -1,8 +1,11 @@
-[gd_scene format=3 uid="uid://cax2j4f2e2n4c"]
+[gd_scene load_steps=2 format=3 uid="uid://cax2j4f2e2n4c"]
+
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="1_theme"]
 
 [node name="GameButton" type="Button"]
 custom_minimum_size = Vector2(0, 80)
 offset_right = 8.0
 offset_bottom = 8.0
+theme = ExtResource("1_theme")
 theme_type_variation = &"BigButton"
 text = "Aktion"

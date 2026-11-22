@@ -164,7 +164,10 @@ func _connect_buttons_sfx(node: Node):
 
 func _update_title_pivot():
 	if is_instance_valid(title_label):
-		title_label.pivot_offset = title_label.size / 2.0
+		if title_label.size.x > 0 and title_label.size.y > 0:
+			title_label.pivot_offset = title_label.size / 2.0
+		else:
+			title_label.pivot_offset = title_label.custom_minimum_size / 2.0
 
 func _start_title_animation():
 	if pulse_tween and pulse_tween.is_valid():
@@ -177,10 +180,10 @@ func _start_title_animation():
 
 	title_label.scale = Vector2.ONE
 
-	# Endlose Puls-Animation (Pochen) für den Titel
+	# Endlose sanfte Puls-Animation (Pochen) für das Titel-Logo
 	pulse_tween = create_tween().set_loops()
-	pulse_tween.tween_property(title_label, "scale", Vector2(1.1, 1.1), 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	pulse_tween.tween_property(title_label, "scale", Vector2(1.0, 1.0), 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse_tween.tween_property(title_label, "scale", Vector2(1.08, 1.08), 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse_tween.tween_property(title_label, "scale", Vector2(1.0, 1.0), 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_start_pressed():
 	# Wechsle zur neuen Szene für Spieloptionen

@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://cmusimt8e2r6a" path="res://assets/ui/shared/arrow_down.png" id="3_fgoeh"]
 [ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
 [ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="4_tileset"]
+[ext_resource type="Texture2D" path="res://assets/ui/shared/arcaders_title.png" id="5_title_tex"]
 [ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="bg_script"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_Settings"]
@@ -43,21 +44,23 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer" unique_id=1819943337]
-custom_minimum_size = Vector2(600, 0)
+custom_minimum_size = Vector2(680, 0)
 layout_mode = 2
 theme_override_constants/separation = 40
 
 [node name="TitleBox" type="CenterContainer" parent="CenterContainer/VBox" unique_id=1214149547]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="CenterContainer/VBox/TitleBox" unique_id=1583006751]
-custom_minimum_size = Vector2(0, 150)
+[node name="Title" type="TextureRect" parent="CenterContainer/VBox/TitleBox" unique_id=1583006751]
+custom_minimum_size = Vector2(680, 174)
 layout_mode = 2
-theme_type_variation = &"Title"
-text = "Arcaders"
-horizontal_alignment = 1
-vertical_alignment = 1
+texture = ExtResource("5_title_tex")
+expand_mode = 1
+stretch_mode = 5
+texture_filter = 1
 
 [node name="StartButton" parent="CenterContainer/VBox" unique_id=1823391922 instance=ExtResource("2_btn")]
+custom_minimum_size = Vector2(580, 80)
 layout_mode = 2
+size_flags_horizontal = 4
 text = "SPIEL STARTEN"

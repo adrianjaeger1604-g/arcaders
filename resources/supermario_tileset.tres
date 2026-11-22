@@ -40,7 +40,6 @@ texture = ExtResource("2_tex")
 9:0/0 = 0
 8:0/0 = 0
 7:0/0 = 0
-7:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 10:4/0 = 0
 11:4/0 = 0
 12:4/0 = 0
@@ -118,5 +117,4 @@ texture = ExtResource("2_tex")
 12:0/0 = 0
 
 [resource]
-physics_layer_0/collision_layer = 1
 sources/1 = SubResource("TileSetAtlasSource_mario1")

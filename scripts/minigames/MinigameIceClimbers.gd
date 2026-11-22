@@ -13,6 +13,7 @@ extends Control
 # ==============================================================================
 
 const MinigameResultHelper = preload("res://scripts/minigames/MinigameResultHelper.gd")
+const GameButtonScene = preload("res://scenes/ui/GameButton.tscn")
 
 # Game Boundaries & Arena
 const VIEWPORT_WIDTH: float = 1920.0
@@ -44,10 +45,9 @@ const ICE_BLOCK_HEIGHT: float = 26.0
 @onready var intro_background = get_node_or_null("IntroBackground")
 @onready var intro_container = $IntroContainer
 @onready var start_btn = $IntroContainer/VBox/StartGameButton
-@onready var pixel_back_btn = get_node_or_null("PixelBackButton")
+@onready var pixel_back_btn = find_child("PixelBackButton", true, false)
 
 @onready var sky_rect = get_node_or_null("SkyBackgroundLayer/SkyRect")
-@onready var star_field = get_node_or_null("SkyBackgroundLayer/StarField")
 
 @onready var world = $World
 @onready var camera = $World/Camera2D
@@ -55,19 +55,17 @@ const ICE_BLOCK_HEIGHT: float = 26.0
 @onready var player_container = $World/Players
 @onready var fx_container = $World/FX
 @onready var snow_particles = $World/SnowParticles
+@onready var left_wall_column = get_node_or_null("World/LeftWallColumn")
+@onready var right_wall_column = get_node_or_null("World/RightWallColumn")
 
 @onready var hud = $HUD
 @onready var altitude_label = $HUD/TopBar/Margin/HBox/AltitudeLabel
 @onready var top_banner = $HUD/TopBar/Margin/HBox/TitleLabel
 @onready var countdown_label = $HUD/CountdownLabel
-@onready var team_sidebar = $HUD/TeamSidebar/VBox
-@onready var victory_overlay = $HUD/VictoryOverlay
-@onready var victory_title = $HUD/VictoryOverlay/VBox/VictoryTitle
-@onready var victory_subtitle = $HUD/VictoryOverlay/VBox/VictorySubtitle
-@onready var return_btn = get_node_or_null("HUD/VictoryOverlay/VBox/ReturnButton")
+@onready var winner_overlay = $HUD/MinigameWinnerOverlay
 
 # State
-var game_state: String = "intro" # "intro", "countdown", "playing", "game_over"
+var game_state: String = "intro" # "intro", "test_room", "countdown", "playing", "game_over"
 var countdown_timer: float = 3.0
 var highest_climbed_y: float = INITIAL_FLOOR_Y - (INITIAL_FLOOR_HEIGHT * 0.5)
 var current_top_platform_y: float = INITIAL_FLOOR_Y - (INITIAL_FLOOR_HEIGHT * 0.5)
@@ -75,6 +73,13 @@ var active_platforms: Array[StaticBody2D] = []
 var last_layer_platforms: Array[Dictionary] = [] # Array von { "x": float, "w": float }
 var last_layer_x_positions: Array[float] = []
 var next_ice_barrier_meter: int = 100
+
+# Testraum
+var is_test_room: bool = false
+var test_room_container: Node2D = null
+var test_room_ui: Control = null
+var test_room_floor_btn: Button = null
+var test_room_start_triggered: bool = false
 
 # Players: Dictionary of p_id -> PlayerData
 # { "node": CharacterBody2D, "name": String, "team_index": int, "team_color": Color,
@@ -89,12 +94,8 @@ func _ready():
 	_connect_buttons_sfx(self)
 	
 	if start_btn:
+		start_btn.text = "STEUERUNG TESTEN"
 		start_btn.pressed.connect(_on_start_pressed)
-	if return_btn == null:
-		return_btn = find_child("ReturnButton", true, false)
-	if return_btn:
-		if not return_btn.pressed.is_connected(_on_return_pressed):
-			return_btn.pressed.connect(_on_return_pressed)
 	if pixel_back_btn:
 		if "auto_return_to_main_board" in pixel_back_btn and pixel_back_btn.auto_return_to_main_board:
 			# PixelBackButton führt cancel_and_return_to_board bereits selbstständig aus
@@ -105,7 +106,8 @@ func _ready():
 	NetworkManager.message_received.connect(_on_network_message)
 	NetworkManager.client_connected.connect(_on_client_connected)
 	
-	victory_overlay.visible = false
+	if winner_overlay:
+		winner_overlay.visible = false
 	countdown_label.visible = false
 	hud.visible = false
 	world.visible = false
@@ -120,10 +122,15 @@ func _ready():
 	})
 	
 	_build_arena_walls()
+	_apply_white_brick_walls()
+	if platform_container:
+		platform_container.z_index = 0
+	if player_container:
+		player_container.z_index = 10
+	if fx_container:
+		fx_container.z_index = 15
 	_spawn_initial_floor()
-	_generate_platforms_up_to(INITIAL_FLOOR_Y - 1800.0)
 	_setup_players()
-	_build_team_sidebar()
 	
 	camera.position = Vector2(VIEWPORT_WIDTH * 0.5, 540.0)
 	_update_altitude_hud()
@@ -135,7 +142,7 @@ func _setup_intro_scroll():
 	if scroll_area and inst_lbl:
 		await get_tree().process_frame
 		if is_instance_valid(inst_lbl) and is_instance_valid(scroll_area):
-			var content_h = inst_lbl.get_minimum_size().y + 32.0
+			var content_h = inst_lbl.get_minimum_size().y + 8.0
 			scroll_area.custom_minimum_size.y = clampf(content_h, 80.0, 480.0)
 
 func _setup_fallback_teams_if_needed():
@@ -178,7 +185,8 @@ func _on_back_pressed():
 			if not NetworkManager.is_replaying_minigame:
 				NetworkManager.current_turn_number -= 1
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")
@@ -186,7 +194,8 @@ func _on_back_pressed():
 func _on_return_pressed():
 	AudioManager.stop_music()
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")
@@ -196,9 +205,9 @@ func _on_return_pressed():
 # ==============================================================================
 
 func _build_arena_walls():
-	# Linke Wand
+	# Linke Wand (Kollision bündig an der Innenkante WALL_LEFT_X)
 	var left_wall = StaticBody2D.new()
-	left_wall.position = Vector2(WALL_LEFT_X, 0)
+	left_wall.position = Vector2(WALL_LEFT_X - 40.0, 0)
 	var left_shape = CollisionShape2D.new()
 	var l_rect = RectangleShape2D.new()
 	l_rect.size = Vector2(80.0, 200000.0) # Riesige vertikale Sperre
@@ -206,15 +215,64 @@ func _build_arena_walls():
 	left_wall.add_child(left_shape)
 	world.add_child(left_wall)
 	
-	# Rechte Wand
+	# Rechte Wand (Kollision bündig an der Innenkante WALL_RIGHT_X)
 	var right_wall = StaticBody2D.new()
-	right_wall.position = Vector2(WALL_RIGHT_X, 0)
+	right_wall.position = Vector2(WALL_RIGHT_X + 40.0, 0)
 	var right_shape = CollisionShape2D.new()
 	var r_rect = RectangleShape2D.new()
 	r_rect.size = Vector2(80.0, 200000.0)
 	right_shape.shape = r_rect
 	right_wall.add_child(right_shape)
 	world.add_child(right_wall)
+
+func _apply_white_brick_walls():
+	var brick_tex = _create_white_brick_texture()
+	if left_wall_column:
+		left_wall_column.texture = brick_tex
+		left_wall_column.stretch_mode = TextureRect.STRETCH_TILE
+		left_wall_column.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	if right_wall_column:
+		right_wall_column.texture = brick_tex
+		right_wall_column.stretch_mode = TextureRect.STRETCH_TILE
+		right_wall_column.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+
+func _create_white_brick_texture() -> ImageTexture:
+	var tw = 120
+	var th = 40
+	var img = Image.create(tw, th, false, Image.FORMAT_RGBA8)
+	
+	var col_mortar = Color(0.12, 0.12, 0.16, 1.0) # Dunkle Fuge für scharfe Abgrenzung
+	var col_brick_base = Color(0.93, 0.95, 0.97, 1.0) # Weißer Backstein
+	var col_brick_hi = Color(1.0, 1.0, 1.0, 1.0) # Glanzkante oben/links
+	var col_brick_sh = Color(0.74, 0.77, 0.83, 1.0) # Icy-Schattenkante unten/rechts
+	var col_brick_groove = Color(0.86, 0.89, 0.93, 1.0) # Feiner Texturstrich
+	
+	img.fill(col_mortar)
+	
+	# 3 Backsteine nebeneinander (je 38px + 2px Fuge), 2 Reihen versetzt
+	for row in range(2):
+		var y_start = row * 20 + 2
+		var y_end = (row + 1) * 20 - 1
+		var x_offset = 0 if row == 0 else -20
+		
+		for b in range(-1, 4):
+			var bx_start = x_offset + b * 40 + 2
+			var bx_end = x_offset + (b + 1) * 40 - 1
+			
+			for y in range(y_start, y_end):
+				for x in range(bx_start, bx_end):
+					if x < 0 or x >= tw:
+						continue
+					if y == y_start or x == bx_start:
+						img.set_pixel(x, y, col_brick_hi)
+					elif y == y_end - 1 or x == bx_end - 1:
+						img.set_pixel(x, y, col_brick_sh)
+					elif y == y_start + 8:
+						img.set_pixel(x, y, col_brick_groove)
+					else:
+						img.set_pixel(x, y, col_brick_base)
+						
+	return ImageTexture.create_from_image(img)
 
 func _spawn_initial_floor():
 	var floor_body = StaticBody2D.new()
@@ -258,9 +316,12 @@ func _generate_platforms_up_to(target_y: float):
 				current_top_platform_y = pre_barrier_y
 				_spawn_platform_layer(pre_barrier_y, step_to_pre)
 				
-			# Durchgehende Barriere aus 24 zerstörbaren kurzen Eisblöcken von links nach rechts spawnen
-			_spawn_ice_barrier_row(barrier_y, next_ice_barrier_meter)
+			# Durchgehende Barriere aus 24 zerstörbaren kurzen Eisblöcken spawnen (50% Chance für 2-zeilig)
+			var is_double = randf() < 0.5
+			_spawn_ice_barrier_row(barrier_y, next_ice_barrier_meter, is_double)
 			next_ice_barrier_meter += 100
+			
+			var top_barrier_y = barrier_y - ICE_BLOCK_HEIGHT if is_double else barrier_y
 			
 			# Virtuelle Plattformen auf der Barriere als Referenz für die Schicht darüber
 			last_layer_platforms = [
@@ -270,7 +331,7 @@ func _generate_platforms_up_to(target_y: float):
 			last_layer_x_positions = [560.0, 1360.0]
 			
 			# Nächste Schicht 150 px über der Barriere platzieren
-			current_top_platform_y = barrier_y - 150.0
+			current_top_platform_y = top_barrier_y - 150.0
 			_spawn_platform_layer(current_top_platform_y, 150.0)
 			continue
 			
@@ -287,6 +348,8 @@ func _generate_platforms_up_to(target_y: float):
 func _spawn_platform_layer(layer_y: float, step: float):
 	var floor_top_y = INITIAL_FLOOR_Y - (INITIAL_FLOOR_HEIGHT * 0.5)
 	var max_reach = _get_max_horizontal_reach(step)
+	var alt_meters = max(0.0, (floor_top_y - layer_y) / 10.0)
+	var allow_crumbling = alt_meters >= 500.0
 	
 	# Begrenzungen für Plattformen (innerhalb der Wände)
 	var min_x_bound = WALL_LEFT_X + 60.0
@@ -341,7 +404,8 @@ func _spawn_platform_layer(layer_y: float, step: float):
 			var gap_from_right = (p_right.x - p_right.w * 0.5) - (mid_x + mid_w * 0.5)
 			
 			if gap_from_left <= max_reach - 75.0 and gap_from_right <= max_reach - 75.0:
-				var plat = _create_single_platform(Vector2(mid_x, layer_y), mid_w, PLATFORM_HEIGHT)
+				var is_crumble_m = allow_crumbling and (randf() < 0.20)
+				var plat = _create_single_platform(Vector2(mid_x, layer_y), mid_w, PLATFORM_HEIGHT, is_crumble_m)
 				platform_container.add_child(plat)
 				active_platforms.append(plat)
 				new_layer_platforms.append({ "x": mid_x, "w": mid_w })
@@ -388,8 +452,16 @@ func _spawn_platform_layer(layer_y: float, step: float):
 			if actual_gap_r > max_reach - 80.0:
 				x_r = p_right.x + sign(x_r - p_right.x) * ((p_right.w + w_r) * 0.5 + (max_reach - 85.0))
 				
-			var plat_l = _create_single_platform(Vector2(x_l, layer_y), w_l, PLATFORM_HEIGHT)
-			var plat_r = _create_single_platform(Vector2(x_r, layer_y), w_r, PLATFORM_HEIGHT)
+			var crumble_l = false
+			var crumble_r = false
+			if allow_crumbling and randf() < 0.25:
+				if randf() < 0.5:
+					crumble_l = true
+				else:
+					crumble_r = true
+					
+			var plat_l = _create_single_platform(Vector2(x_l, layer_y), w_l, PLATFORM_HEIGHT, crumble_l)
+			var plat_r = _create_single_platform(Vector2(x_r, layer_y), w_r, PLATFORM_HEIGHT, crumble_r)
 			platform_container.add_child(plat_l)
 			platform_container.add_child(plat_r)
 			active_platforms.append(plat_l)
@@ -422,8 +494,16 @@ func _spawn_platform_layer(layer_y: float, step: float):
 			if abs(x_r - p_single.x) - (p_single.w + w_r) * 0.5 > max_reach - 80.0:
 				x_r = p_single.x + ((p_single.w + w_r) * 0.5 + (max_reach - 85.0))
 				
-			var plat_l = _create_single_platform(Vector2(x_l, layer_y), w_l, PLATFORM_HEIGHT)
-			var plat_r = _create_single_platform(Vector2(x_r, layer_y), w_r, PLATFORM_HEIGHT)
+			var crumble_split_l = false
+			var crumble_split_r = false
+			if allow_crumbling and randf() < 0.25:
+				if randf() < 0.5:
+					crumble_split_l = true
+				else:
+					crumble_split_r = true
+					
+			var plat_l = _create_single_platform(Vector2(x_l, layer_y), w_l, PLATFORM_HEIGHT, crumble_split_l)
+			var plat_r = _create_single_platform(Vector2(x_r, layer_y), w_r, PLATFORM_HEIGHT, crumble_split_r)
 			platform_container.add_child(plat_l)
 			platform_container.add_child(plat_r)
 			active_platforms.append(plat_l)
@@ -450,7 +530,8 @@ func _spawn_platform_layer(layer_y: float, step: float):
 			if actual_gap_s > max_reach - 80.0:
 				x_single = p_single.x + sign(x_single - p_single.x) * ((p_single.w + w_single) * 0.5 + (max_reach - 85.0))
 				
-			var plat_s = _create_single_platform(Vector2(x_single, layer_y), w_single, PLATFORM_HEIGHT)
+			var is_crumble_s = allow_crumbling and (randf() < 0.18)
+			var plat_s = _create_single_platform(Vector2(x_single, layer_y), w_single, PLATFORM_HEIGHT, is_crumble_s)
 			platform_container.add_child(plat_s)
 			active_platforms.append(plat_s)
 			new_layer_platforms.append({ "x": x_single, "w": w_single })
@@ -460,7 +541,7 @@ func _spawn_platform_layer(layer_y: float, step: float):
 	for p_info in new_layer_platforms:
 		last_layer_x_positions.append(p_info.x)
 
-func _create_single_platform(pos: Vector2, w: float, h: float) -> StaticBody2D:
+func _create_single_platform(pos: Vector2, w: float, h: float, is_crumbling: bool = false) -> StaticBody2D:
 	var body = StaticBody2D.new()
 	body.position = pos
 	
@@ -472,62 +553,211 @@ func _create_single_platform(pos: Vector2, w: float, h: float) -> StaticBody2D:
 	col.one_way_collision_margin = 14.0
 	body.add_child(col)
 	
-	var vis = _create_platform_visual(w, h, false)
+	var vis = _create_platform_visual(w, h, false, is_crumbling)
+	vis.name = "Visual"
 	body.add_child(vis)
+	
+	if is_crumbling:
+		body.add_to_group("crumbling_platforms")
+		body.set_meta("is_crumbling", true)
+		body.set_meta("crumble_state", "idle")
+		body.set_meta("timer", 2.0)
+		body.set_meta("crumb_timer", 0.0)
+		body.set_meta("fall_velocity", 0.0)
+		body.set_meta("width", w)
+		body.set_meta("height", h)
+		body.set_meta("orig_x", pos.x)
+		body.set_meta("rot_speed", randf_range(-1.2, 1.2))
+		
 	return body
 
-func _create_platform_visual(w: float, h: float, is_ground: bool) -> Node2D:
+func _create_platform_visual(w: float, h: float, is_ground: bool, is_crumbling: bool = false) -> Node2D:
 	var node = Node2D.new()
 	
-	# Eis-Körper (Grundplatte mit pixeligem Rand)
+	# Grundkörper: Eisplatte (Tiefes Ozeanblau mit kühlem Farbverlauf, bei brüchigen Plattformen rissiger Graublau-Ton)
 	var base_rect = ColorRect.new()
 	base_rect.size = Vector2(w, h)
 	base_rect.position = Vector2(-w * 0.5, -h * 0.5)
-	base_rect.color = Color(0.18, 0.46, 0.74, 0.96) if not is_ground else Color(0.14, 0.36, 0.62, 1.0)
+	if is_ground:
+		base_rect.color = Color(0.12, 0.32, 0.56, 1.0)
+	elif is_crumbling:
+		base_rect.color = Color(0.20, 0.44, 0.62, 1.0)
+	else:
+		base_rect.color = Color(0.18, 0.46, 0.74, 1.0)
 	node.add_child(base_rect)
 	
-	# Dunklerer unterer Rand / Schatten
-	var shadow_rect = ColorRect.new()
-	shadow_rect.size = Vector2(w, 5.0)
-	shadow_rect.position = Vector2(-w * 0.5, h * 0.5 - 5.0)
-	shadow_rect.color = Color(0.08, 0.22, 0.38, 1.0)
-	node.add_child(shadow_rect)
+	# Untere Eisschicht (dunklere Tiefe / 3D-Kante)
+	var bot_shade = ColorRect.new()
+	bot_shade.size = Vector2(w, 8.0)
+	bot_shade.position = Vector2(-w * 0.5, h * 0.5 - 8.0)
+	bot_shade.color = Color(0.08, 0.20, 0.36, 1.0) if is_crumbling else Color(0.08, 0.22, 0.40, 1.0)
+	node.add_child(bot_shade)
 	
-	# Schneeschicht oben drauf (glänzendes Weiß/Hellcyan)
-	var snow_cap = ColorRect.new()
+	# Dunkler Abschlussstrich ganz unten (2px)
+	var bot_edge = ColorRect.new()
+	bot_edge.size = Vector2(w, 2.0)
+	bot_edge.position = Vector2(-w * 0.5, h * 0.5 - 2.0)
+	bot_edge.color = Color(0.04, 0.12, 0.24, 1.0)
+	node.add_child(bot_edge)
+	
+	# Gechiselte Eisfacetten / Kristall-Lichtreflexe
+	if not is_ground and w >= 80.0:
+		var facet_1 = ColorRect.new()
+		facet_1.size = Vector2(w * 0.35, 4.0)
+		facet_1.position = Vector2(-w * 0.35, -2.0)
+		facet_1.color = Color(0.45, 0.76, 0.96, 0.55) if not is_crumbling else Color(0.55, 0.80, 0.95, 0.45)
+		node.add_child(facet_1)
+		
+		var facet_2 = ColorRect.new()
+		facet_2.size = Vector2(w * 0.25, 3.0)
+		facet_2.position = Vector2(w * 0.12, 1.0)
+		facet_2.color = Color(0.60, 0.85, 1.0, 0.45) if not is_crumbling else Color(0.70, 0.88, 1.0, 0.35)
+		node.add_child(facet_2)
+		
+		# Seitliche Eiskanten-Abschrägung (Pixel-Ecken)
+		var corner_l = ColorRect.new()
+		corner_l.size = Vector2(3.0, 6.0)
+		corner_l.position = Vector2(-w * 0.5, h * 0.5 - 6.0)
+		corner_l.color = Color(0.04, 0.12, 0.24, 1.0)
+		node.add_child(corner_l)
+		
+		var corner_r = ColorRect.new()
+		corner_r.size = Vector2(3.0, 6.0)
+		corner_r.position = Vector2(w * 0.5 - 3.0, h * 0.5 - 6.0)
+		corner_r.color = Color(0.04, 0.12, 0.24, 1.0)
+		node.add_child(corner_r)
+
+	# Schneeschicht oben (flauschiges Weiß mit sanfter Frost-Schattenkante)
 	var snow_h = 7.0 if not is_ground else 10.0
-	snow_cap.size = Vector2(w, snow_h)
-	snow_cap.position = Vector2(-w * 0.5, -h * 0.5)
-	snow_cap.color = Color(0.92, 0.98, 1.0, 1.0)
-	node.add_child(snow_cap)
-	
-	# Kleine hängende Eiszapfen-Pixel an der Unterseite
-	if not is_ground and w >= 160.0:
-		var icicle_count = int(w / 45.0)
+	if not is_crumbling:
+		var snow_cap = ColorRect.new()
+		snow_cap.size = Vector2(w, snow_h)
+		snow_cap.position = Vector2(-w * 0.5, -h * 0.5)
+		snow_cap.color = Color(0.96, 0.98, 1.0, 1.0)
+		node.add_child(snow_cap)
+		
+		var snow_sub = ColorRect.new()
+		snow_sub.size = Vector2(w, 2.0)
+		snow_sub.position = Vector2(-w * 0.5, -h * 0.5 + snow_h - 2.0)
+		snow_sub.color = Color(0.76, 0.88, 0.98, 0.9)
+		node.add_child(snow_sub)
+	else:
+		# Brüchige Plattform: Sichtbare Bruchfuge in der Schneedecke
+		var break_x = -w * 0.12
+		var left_w = (w * 0.5) + break_x - 3.0
+		var right_x = break_x + 3.0
+		var right_w = (w * 0.5) - break_x - 3.0
+		
+		var cap_l = ColorRect.new()
+		cap_l.size = Vector2(left_w, snow_h)
+		cap_l.position = Vector2(-w * 0.5, -h * 0.5)
+		cap_l.color = Color(0.94, 0.96, 0.98, 1.0)
+		node.add_child(cap_l)
+		
+		var cap_r = ColorRect.new()
+		cap_r.size = Vector2(right_w, snow_h)
+		cap_r.position = Vector2(right_x, -h * 0.5)
+		cap_r.color = Color(0.94, 0.96, 0.98, 1.0)
+		node.add_child(cap_r)
+		
+		# Schattenkante links & rechts
+		var sub_l = ColorRect.new()
+		sub_l.size = Vector2(left_w, 2.0)
+		sub_l.position = Vector2(-w * 0.5, -h * 0.5 + snow_h - 2.0)
+		sub_l.color = Color(0.72, 0.84, 0.94, 0.9)
+		node.add_child(sub_l)
+		
+		var sub_r = ColorRect.new()
+		sub_r.size = Vector2(right_w, 2.0)
+		sub_r.position = Vector2(right_x, -h * 0.5 + snow_h - 2.0)
+		sub_r.color = Color(0.72, 0.84, 0.94, 0.9)
+		node.add_child(sub_r)
+
+	# Hängende pixelige Eiszapfen an der Unterseite
+	if not is_ground and w >= 120.0 and not is_crumbling:
+		var icicle_count = int(w / 38.0)
 		for j in range(icicle_count):
-			var icicle = ColorRect.new()
-			var ic_x = (-w * 0.5) + 18.0 + (j * 42.0) + randf_range(-6.0, 6.0)
-			var ic_len = randf_range(6.0, 14.0)
-			icicle.size = Vector2(5.0, ic_len)
-			icicle.position = Vector2(ic_x, h * 0.5)
-			icicle.color = Color(0.72, 0.92, 1.0, 0.88)
-			node.add_child(icicle)
+			var ic_x = (-w * 0.5) + 16.0 + (j * 36.0) + randf_range(-4.0, 4.0)
+			var ic_len = randf_range(8.0, 16.0)
+			
+			# Breiter Eiszapfen-Körper
+			var ic_base = ColorRect.new()
+			ic_base.size = Vector2(4.0, ic_len)
+			ic_base.position = Vector2(ic_x, h * 0.5)
+			ic_base.color = Color(0.48, 0.78, 0.98, 0.85)
+			node.add_child(ic_base)
+			
+			# Spitze des Eiszapfens
+			var ic_tip = ColorRect.new()
+			ic_tip.size = Vector2(2.0, 4.0)
+			ic_tip.position = Vector2(ic_x + 1.0, h * 0.5 + ic_len)
+			ic_tip.color = Color(0.90, 0.96, 1.0, 0.95)
+			node.add_child(ic_tip)
+
+	# Spezifische Risse für brüchige Plattformen
+	if is_crumbling:
+		var cracks = Node2D.new()
+		cracks.name = "Cracks"
+		
+		var c1_x = -w * 0.12
+		var segs = [
+			Vector2(c1_x - 1.0, -h * 0.5 + 2.0), Vector2(3.0, 6.0),
+			Vector2(c1_x + 1.0, -h * 0.5 + 7.0), Vector2(2.0, 6.0),
+			Vector2(c1_x - 2.0, -h * 0.5 + 12.0), Vector2(3.0, 6.0),
+			Vector2(c1_x, h * 0.5 - 6.0), Vector2(2.0, 6.0)
+		]
+		for s in range(0, segs.size(), 2):
+			var cr = ColorRect.new()
+			cr.position = segs[s]
+			cr.size = segs[s + 1]
+			cr.color = Color(0.04, 0.10, 0.20, 0.95)
+			cracks.add_child(cr)
+			
+			var ch = ColorRect.new()
+			ch.position = segs[s] + Vector2(cr.size.x, 0)
+			ch.size = Vector2(1.0, cr.size.y)
+			ch.color = Color(0.85, 0.95, 1.0, 0.8)
+			cracks.add_child(ch)
+			
+		if w >= 130.0:
+			var c2_x = w * 0.20
+			var segs2 = [
+				Vector2(c2_x, -h * 0.5 + 4.0), Vector2(2.0, 5.0),
+				Vector2(c2_x + 2.0, -h * 0.5 + 8.0), Vector2(3.0, 5.0),
+				Vector2(c2_x - 1.0, -h * 0.5 + 12.0), Vector2(2.0, 5.0)
+			]
+			for s in range(0, segs2.size(), 2):
+				var cr2 = ColorRect.new()
+				cr2.position = segs2[s]
+				cr2.size = segs2[s + 1]
+				cr2.color = Color(0.04, 0.10, 0.20, 0.95)
+				cracks.add_child(cr2)
+				
+		node.add_child(cracks)
 			
 	return node
 
-func _spawn_ice_barrier_row(barrier_y: float, meter: int):
-	# Durchgehende Reihe aus kurzen zerstörbaren Eisblöcken über die gesamte Bildschirmbreite (120 bis 1800 px)
+func _spawn_ice_barrier_row(barrier_y: float, meter: int, is_double: bool = false):
+	# Durchgehende Reihe(n) aus kurzen zerstörbaren Eisblöcken über die gesamte Bildschirmbreite (120 bis 1800 px)
 	var total_width = WALL_RIGHT_X - WALL_LEFT_X # 1680.0 px
 	var count = int(round(total_width / ICE_BLOCK_WIDTH)) # 24 Blöcke
 	
-	for i in range(count):
-		var bx = WALL_LEFT_X + (float(i) + 0.5) * ICE_BLOCK_WIDTH
-		var block = _create_destructible_ice_block(Vector2(bx, barrier_y), ICE_BLOCK_WIDTH, ICE_BLOCK_HEIGHT)
-		platform_container.add_child(block)
-		active_platforms.append(block)
+	var row_count = 2 if is_double else 1
+	for r in range(row_count):
+		var row_y = barrier_y - (float(r) * ICE_BLOCK_HEIGHT)
+		var x_stagger = (ICE_BLOCK_WIDTH * 0.5) if (r % 2 == 1) else 0.0
 		
-	# Retro Höhen-Markierung dezent hinter der Reihe platzieren
-	_spawn_barrier_milestone_badge(barrier_y, meter)
+		for i in range(count):
+			var bx = WALL_LEFT_X + (float(i) + 0.5) * ICE_BLOCK_WIDTH + x_stagger
+			if bx > WALL_RIGHT_X - (ICE_BLOCK_WIDTH * 0.5):
+				bx -= total_width
+			var block = _create_destructible_ice_block(Vector2(bx, row_y), ICE_BLOCK_WIDTH, ICE_BLOCK_HEIGHT)
+			platform_container.add_child(block)
+			active_platforms.append(block)
+			
+	# Retro Höhen-Markierung dezent hinter der obersten Reihe platzieren
+	var top_barrier_y = barrier_y - (float(row_count - 1) * ICE_BLOCK_HEIGHT)
+	_spawn_barrier_milestone_badge(top_barrier_y, meter)
 
 func _create_destructible_ice_block(pos: Vector2, w: float = ICE_BLOCK_WIDTH, h: float = ICE_BLOCK_HEIGHT) -> StaticBody2D:
 	var body = StaticBody2D.new()
@@ -548,53 +778,72 @@ func _create_destructible_ice_block(pos: Vector2, w: float = ICE_BLOCK_WIDTH, h:
 func _create_ice_block_visual(w: float, h: float) -> Node2D:
 	var node = Node2D.new()
 	
-	# Eis-Grundkörper (kräftiges, eisiges Cyan-Blau)
-	var base_rect = ColorRect.new()
-	base_rect.size = Vector2(w, h)
-	base_rect.position = Vector2(-w * 0.5, -h * 0.5)
-	base_rect.color = Color(0.20, 0.58, 0.86, 0.98)
-	node.add_child(base_rect)
+	# Äußerer dunkler Pixel-Rahmen für perfekten Retro-Raster-Look
+	var border = ColorRect.new()
+	border.size = Vector2(w, h)
+	border.position = Vector2(-w * 0.5, -h * 0.5)
+	border.color = Color(0.06, 0.14, 0.24, 1.0)
+	node.add_child(border)
 	
-	# Dunklerer Schatten-Rand unten (3px)
+	# Eis-Grundkörper (kräftiges, eisiges Cyan)
+	var body_rect = ColorRect.new()
+	body_rect.size = Vector2(w - 2.0, h - 2.0)
+	body_rect.position = Vector2(-w * 0.5 + 1.0, -h * 0.5 + 1.0)
+	body_rect.color = Color(0.24, 0.62, 0.90, 1.0)
+	node.add_child(body_rect)
+	
+	# Dunklerer Schatten-Rand unten (3px) und rechts (2px)
 	var bot_edge = ColorRect.new()
-	bot_edge.size = Vector2(w, 3.0)
-	bot_edge.position = Vector2(-w * 0.5, h * 0.5 - 3.0)
-	bot_edge.color = Color(0.08, 0.24, 0.44, 1.0)
+	bot_edge.size = Vector2(w - 2.0, 3.0)
+	bot_edge.position = Vector2(-w * 0.5 + 1.0, h * 0.5 - 4.0)
+	bot_edge.color = Color(0.08, 0.26, 0.48, 1.0)
 	node.add_child(bot_edge)
 	
-	# Dunklere Fugen-Kante rechts (2px) für klaren Block-Raster-Look
 	var right_edge = ColorRect.new()
-	right_edge.size = Vector2(2.0, h)
-	right_edge.position = Vector2(w * 0.5 - 2.0, -h * 0.5)
-	right_edge.color = Color(0.10, 0.28, 0.48, 1.0)
+	right_edge.size = Vector2(2.0, h - 2.0)
+	right_edge.position = Vector2(w * 0.5 - 3.0, -h * 0.5 + 1.0)
+	right_edge.color = Color(0.10, 0.30, 0.52, 1.0)
 	node.add_child(right_edge)
 	
-	# Heller Glanz-Streifen links (1px)
+	# Heller Glanz-Streifen links (2px)
 	var left_edge = ColorRect.new()
-	left_edge.size = Vector2(1.0, h - 3.0)
-	left_edge.position = Vector2(-w * 0.5, -h * 0.5 + 4.0)
-	left_edge.color = Color(0.65, 0.88, 1.0, 0.65)
+	left_edge.size = Vector2(2.0, h - 4.0)
+	left_edge.position = Vector2(-w * 0.5 + 1.0, -h * 0.5 + 1.0)
+	left_edge.color = Color(0.72, 0.92, 1.0, 0.75)
 	node.add_child(left_edge)
 	
-	# Schneekappe / Frost-Highlight oben drauf (4px weiß-hellcyan)
+	# Schneekappe / Frost-Highlight oben drauf (4px weiß)
 	var snow_cap = ColorRect.new()
-	snow_cap.size = Vector2(w, 4.0)
-	snow_cap.position = Vector2(-w * 0.5, -h * 0.5)
-	snow_cap.color = Color(0.92, 0.98, 1.0, 1.0)
+	snow_cap.size = Vector2(w - 2.0, 4.0)
+	snow_cap.position = Vector2(-w * 0.5 + 1.0, -h * 0.5 + 1.0)
+	snow_cap.color = Color(0.96, 0.98, 1.0, 1.0)
 	node.add_child(snow_cap)
 	
-	# Kristalline Glanz-Facette in der Mitte
+	# Horizontale Chisel-Fuge in der Mitte (wie ein echter Eis-Backstein)
+	var mid_groove = ColorRect.new()
+	mid_groove.size = Vector2(w - 8.0, 2.0)
+	mid_groove.position = Vector2(-w * 0.5 + 4.0, 0.0)
+	mid_groove.color = Color(0.12, 0.38, 0.65, 0.9)
+	node.add_child(mid_groove)
+	
+	var mid_hi = ColorRect.new()
+	mid_hi.size = Vector2(w - 8.0, 1.0)
+	mid_hi.position = Vector2(-w * 0.5 + 4.0, 2.0)
+	mid_hi.color = Color(0.60, 0.88, 1.0, 0.6)
+	node.add_child(mid_hi)
+	
+	# Kristalline Facette
 	var facet = ColorRect.new()
-	facet.size = Vector2(w * 0.40, 3.0)
-	facet.position = Vector2(-w * 0.20, -2.0)
-	facet.color = Color(0.82, 0.95, 1.0, 0.65)
+	facet.size = Vector2(w * 0.35, 4.0)
+	facet.position = Vector2(-w * 0.25, -6.0)
+	facet.color = Color(0.78, 0.92, 1.0, 0.55)
 	node.add_child(facet)
 	
-	# Kleiner funkelnder Kristall-Pixel
+	# Funkelnder Kristall-Pixel
 	var sparkle = ColorRect.new()
-	sparkle.size = Vector2(4.0, 4.0)
-	sparkle.position = Vector2(w * 0.22, 2.0)
-	sparkle.color = Color(0.96, 1.0, 1.0, 0.85)
+	sparkle.size = Vector2(3.0, 3.0)
+	sparkle.position = Vector2(w * 0.25, -5.0)
+	sparkle.color = Color(1.0, 1.0, 1.0, 0.95)
 	node.add_child(sparkle)
 	
 	return node
@@ -621,7 +870,7 @@ func _spawn_barrier_milestone_badge(barrier_y: float, meter: int):
 	badge.add_theme_stylebox_override("panel", style)
 	
 	var lbl = Label.new()
-	lbl.text = "❄  %d M  ❄" % meter
+	lbl.text = "%d M" % meter
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", 22)
@@ -708,6 +957,7 @@ func _create_player_node(info: Dictionary, spawn_pos: Vector2):
 	body.position = spawn_pos
 	body.collision_layer = 2
 	body.collision_mask = 1 # Kollidiert mit Plattformen & Wänden
+	body.z_index = 10
 	
 	# Collision Shape
 	var col = CollisionShape2D.new()
@@ -760,6 +1010,8 @@ func _instantiate_character_sprite(character_name: String) -> AnimatedSprite2D:
 		
 	# Prüfe ob Template-Szene existiert (Groß-/Kleinschreibung tolerant)
 	var possible_names = [character_name, character_name.capitalize(), character_name.to_pascal_case()]
+	if character_name.to_lower() == "cedi" or character_name.strip_edges().is_empty() or character_name.to_lower() == "unknown":
+		possible_names.append("Cedric")
 	for c_name in possible_names:
 		var scene_path = "res://scenes/characters/%s.tscn" % c_name
 		if ResourceLoader.exists(scene_path):
@@ -809,6 +1061,8 @@ func _instantiate_character_sprite(character_name: String) -> AnimatedSprite2D:
 
 func _create_player_overhead_badge(p_name: String, team_col: Color) -> Node2D:
 	var container = Node2D.new()
+	container.z_index = 2
+	container.z_as_relative = true
 	
 	# Kleiner Pfeil in Teamfarbe
 	var arrow = Polygon2D.new()
@@ -825,81 +1079,15 @@ func _create_player_overhead_badge(p_name: String, team_col: Color) -> Node2D:
 	lbl.size = Vector2(140, 24)
 	lbl.add_theme_font_size_override("font_size", 14)
 	lbl.add_theme_color_override("font_color", team_col)
-	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	lbl.add_theme_constant_override("outline_size", 4)
+	lbl.add_theme_color_override("font_outline_color", Color(0.04, 0.04, 0.06, 0.98))
+	lbl.add_theme_constant_override("outline_size", 6)
 	container.add_child(lbl)
 	
 	return container
 
 # ==============================================================================
-#                             TEAM SIDEBAR & HUD
+#                             HUD & HÖHE
 # ==============================================================================
-
-func _build_team_sidebar():
-	for child in team_sidebar.get_children():
-		child.queue_free()
-		
-	for team_idx in range(NetworkManager.computed_teams.size()):
-		var team = NetworkManager.computed_teams[team_idx]
-		var team_col = team.get("color", Color(1, 1, 1))
-		
-		var team_panel = PanelContainer.new()
-		var sb = StyleBoxFlat.new()
-		sb.bg_color = Color(team_col.r * 0.15, team_col.g * 0.15, team_col.b * 0.15, 0.85)
-		sb.border_width_left = 3
-		sb.border_color = team_col
-		sb.corner_radius_top_left = 6
-		sb.corner_radius_bottom_left = 6
-		sb.content_margin_left = 10
-		sb.content_margin_right = 10
-		sb.content_margin_top = 8
-		sb.content_margin_bottom = 8
-		team_panel.add_theme_stylebox_override("panel", sb)
-		
-		var vbox = VBoxContainer.new()
-		vbox.add_theme_constant_override("separation", 4)
-		
-		var team_title = Label.new()
-		team_title.text = team.get("name", "Team")
-		team_title.add_theme_font_size_override("font_size", 16)
-		team_title.add_theme_color_override("font_color", team_col)
-		vbox.add_child(team_title)
-		
-		for p in team.get("players", []):
-			var pid = _get_player_id(p)
-			var row = HBoxContainer.new()
-			row.add_theme_constant_override("separation", 8)
-			
-			var char_name = str(p.get("character", "Cedric"))
-			var icon = TextureRect.new()
-			icon.custom_minimum_size = Vector2(22, 22)
-			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			if NetworkManager.character_textures.has(char_name):
-				icon.texture = NetworkManager.character_textures[char_name]
-			row.add_child(icon)
-			
-			var p_label = Label.new()
-			p_label.text = str(p.get("name", "Spieler"))
-			p_label.add_theme_font_size_override("font_size", 14)
-			p_label.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
-			row.add_child(p_label)
-			
-			var status_tag = Label.new()
-			status_tag.text = "▲"
-			status_tag.add_theme_font_size_override("font_size", 12)
-			status_tag.add_theme_color_override("font_color", Color(0.35, 0.95, 0.45))
-			row.add_child(status_tag)
-			
-			vbox.add_child(row)
-			
-			if players_data.has(pid):
-				players_data[pid]["hud_card"] = row
-				players_data[pid]["hud_status_label"] = status_tag
-				
-		team_panel.add_child(vbox)
-		team_sidebar.add_child(team_panel)
 
 func _update_altitude_hud():
 	var floor_top_y = INITIAL_FLOOR_Y - (INITIAL_FLOOR_HEIGHT * 0.5)
@@ -915,54 +1103,9 @@ func _update_altitude_hud():
 	altitude_label.text = "HÖHE: %d m" % current_meters
 	_update_dynamic_background(float(current_meters))
 
-func _update_dynamic_background(alt_m: float):
-	if sky_rect == null or not is_instance_valid(sky_rect):
-		return
-		
-	# Farbverlauf basierend auf erreichter Höhe:
-	# 0m bis 60m: Eisiges Tal (Arktisches Dunkelblau)
-	# 60m bis 160m: Hoher Berggipfel / Frostiges Eis-Azur
-	# 160m bis 280m: Dämmerung / Alpin-Violett
-	# 280m bis 420m: Stratosphäre (Tiefes Indigo-Nachtblau)
-	# 420m+: Weltraum / Kosmos (Tiefschwarz mit funkelnden Sternen)
-	var col_valley = Color(0.05, 0.11, 0.22)
-	var col_peak = Color(0.07, 0.20, 0.36)
-	var col_twilight = Color(0.14, 0.10, 0.30)
-	var col_strato = Color(0.06, 0.04, 0.18)
-	var col_space = Color(0.02, 0.02, 0.06)
-	
-	var target_col: Color
-	if alt_m < 60.0:
-		var t = clampf(alt_m / 60.0, 0.0, 1.0)
-		target_col = col_valley.lerp(col_peak, t)
-	elif alt_m < 160.0:
-		var t = clampf((alt_m - 60.0) / 100.0, 0.0, 1.0)
-		target_col = col_peak.lerp(col_twilight, t)
-	elif alt_m < 280.0:
-		var t = clampf((alt_m - 160.0) / 120.0, 0.0, 1.0)
-		target_col = col_twilight.lerp(col_strato, t)
-	else:
-		var t = clampf((alt_m - 280.0) / 140.0, 0.0, 1.0)
-		target_col = col_strato.lerp(col_space, t)
-		
-	sky_rect.color = sky_rect.color.lerp(target_col, 0.08)
-	
-	# Sterne ab 100m sanft einblenden
-	if star_field and is_instance_valid(star_field):
-		if alt_m > 100.0:
-			star_field.emitting = true
-			var star_alpha = clampf((alt_m - 100.0) / 180.0, 0.0, 1.0)
-			star_field.modulate.a = star_alpha
-		else:
-			star_field.emitting = false
-			star_field.modulate.a = 0.0
-			
-	# Schnee-Partikel oberhalb der Stratosphäre (> 240m) langsam ausdünnen
-	if snow_particles and is_instance_valid(snow_particles):
-		if alt_m > 240.0:
-			snow_particles.modulate.a = clampf(1.0 - ((alt_m - 240.0) / 160.0), 0.15, 1.0)
-		else:
-			snow_particles.modulate.a = 1.0
+func _update_dynamic_background(_alt_m: float):
+	if sky_rect and is_instance_valid(sky_rect):
+		sky_rect.color = Color(0, 0, 0, 1)
 
 # ==============================================================================
 #                             SPIELABLAUF & COUNTDOWN
@@ -971,30 +1114,256 @@ func _update_dynamic_background(alt_m: float):
 func _on_start_pressed():
 	AudioManager.play_music("ice_climbers")
 	if pixel_back_btn:
-		pixel_back_btn.visible = false
-	if intro_background:
+		pixel_back_btn.visible = true
+	if is_instance_valid(intro_background):
 		intro_background.visible = false
 		intro_background.process_mode = Node.PROCESS_MODE_DISABLED
-		# Vollständig entfernen, damit die TileMap-Deckenkollision bei y=0 komplett verschwindet!
 		intro_background.queue_free()
 		intro_background = null
 	intro_container.visible = false
+	_enter_test_room()
+
+func _enter_test_room():
+	game_state = "test_room"
+	is_test_room = true
+	test_room_start_triggered = false
+	
 	world.visible = true
 	hud.visible = true
-	countdown_label.visible = true
+	countdown_label.visible = false
+	
+	top_banner.text = "ICE CLIMBERS: TESTRAUM"
+	altitude_label.text = "TESTRAUM"
+	
+	camera.position = Vector2(VIEWPORT_WIDTH * 0.5, 540.0)
+	
+	_build_test_room_arena()
+	_reset_players_to_floor()
+	
+	NetworkManager.broadcast({
+		"type": "state_change",
+		"state": "ice_climbers",
+		"enabled": true,
+		"countdown_text": "TEST",
+		"banner_text": "Testraum: Steuerung ausprobieren!"
+	})
+
+func _build_test_room_arena():
+	active_platforms.clear()
+	for child in platform_container.get_children():
+		child.queue_free()
+		
+	test_room_container = Node2D.new()
+	test_room_container.name = "TestRoomContainer"
+	test_room_container.z_index = 0
+	world.add_child(test_room_container)
+	if is_instance_valid(player_container):
+		world.move_child(test_room_container, player_container.get_index())
+	
+	_spawn_initial_floor()
+	
+	# Test-Plattformen (Tier 1 bis Tier 5, keine Überlappung mit Blöcken!)
+	var test_plats = [
+		# Tier 1 (Y = 810)
+		{ "pos": Vector2(460.0, 810.0), "w": 240.0 },
+		{ "pos": Vector2(1460.0, 810.0), "w": 240.0 },
+		
+		# Tier 2 (Y = 660)
+		{ "pos": Vector2(280.0, 660.0), "w": 180.0 },
+		{ "pos": Vector2(960.0, 660.0), "w": 300.0 },
+		{ "pos": Vector2(1640.0, 660.0), "w": 180.0 },
+		
+		# Tier 3 (Y = 510)
+		{ "pos": Vector2(560.0, 510.0), "w": 260.0 },
+		{ "pos": Vector2(1360.0, 510.0), "w": 260.0 },
+		
+		# Tier 4 (Y = 360)
+		{ "pos": Vector2(280.0, 360.0), "w": 180.0 },
+		{ "pos": Vector2(960.0, 360.0), "w": 280.0 },
+		{ "pos": Vector2(1640.0, 360.0), "w": 180.0 },
+		
+		# Tier 5 (Y = 210)
+		{ "pos": Vector2(600.0, 210.0), "w": 260.0 },
+		{ "pos": Vector2(1320.0, 210.0), "w": 260.0 }
+	]
+	for p_info in test_plats:
+		var p_node = _create_single_platform(p_info["pos"], p_info["w"], PLATFORM_HEIGHT, false)
+		test_room_container.add_child(p_node)
+		active_platforms.append(p_node)
+		
+	# Zerstörbare Eisblöcke zum Testen (keine Überlappung mit Plattformen!)
+	var block_configs = [
+		# Tier 1 Mitte (Y = 810)
+		Vector2(855.0, 810.0), Vector2(925.0, 810.0), Vector2(995.0, 810.0), Vector2(1065.0, 810.0),
+		
+		# Tier 2 Seiten (Y = 660)
+		Vector2(500.0, 660.0), Vector2(570.0, 660.0), Vector2(640.0, 660.0),
+		Vector2(1280.0, 660.0), Vector2(1350.0, 660.0), Vector2(1420.0, 660.0),
+		
+		# Tier 3 Mitte (Y = 510)
+		Vector2(855.0, 510.0), Vector2(925.0, 510.0), Vector2(995.0, 510.0), Vector2(1065.0, 510.0),
+		
+		# Tier 4 Seiten (Y = 360)
+		Vector2(500.0, 360.0), Vector2(570.0, 360.0), Vector2(640.0, 360.0),
+		Vector2(1280.0, 360.0), Vector2(1350.0, 360.0), Vector2(1420.0, 360.0),
+		
+		# Tier 5 Mitte (Y = 210)
+		Vector2(855.0, 210.0), Vector2(925.0, 210.0), Vector2(995.0, 210.0), Vector2(1065.0, 210.0)
+	]
+	for b_pos in block_configs:
+		var block = _create_destructible_ice_block(b_pos, ICE_BLOCK_WIDTH, ICE_BLOCK_HEIGHT)
+		block.add_to_group("test_room_blocks")
+		test_room_container.add_child(block)
+		active_platforms.append(block)
+		
+	_spawn_test_room_floor_button()
+
+func _spawn_test_room_floor_button():
+	if is_instance_valid(test_room_ui):
+		test_room_ui.queue_free()
+		
+	test_room_ui = Control.new()
+	test_room_ui.name = "TestRoomUI"
+	test_room_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	test_room_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	test_room_ui.theme = preload("res://resources/global_button_theme.tres")
+	hud.add_child(test_room_ui)
+	
+	# Primärbutton mittig der X-Achse mit exakt 24px Abstand zum unteren Bildschirmrand
+	test_room_floor_btn = GameButtonScene.instantiate()
+	test_room_floor_btn.theme = preload("res://resources/global_button_theme.tres")
+	test_room_floor_btn.text = "SPIEL STARTEN"
+	test_room_floor_btn.custom_minimum_size = Vector2(360, 60)
+	test_room_floor_btn.pivot_offset = Vector2(180, 30)
+	test_room_floor_btn.anchor_left = 0.5
+	test_room_floor_btn.anchor_right = 0.5
+	test_room_floor_btn.anchor_top = 1.0
+	test_room_floor_btn.anchor_bottom = 1.0
+	test_room_floor_btn.offset_left = -180.0
+	test_room_floor_btn.offset_right = 180.0
+	test_room_floor_btn.offset_top = -84.0
+	test_room_floor_btn.offset_bottom = -24.0
+	test_room_floor_btn.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	test_room_floor_btn.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	test_room_floor_btn.pressed.connect(_on_test_room_start_button_pressed)
+	_connect_buttons_sfx(test_room_floor_btn)
+	test_room_ui.add_child(test_room_floor_btn)
+
+func _on_test_room_start_button_pressed():
+	if test_room_start_triggered:
+		return
+	test_room_start_triggered = true
+	AudioManager.play_sfx("button_press")
+	
+	if is_instance_valid(test_room_floor_btn):
+		test_room_floor_btn.disabled = true
+		var tw = create_tween()
+		tw.tween_property(test_room_floor_btn, "scale", Vector2(0.96, 0.96), 0.1)
+		tw.tween_property(test_room_floor_btn, "modulate:a", 0.0, 0.25)
+		
+	_start_real_game_from_test_room()
+
+func _start_real_game_from_test_room():
+	is_test_room = false
+	
+	if is_instance_valid(intro_background):
+		intro_background.visible = false
+		intro_background.process_mode = Node.PROCESS_MODE_DISABLED
+		intro_background.queue_free()
+		intro_background = null
+		
+	if is_instance_valid(test_room_container):
+		test_room_container.queue_free()
+		test_room_container = null
+	if is_instance_valid(test_room_ui):
+		test_room_ui.queue_free()
+		test_room_ui = null
+		
+	active_platforms.clear()
+	for child in platform_container.get_children():
+		child.queue_free()
+		
+	_spawn_initial_floor()
+	current_top_platform_y = INITIAL_FLOOR_Y - (INITIAL_FLOOR_HEIGHT * 0.5)
+	highest_climbed_y = current_top_platform_y
+	last_layer_platforms.clear()
+	last_layer_x_positions.clear()
+	next_ice_barrier_meter = 100
+	_generate_platforms_up_to(INITIAL_FLOOR_Y - 1800.0)
+	
+	_reset_players_to_floor()
+	
+	camera.position = Vector2(VIEWPORT_WIDTH * 0.5, 540.0)
+	top_banner.text = "ICE CLIMBERS"
+	_update_altitude_hud()
+	
 	game_state = "countdown"
 	countdown_timer = 3.0
+	countdown_label.visible = true
 	countdown_label.text = "3"
 	countdown_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	AudioManager.play_sfx("countdown_321go")
 	
-	# Handys bereits auf den Ice-Climbers-Bildschirm schalten, aber DEAKTIVIERT (wie bei Cookie Clickers)!
 	NetworkManager.broadcast({
 		"type": "state_change",
 		"state": "ice_climbers",
 		"enabled": false,
-		"countdown_text": "3"
+		"countdown_text": "3",
+		"banner_text": "Bereithalten... Countdown läuft!"
 	})
+
+func _reset_players_to_floor():
+	var all_pids = players_data.keys()
+	var count = max(1, all_pids.size())
+	var spawn_width = (WALL_RIGHT_X - WALL_LEFT_X) - 200.0
+	var spacing = spawn_width / float(count + 1)
+	var floor_top_y = INITIAL_FLOOR_Y - (INITIAL_FLOOR_HEIGHT * 0.5)
+	
+	for i in range(all_pids.size()):
+		var pid = all_pids[i]
+		var p = players_data[pid]
+		var body: CharacterBody2D = p["node"]
+		if not is_instance_valid(body):
+			continue
+			
+		var spawn_x = WALL_LEFT_X + 100.0 + ((i + 1) * spacing)
+		var spawn_y = floor_top_y - 38.0
+		body.position = Vector2(spawn_x, spawn_y)
+		body.velocity = Vector2(0.0, 15.0)
+		body.collision_layer = 2
+		body.collision_mask = 1
+		body.modulate = Color(1, 1, 1, 1)
+		body.scale = Vector2(1, 1)
+		
+		p["alive"] = true
+		p["input_dir"] = 0.0
+		p["input_jump"] = false
+		p["is_holding_jump"] = false
+		p["jump_buffered"] = 0.0
+		p["coyote_time"] = 0.0
+		
+		var anim: AnimatedSprite2D = p["anim_sprite"]
+		if anim:
+			anim.play("idle")
+
+func _schedule_test_block_respawn(pos: Vector2):
+	if game_state == "test_room":
+		get_tree().create_timer(4.0).timeout.connect(func():
+			if game_state == "test_room" and is_instance_valid(test_room_container):
+				_respawn_test_block(pos)
+		)
+
+func _respawn_test_block(pos: Vector2):
+	if game_state != "test_room" or not is_instance_valid(test_room_container):
+		return
+	var block = _create_destructible_ice_block(pos, ICE_BLOCK_WIDTH, ICE_BLOCK_HEIGHT)
+	block.add_to_group("test_room_blocks")
+	test_room_container.add_child(block)
+	active_platforms.append(block)
+	
+	block.scale = Vector2(0.1, 0.1)
+	var tw = create_tween()
+	tw.tween_property(block, "scale", Vector2(1.0, 1.0), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _process(delta):
 	if game_state == "countdown":
@@ -1028,7 +1397,8 @@ func _process_countdown(delta):
 			"type": "state_change",
 			"state": "ice_climbers",
 			"enabled": true,
-			"countdown_text": "GO!"
+			"countdown_text": "GO!",
+			"banner_text": "Klettere nach oben! Nicht abstürzen!"
 		})
 		
 		# Countdown nach 0.6s sanft ausblenden
@@ -1044,11 +1414,16 @@ func _physics_process(delta):
 	if game_state == "countdown":
 		_process_countdown_physics(delta)
 		return
+	if game_state == "test_room":
+		_process_local_keyboard_input()
+		_update_all_players(delta)
+		return
 	if game_state != "playing":
 		return
 		
 	_process_local_keyboard_input()
 	_update_all_players(delta)
+	_process_crumbling_platforms(delta)
 	_update_camera(delta)
 	_check_player_eliminations()
 	_recycle_old_platforms()
@@ -1069,6 +1444,9 @@ func _process_countdown_physics(_delta: float):
 		if anim.animation != "idle":
 			anim.play("idle")
 
+var _last_kb_dir: float = 0.0
+var _last_kb_jump: bool = false
+
 func _process_local_keyboard_input():
 	# Erlaubt das Testen des ersten Spielers direkt über Pfeiltasten / WASD
 	var active_pids = players_data.keys()
@@ -1080,19 +1458,30 @@ func _process_local_keyboard_input():
 		return
 		
 	var dir = Input.get_axis("ui_left", "ui_right")
+	if dir == 0.0:
+		if Input.is_key_pressed(KEY_A):
+			dir = -1.0
+		elif Input.is_key_pressed(KEY_D):
+			dir = 1.0
+
 	if dir != 0.0:
 		p["input_dir"] = dir
-	elif Input.is_key_pressed(KEY_A):
-		p["input_dir"] = -1.0
-	elif Input.is_key_pressed(KEY_D):
-		p["input_dir"] = 1.0
-	else:
+		_last_kb_dir = dir
+	elif _last_kb_dir != 0.0:
+		# Setze nur auf 0 zurück, wenn die Richtungs-Eingabe vorher von der Tastatur kam
 		p["input_dir"] = 0.0
+		_last_kb_dir = 0.0
 		
 	var j_held = Input.is_action_pressed("ui_accept") or Input.is_key_pressed(KEY_SPACE) or Input.is_key_pressed(KEY_W)
-	if j_held and not p.get("is_holding_jump", false):
-		p["jump_buffered"] = 0.16
-	p["is_holding_jump"] = j_held
+	if j_held:
+		if not _last_kb_jump:
+			p["jump_buffered"] = 0.25
+		p["is_holding_jump"] = true
+		_last_kb_jump = true
+	elif _last_kb_jump:
+		# Setze Sprunghaltung nur zurück, wenn sie über Tastatur gehalten wurde
+		p["is_holding_jump"] = false
+		_last_kb_jump = false
 
 func _update_all_players(delta: float):
 	for pid in players_data:
@@ -1123,18 +1512,17 @@ func _update_all_players(delta: float):
 			body.velocity.y = JUMP_VELOCITY
 			p["jump_buffered"] = 0.0
 			p["coyote_time"] = 0.0
-			p["jump_cut_immune"] = 0.20 # Erhöht auf 200ms für zuverlässige Sprünge auch bei schnellem Antippen auf Smartphones
+			p["jump_cut_immune"] = 0.04 # 40ms kurzes Takeoff-Fenster für extrem reaktive Sprunghöhe
 			AudioManager.play_sfx("jump")
 			_spawn_jump_dust(body.position + Vector2(0, 24))
 			
 		# Variable Sprunghöhe (Mario-Mechanik):
 		# Wenn der Sprung-Knopf losgelassen wird während der Charakter nach oben steigt,
-		# wird der Sprung gekappt (kurzer Klick = kürzerer Sprung, langer Klick = voller Sprung).
-		# Aber erst nach der minimalen Takeoff-Immunität (200ms)!
+		# wird der Sprung sofort gekappt (kurzer Tap = kleiner Sprung ca. 75-80px, halten = voller Sprung ca. 192px).
 		if p.has("jump_cut_immune") and p["jump_cut_immune"] > 0.0:
 			p["jump_cut_immune"] -= delta
-		elif not p.get("is_holding_jump", false) and body.velocity.y < -420.0:
-			body.velocity.y = -420.0
+		elif not p.get("is_holding_jump", false) and body.velocity.y < -320.0:
+			body.velocity.y = -320.0
 			
 		# Horizontale Bewegung (Snappy Arcade Movement)
 		var target_vx = p["input_dir"] * MOVE_SPEED
@@ -1181,6 +1569,136 @@ func _update_all_players(delta: float):
 		elif body.position.x > WALL_RIGHT_X - 24.0:
 			body.position.x = WALL_RIGHT_X - 24.0
 			body.velocity.x = 0.0
+
+func _process_crumbling_platforms(delta: float):
+	var crumbling_nodes = get_tree().get_nodes_in_group("crumbling_platforms")
+	if crumbling_nodes.is_empty():
+		return
+		
+	# 1. Ermittle welche brüchigen Plattformen aktuell von mindestens einem lebenden Spieler betreten werden
+	var stepped_plats: Dictionary = {}
+	for pid in players_data:
+		var p = players_data[pid]
+		if not p.get("alive", false):
+			continue
+		var p_body: CharacterBody2D = p["node"]
+		if not is_instance_valid(p_body):
+			continue
+			
+		# A) Prüfung über Slide-Kollision (Bodenkontakt)
+		if p_body.is_on_floor():
+			var coll_count = p_body.get_slide_collision_count()
+			for c_idx in range(coll_count):
+				var col = p_body.get_slide_collision(c_idx)
+				if col.get_normal().y < -0.5:
+					var collider = col.get_collider()
+					if is_instance_valid(collider) and collider.is_in_group("crumbling_platforms"):
+						stepped_plats[collider] = true
+						
+		# B) Robuste Geometrie-Prüfung (Unterkante der Spieler-Kapsel liegt bei Y + 38.0)
+		var feet_pos = p_body.global_position + Vector2(0, 38.0)
+		for plat in crumbling_nodes:
+			if not is_instance_valid(plat):
+				continue
+			if plat.get_meta("crumble_state", "idle") == "falling":
+				continue
+			var pw = plat.get_meta("width", 200.0)
+			var ph = plat.get_meta("height", 24.0)
+			var plat_pos = plat.global_position
+			var plat_top = plat_pos.y - ph * 0.5
+			if abs(feet_pos.x - plat_pos.x) <= pw * 0.5 + 6.0:
+				if feet_pos.y >= plat_top - 6.0 and feet_pos.y <= plat_top + 16.0:
+					if p_body.velocity.y >= -15.0:
+						stepped_plats[plat] = true
+
+	# 2. Status-Maschine für jede brüchige Plattform aktualisieren
+	for plat in crumbling_nodes:
+		if not is_instance_valid(plat):
+			continue
+			
+		var state = plat.get_meta("crumble_state", "idle")
+		var is_stepped = stepped_plats.has(plat)
+		
+		match state:
+			"idle":
+				if is_stepped:
+					# Spieler hat die Plattform betreten
+					plat.set_meta("crumble_state", "stepped")
+					plat.set_meta("has_been_stepped", true)
+					AudioManager.play_sfx("hit")
+					
+			"stepped":
+				if not is_stepped:
+					# Spieler war drauf und ist nun abgesprungen / weitergegangen!
+					# 2-Sekunden-Countdown startet
+					plat.set_meta("crumble_state", "countdown")
+					plat.set_meta("timer", 2.0)
+					plat.set_meta("crumb_timer", 0.0)
+					AudioManager.play_sfx("hit")
+					
+			"countdown":
+				var t = plat.get_meta("timer", 2.0) - delta
+				plat.set_meta("timer", t)
+				
+				# Visuelles Zittern / Rütteln (wird intensiver je näher der Einsturz rückt)
+				var vis = plat.get_node_or_null("Visual")
+				var progress = clampf(1.0 - (t / 2.0), 0.0, 1.0)
+				var shake_amp = 1.5 + progress * 3.5
+				if vis:
+					vis.position.x = sin(Time.get_ticks_msec() * 0.05) * shake_amp
+					var cracks = vis.get_node_or_null("Cracks")
+					if cracks:
+						cracks.modulate = Color(1.3, 0.7, 0.7) if (int(Time.get_ticks_msec() / 80) % 2 == 0) else Color(1.0, 1.0, 1.0)
+						
+				# Bröckelnde Eisstaub-Partikel fallen herab
+				var ct = plat.get_meta("crumb_timer", 0.0) - delta
+				if ct <= 0.0:
+					plat.set_meta("crumb_timer", randf_range(0.12, 0.22))
+					var pw = plat.get_meta("width", 200.0)
+					_spawn_crumb_particle(plat.global_position + Vector2(randf_range(-pw * 0.4, pw * 0.4), 10.0))
+					
+				if t <= 0.0:
+					# 2 Sekunden abgelaufen: Plattform stürzt ab!
+					plat.set_meta("crumble_state", "falling")
+					plat.set_meta("fall_velocity", 120.0)
+					plat.collision_layer = 0
+					plat.collision_mask = 0
+					for child in plat.get_children():
+						if child is CollisionShape2D:
+							child.set_deferred("disabled", true)
+					AudioManager.play_sfx("block_break")
+					
+					var pw = plat.get_meta("width", 200.0)
+					for k in range(3):
+						var offset_x = (-0.35 + 0.35 * float(k)) * pw
+						_spawn_ice_shatter_fx(plat.global_position + Vector2(offset_x, 0))
+						
+			"falling":
+				var vy = plat.get_meta("fall_velocity", 120.0) + GRAVITY * 1.1 * delta
+				plat.set_meta("fall_velocity", vy)
+				plat.position.y += vy * delta
+				plat.rotation += plat.get_meta("rot_speed", 0.6) * delta
+				
+				# Aufräumen sobald unter Bildschirmrand
+				if plat.position.y > camera.position.y + 750.0:
+					active_platforms.erase(plat)
+					plat.queue_free()
+
+func _spawn_crumb_particle(pos: Vector2):
+	if fx_container == null:
+		return
+	var dot = ColorRect.new()
+	var dsize = randf_range(2.0, 4.0)
+	dot.size = Vector2(dsize, dsize)
+	dot.position = pos
+	dot.color = Color(0.85, 0.95, 1.0, 0.85)
+	fx_container.add_child(dot)
+	
+	var tw = create_tween().set_parallel(true)
+	tw.tween_property(dot, "position:y", pos.y + randf_range(30.0, 65.0), 0.35)
+	tw.tween_property(dot, "position:x", pos.x + randf_range(-6.0, 6.0), 0.35)
+	tw.tween_property(dot, "modulate:a", 0.0, 0.35)
+	tw.finished.connect(func(): if is_instance_valid(dot): dot.queue_free())
 
 func _update_camera(delta: float):
 	# Finde die höchste Y-Position aller noch lebenden Spieler
@@ -1235,14 +1753,6 @@ func _eliminate_player(pid: int):
 	tw.tween_property(body, "modulate:a", 0.0, 0.45)
 	tw.tween_property(body, "scale", Vector2(0.2, 0.2), 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	
-	# Sidebar HUD aktualisieren
-	if p.has("hud_status_label") and is_instance_valid(p["hud_status_label"]):
-		var lbl: Label = p["hud_status_label"]
-		lbl.text = "✖"
-		lbl.add_theme_color_override("font_color", Color(1.0, 0.25, 0.25))
-	if p.has("hud_card") and is_instance_valid(p["hud_card"]):
-		p["hud_card"].modulate = Color(0.5, 0.5, 0.5, 0.6)
-		
 	# Siegbedingung prüfen
 	_check_victory_condition()
 
@@ -1272,36 +1782,15 @@ func _check_victory_condition():
 func _trigger_victory(winning_team_idx: int):
 	game_state = "game_over"
 	
-	# Handys zurück auf Waiting setzen
-	NetworkManager.broadcast({
-		"type": "state_change",
-		"state": "waiting"
-	})
-	
-	victory_overlay.visible = true
-	victory_overlay.modulate.a = 0.0
-	var tw = create_tween()
-	tw.tween_property(victory_overlay, "modulate:a", 1.0, 0.45)
-	
 	if winning_team_idx != -1 and winning_team_idx < NetworkManager.computed_teams.size():
 		var winning_team = NetworkManager.computed_teams[winning_team_idx]
-		var team_name = winning_team.get("name", "Team")
 		var team_col = winning_team.get("color", Color(1, 1, 1))
-		
-		victory_title.text = "SIEGER: %s!" % team_name
-		victory_title.add_theme_color_override("font_color", team_col)
-		victory_subtitle.text = "Das Team hat die eisige Bergspitze bezwungen!"
-		
-		AudioManager.play_sfx("confetti-pop-sound-effect")
-		for p in winning_team.get("players", []):
-			if p.has("character"):
-				AudioManager.play_character_sfx(p["character"], "win")
-				
+		var points = 2
+		if NetworkManager.current_selecting_team_color == team_col:
+			points = 3
+			
 		# Punkte auf dem Spielbrett vergeben
 		if NetworkManager.current_minigame_index != -1:
-			var points = 2
-			if NetworkManager.current_selecting_team_color == team_col:
-				points = 3
 			NetworkManager.minigame_winners[NetworkManager.current_minigame_index] = {
 				"color": team_col,
 				"points": points,
@@ -1311,10 +1800,12 @@ func _trigger_victory(winning_team_idx: int):
 				var pid = _get_player_id(p)
 				if pid != -1 and NetworkManager.player_sessions.has(pid):
 					NetworkManager.player_sessions[pid]["score"] += points
+					
+		if winner_overlay:
+			winner_overlay.setup_winner(winning_team, points, "Das Team hat die eisige Bergspitze bezwungen!")
 	else:
-		victory_title.text = "UNENTSCHIEDEN!"
-		victory_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-		victory_subtitle.text = "Alle Kletterer sind in die Tiefe gestürzt!"
+		if winner_overlay:
+			winner_overlay.setup_winner(null, 0, "Alle Kletterer sind in die Tiefe gestürzt!")
 
 # ==============================================================================
 #                             NETZWERK & STEUERUNG
@@ -1343,7 +1834,7 @@ func _find_player_entry(player_id: int) -> Dictionary:
 
 func _on_network_message(player_id: int, data: Dictionary):
 	if data.get("type") == "ice_climbers_input":
-		if game_state != "playing":
+		if game_state != "playing" and game_state != "test_room":
 			return # Eingaben während des Countdowns ignorieren
 		var p = _find_player_entry(player_id)
 		if not p.is_empty():
@@ -1361,14 +1852,24 @@ func _on_client_connected(player_id: int, _player_name: String):
 			"type": "state_change",
 			"state": "ice_climbers",
 			"enabled": true,
-			"countdown_text": "GO!"
+			"countdown_text": "GO!",
+			"banner_text": "Klettere nach oben! Nicht abstürzen!"
+		})
+	elif game_state == "test_room":
+		NetworkManager.send_to_player(player_id, {
+			"type": "state_change",
+			"state": "ice_climbers",
+			"enabled": true,
+			"countdown_text": "TEST",
+			"banner_text": "Testraum: Steuerung ausprobieren!"
 		})
 	elif game_state == "countdown":
 		NetworkManager.send_to_player(player_id, {
 			"type": "state_change",
 			"state": "ice_climbers",
 			"enabled": false,
-			"countdown_text": countdown_label.text
+			"countdown_text": countdown_label.text,
+			"banner_text": "Bereithalten... Countdown läuft!"
 		})
 	elif game_state == "intro" or game_state == "game_over":
 		NetworkManager.send_to_player(player_id, {
@@ -1419,6 +1920,7 @@ func _break_ice_block(block: StaticBody2D, player_body: CharacterBody2D):
 		return
 		
 	var block_pos = block.global_position
+	var is_test_block = block.is_in_group("test_room_blocks")
 	block.remove_from_group("destructible_ice_blocks")
 	active_platforms.erase(block)
 	
@@ -1426,7 +1928,7 @@ func _break_ice_block(block: StaticBody2D, player_body: CharacterBody2D):
 		if child is CollisionShape2D:
 			child.set_deferred("disabled", true)
 			
-	AudioManager.play_sfx("hit")
+	AudioManager.play_sfx("block_break")
 	_spawn_ice_shatter_fx(block_pos)
 	
 	if is_instance_valid(player_body):
@@ -1434,6 +1936,10 @@ func _break_ice_block(block: StaticBody2D, player_body: CharacterBody2D):
 		player_body.velocity.y = 80.0
 		
 	block.queue_free()
+	
+	# Im Testraum: Zerstörten Block nach 4 Sekunden automatisch respawnen
+	if is_test_block:
+		_schedule_test_block_respawn(block_pos)
 	
 	# Prüfen, ob der Kopf des Spielers (Radius 22px) auch einen direkt angrenzenden Block berührt
 	if is_instance_valid(player_body):
@@ -1443,13 +1949,17 @@ func _break_ice_block(block: StaticBody2D, player_body: CharacterBody2D):
 				if abs(neighbor.global_position.y - block_pos.y) < 15.0:
 					var dist_x = abs(neighbor.global_position.x - p_x)
 					if dist_x < (ICE_BLOCK_WIDTH * 0.5 + 16.0):
+						var n_pos = neighbor.global_position
+						var n_is_test = neighbor.is_in_group("test_room_blocks")
 						neighbor.remove_from_group("destructible_ice_blocks")
 						active_platforms.erase(neighbor)
 						for child in neighbor.get_children():
 							if child is CollisionShape2D:
 								child.set_deferred("disabled", true)
-						_spawn_ice_shatter_fx(neighbor.global_position)
+						_spawn_ice_shatter_fx(n_pos)
 						neighbor.queue_free()
+						if n_is_test:
+							_schedule_test_block_respawn(n_pos)
 
 func _spawn_ice_shatter_fx(pos: Vector2):
 	if fx_container == null:

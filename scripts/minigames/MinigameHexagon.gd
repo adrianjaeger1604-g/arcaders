@@ -43,7 +43,8 @@ enum GamePhase {
 
 var current_phase: GamePhase = GamePhase.INTRO
 var current_round: int = 1
-const MAX_ROUNDS: int = 5
+const MAX_ROUNDS: int = 3
+var is_practice_round: bool = false
 
 # Board-Zustand der aktuellen Runde
 var board_numbers: Array[int] = [] # 19 Zahlen von 1..5
@@ -63,12 +64,17 @@ var buzzed_player_id: int = -1
 var selected_hex_indices: Array[int] = [] # max 3
 var highlighted_solution_triplet: Array = [] # Für Hover/Klick-Hervorhebung in der Auflösung
 
+# Deathmatch
+var is_deathmatch: bool = false
+var deathmatch_round: int = 0
+var deathmatch_active_teams: Array = [] # Teams im Deathmatch
+
 # Punktestand pro Team (Minuspunkte erlaubt!)
 var team_scores: Dictionary = {} # { team_name: int }
 var teams_cache: Array = []
 
 # Hexagon Geometrie
-const HEX_RADIUS: float = 62.0
+const HEX_RADIUS: float = 70.0
 var hex_positions: Array[Vector2] = []
 var hovered_hex_idx: int = -1
 
@@ -81,52 +87,53 @@ var hovered_hex_idx: int = -1
 
 # TopHeader (wie im Videospielquiz / Bet Buddy Extreme)
 @onready var top_header = $TopHeader
-@onready var round_label = $TopHeader/RoundLabel
 @onready var score_container = $TopHeader/ScoreContainer
 
-# Hauptlayout
-@onready var main_layout = $MainLayout
+# Spielfeld & Center (absolut zentriert in X & Y)
+@onready var board_area = $BoardArea
+@onready var round_label = $BoardArea/RoundLabel
+@onready var board_canvas = $BoardArea/BoardContainer/HexCanvas
 
-# Center Area & Timer unter dem Hexagon (wie bei Bet Buddy Extreme)
-@onready var board_canvas = $MainLayout/CenterArea/BoardContainer/HexCanvas
-@onready var timer_container = $MainLayout/CenterArea/TimerContainer
-@onready var timer_desc = $MainLayout/CenterArea/TimerContainer/VBox/TimerDisplayHBox/TimerDesc
-@onready var timer_label = $MainLayout/CenterArea/TimerContainer/VBox/TimerDisplayHBox/TimerLabel
-@onready var timer_bar = $MainLayout/CenterArea/TimerContainer/VBox/TimerBar
-@onready var btn_skip_timer = $MainLayout/CenterArea/TimerContainer/VBox/BtnSkipTimer
+# Rechte Spalte (Sidepanel)
+@onready var right_panel = $RightPanel
+@onready var target_sum_card = $RightPanel/VBox/TargetSumCard
+@onready var target_sum_label = $RightPanel/VBox/TargetSumCard/VBox/TargetSumLabel
 
-# Rechte Spalte
-@onready var target_sum_card = $MainLayout/RightPanel/VBox/TargetSumCard
-@onready var target_sum_label = $MainLayout/RightPanel/VBox/TargetSumCard/VBox/TargetSumLabel
+@onready var buzzer_card = $RightPanel/VBox/BuzzerCard
+@onready var buzzer_status_label = $RightPanel/VBox/BuzzerCard/VBox/BuzzerStatusLabel
+@onready var buzzed_player_name = $RightPanel/VBox/BuzzerCard/VBox/PlayerNameLabel
+@onready var buzzed_team_badge = $RightPanel/VBox/BuzzerCard/VBox/TeamBadge
+@onready var buzzed_char_icon = $RightPanel/VBox/BuzzerCard/VBox/CharIcon
 
-@onready var buzzer_card = $MainLayout/RightPanel/VBox/BuzzerCard
-@onready var buzzer_status_label = $MainLayout/RightPanel/VBox/BuzzerCard/VBox/BuzzerStatusLabel
-@onready var buzzed_player_name = $MainLayout/RightPanel/VBox/BuzzerCard/VBox/PlayerNameLabel
-@onready var buzzed_team_badge = $MainLayout/RightPanel/VBox/BuzzerCard/VBox/TeamBadge
-@onready var buzzed_char_icon = $MainLayout/RightPanel/VBox/BuzzerCard/VBox/CharIcon
+@onready var gm_selection_card = $RightPanel/VBox/GMCard
+@onready var letter_slot_1 = $RightPanel/VBox/GMCard/VBox/Slots/Slot1
+@onready var letter_slot_2 = $RightPanel/VBox/GMCard/VBox/Slots/Slot2
+@onready var letter_slot_3 = $RightPanel/VBox/GMCard/VBox/Slots/Slot3
+@onready var btn_resolve = $RightPanel/VBox/GMCard/VBox/Buttons/BtnResolve
+@onready var btn_clear = $RightPanel/VBox/GMCard/VBox/Buttons/BtnClear
+@onready var btn_end_round = $RightPanel/VBox/BtnEndRound
 
-@onready var gm_selection_card = $MainLayout/RightPanel/VBox/GMCard
-@onready var letter_slot_1 = $MainLayout/RightPanel/VBox/GMCard/VBox/Slots/Slot1
-@onready var letter_slot_2 = $MainLayout/RightPanel/VBox/GMCard/VBox/Slots/Slot2
-@onready var letter_slot_3 = $MainLayout/RightPanel/VBox/GMCard/VBox/Slots/Slot3
-@onready var btn_resolve = $MainLayout/RightPanel/VBox/GMCard/VBox/Buttons/BtnResolve
-@onready var btn_clear = $MainLayout/RightPanel/VBox/GMCard/VBox/Buttons/BtnClear
-@onready var btn_end_round = $MainLayout/RightPanel/VBox/BtnEndRound
+@onready var reveal_card = $RightPanel/VBox/RevealCard
+@onready var reveal_summary_label = $RightPanel/VBox/RevealCard/VBox/RevealSummaryLabel
+@onready var solutions_list = $RightPanel/VBox/RevealCard/VBox/SolutionsScroll/SolutionsList
+@onready var btn_next_round = $RightPanel/VBox/BtnNextRound
 
-@onready var reveal_card = $MainLayout/RightPanel/VBox/RevealCard
-@onready var reveal_summary_label = $MainLayout/RightPanel/VBox/RevealCard/VBox/RevealSummaryLabel
-@onready var solutions_list = $MainLayout/RightPanel/VBox/RevealCard/VBox/SolutionsScroll/SolutionsList
-@onready var btn_next_round = $MainLayout/RightPanel/VBox/RevealCard/VBox/BtnNextRound
+# Unten: Timer & Feedback Bar (beide mit panel_side_style Goldrand)
+@onready var bottom_container = $BottomContainer
+@onready var timer_container = $BottomContainer/TimerContainer
+@onready var timer_desc = $BottomContainer/TimerContainer/VBox/TimerDisplayHBox/TimerDesc
+@onready var timer_label = $BottomContainer/TimerContainer/VBox/TimerDisplayHBox/TimerLabel
+@onready var timer_bar = $BottomContainer/TimerContainer/VBox/TimerBar
+@onready var skip_timer_container = $BottomContainer/TimerContainer/VBox/SkipTimerContainer
+@onready var btn_skip_timer = $BottomContainer/TimerContainer/VBox/SkipTimerContainer/BtnSkipTimer
+@onready var bottom_bar = $BottomContainer/BottomBar
+@onready var feedback_label = $BottomContainer/BottomBar/FeedbackLabel
 
-# Bottom Feedback Bar
-@onready var bottom_bar = $BottomBar
-@onready var feedback_label = $BottomBar/FeedbackLabel
+# Winner Overlay
+@onready var winner_overlay = $MinigameWinnerOverlay
 
-# Victory Overlay
-@onready var victory_overlay = $VictoryOverlay
-@onready var victory_title = $VictoryOverlay/Panel/VBox/VictoryTitle
-@onready var victory_podium = $VictoryOverlay/Panel/VBox/Podium
-@onready var btn_back_to_board = $VictoryOverlay/Panel/VBox/BtnBackToBoard
+var gameplay_bg: TextureRect = null
+var gameplay_dim: ColorRect = null
 
 func _ready():
 	AudioManager.play_random_quiz_music()
@@ -136,6 +143,7 @@ func _ready():
 	
 	_compute_hex_positions()
 	_init_teams()
+	_ensure_gameplay_background()
 	_connect_ui_signals()
 	_connect_buttons_sfx(self)
 	
@@ -145,19 +153,31 @@ func _ready():
 	if bg_tilemap:
 		bg_tilemap.visible = true
 	intro_container.visible = true
-	main_layout.visible = false
+	board_area.visible = false
+	right_panel.visible = false
+	bottom_container.visible = false
 	top_header.visible = false
-	bottom_bar.visible = false
-	victory_overlay.visible = false
+	if winner_overlay:
+		winner_overlay.visible = false
 	if pixel_back_btn:
 		pixel_back_btn.visible = true
-	
+	_setup_intro_scroll()
+
 	# Handys in den Waiting-Screen schalten
 	NetworkManager.broadcast({
 		"type": "state_change",
 		"state": "waiting",
 		"message": "Erkläre die Regeln... Warten auf Start."
 	})
+
+func _setup_intro_scroll():
+	var scroll_area = get_node_or_null("IntroContainer/VBox/ScrollArea")
+	var inst_lbl = get_node_or_null("IntroContainer/VBox/ScrollArea/InstructionContainer/Instruction")
+	if scroll_area and inst_lbl:
+		await get_tree().process_frame
+		if is_instance_valid(inst_lbl) and is_instance_valid(scroll_area):
+			var content_h = inst_lbl.get_minimum_size().y + 8.0
+			scroll_area.custom_minimum_size.y = clampf(content_h, 80.0, 480.0)
 
 func _compute_hex_positions():
 	hex_positions.clear()
@@ -197,7 +217,6 @@ func _connect_ui_signals():
 	btn_clear.pressed.connect(_clear_letter_selection)
 	btn_end_round.pressed.connect(_end_round_to_reveal)
 	btn_next_round.pressed.connect(_on_next_round_pressed)
-	btn_back_to_board.pressed.connect(_on_back_to_main_board_pressed)
 	
 	board_canvas.draw.connect(_on_hex_canvas_draw)
 	board_canvas.gui_input.connect(_on_hex_canvas_gui_input)
@@ -210,7 +229,12 @@ func _connect_buttons_sfx(node: Node):
 
 func _process(delta):
 	if current_phase == GamePhase.MEMORIZE:
+		var prev_sec = int(ceil(memorize_time_left))
 		memorize_time_left -= delta
+		var curr_sec = int(ceil(memorize_time_left))
+		if curr_sec != prev_sec and curr_sec in [3, 2, 1]:
+			AudioManager.play_sfx("timer_tick")
+			
 		if memorize_time_left <= 0.0:
 			memorize_time_left = 0.0
 			_start_quiz_phase()
@@ -218,7 +242,12 @@ func _process(delta):
 		
 	elif current_phase == GamePhase.QUIZ:
 		if is_inactivity_timer_running:
+			var prev_sec = int(ceil(inactivity_time_left))
 			inactivity_time_left -= delta
+			var curr_sec = int(ceil(inactivity_time_left))
+			if curr_sec != prev_sec and curr_sec in [3, 2, 1]:
+				AudioManager.play_sfx("timer_tick")
+				
 			if inactivity_time_left <= 0.0:
 				inactivity_time_left = 0.0
 				is_inactivity_timer_running = false
@@ -229,29 +258,79 @@ func _process(delta):
 # SPIEL- & RUNDENABLAUF
 # ==============================================================================
 
+func _load_texture_safe(res_path: String) -> Texture2D:
+	if FileAccess.file_exists(res_path):
+		var bytes = FileAccess.get_file_as_bytes(res_path)
+		if not bytes.is_empty():
+			var img = Image.new()
+			if img.load_png_from_buffer(bytes) == OK or img.load_jpg_from_buffer(bytes) == OK:
+				return ImageTexture.create_from_image(img)
+	if ResourceLoader.exists(res_path):
+		var t = load(res_path)
+		if t is Texture2D:
+			return t
+	return null
+
+func _ensure_gameplay_background():
+	if gameplay_bg != null and is_instance_valid(gameplay_bg):
+		return
+		
+	var tex = _load_texture_safe("res://assets/minigames/hexagon/hexagon_bg.png")
+	if tex == null:
+		tex = _load_texture_safe("res://assets/minigames/hexagon/hexagon_bg.jpg")
+		
+	if tex != null:
+		gameplay_bg = TextureRect.new()
+		gameplay_bg.name = "GameplayBackground"
+		gameplay_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		gameplay_bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		gameplay_bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		gameplay_bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		gameplay_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		gameplay_bg.texture = tex
+		gameplay_bg.visible = false
+		add_child(gameplay_bg)
+		
+		var insert_idx = 1
+		var bg_tilemap = get_node_or_null("BackgroundTileMap")
+		if bg_tilemap:
+			insert_idx = bg_tilemap.get_index() + 1
+		move_child(gameplay_bg, insert_idx)
+		
+		gameplay_dim = ColorRect.new()
+		gameplay_dim.name = "GameplayDim"
+		gameplay_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+		gameplay_dim.color = Color(0.03, 0.02, 0.05, 0.25)
+		gameplay_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		gameplay_dim.visible = false
+		add_child(gameplay_dim)
+		move_child(gameplay_dim, insert_idx + 1)
+
 func _on_start_game_pressed():
 	intro_container.visible = false
 	var bg_tilemap = get_node_or_null("BackgroundTileMap")
 	if bg_tilemap:
 		bg_tilemap.visible = false
-	if pixel_back_btn:
-		pixel_back_btn.visible = true
-	_ensure_gameplay_background()
 	if gameplay_bg:
 		gameplay_bg.visible = true
 	if gameplay_dim:
 		gameplay_dim.visible = true
+	if pixel_back_btn:
+		pixel_back_btn.visible = true
 		
 	top_header.visible = true
-	main_layout.visible = true
-	bottom_bar.visible = true
-	_start_round(1)
+	board_area.visible = true
+	right_panel.visible = true
+	bottom_container.visible = true
+	is_practice_round = true
+	_start_round(0)
 
 func _start_round(round_idx: int):
 	current_round = round_idx
 	current_phase = GamePhase.MEMORIZE
 	
-	victory_overlay.visible = false
+	if winner_overlay:
+		winner_overlay.visible = false
 	reveal_card.visible = false
 	highlighted_solution_triplet.clear()
 	selected_hex_indices.clear()
@@ -266,29 +345,72 @@ func _start_round(round_idx: int):
 	memorize_time_left = 60.0
 	inactivity_time_left = 30.0
 	
-	round_label.text = "Runde %d / %d" % [current_round, MAX_ROUNDS]
+	if is_deathmatch:
+		if deathmatch_round <= 1:
+			round_label.text = "DEATHMATCH"
+		else:
+			round_label.text = "DEATHMATCH (Runde %d)" % deathmatch_round
+		round_label.add_theme_color_override("font_color", Color(1.0, 0.28, 0.28))
+	elif is_practice_round:
+		round_label.text = "TESTRUNDE"
+		round_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	else:
+		round_label.text = "Runde %d / %d" % [current_round, MAX_ROUNDS]
+		round_label.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+		
 	timer_container.visible = true
 	timer_desc.text = "Merkzeit:"
 	_update_memorize_timer_ui()
-	btn_skip_timer.visible = true
+	if skip_timer_container:
+		skip_timer_container.visible = true
+	if btn_skip_timer:
+		btn_skip_timer.visible = true
 	
+	# Während der Merkphase rechtes Sidepanel und unterste Infobar ausblenden
+	if right_panel:
+		right_panel.visible = false
+	if bottom_bar:
+		bottom_bar.visible = false
 	target_sum_card.visible = false
 	buzzer_card.visible = false
 	gm_selection_card.visible = false
 	btn_end_round.visible = false
-	feedback_label.text = "Merke dir die Zahlen im Hexagon! (60 Sekunden Zeit)"
-	feedback_label.modulate = Color(1.0, 0.9, 0.5)
+	btn_next_round.visible = false
+	if is_deathmatch:
+		var dm_names = []
+		for t in deathmatch_active_teams:
+			dm_names.append(t.get("name", "Team"))
+		feedback_label.text = "DEATHMATCH: %s! Merke dir die Zahlen!" % " vs ".join(dm_names)
+		feedback_label.modulate = Color(1.0, 0.35, 0.35)
+	elif is_practice_round:
+		feedback_label.text = "Testrunde: Merke dir die Zahlen im Hexagon! (Keine Wertung)"
+		feedback_label.modulate = Color(1.0, 0.85, 0.3)
+	else:
+		feedback_label.text = "Merke dir die Zahlen im Hexagon! (60 Sekunden Zeit)"
+		feedback_label.modulate = Color(1.0, 0.9, 0.5)
 	
 	_update_letter_slots_ui()
 	_update_team_scores_ui()
 	board_canvas.queue_redraw()
 	
-	# Handys informieren
-	NetworkManager.broadcast({
-		"type": "state_change",
-		"state": "waiting",
-		"message": "Merke dir das Hexagon! Runde %d" % current_round
-	})
+	# Handys informieren (nicht-spielende Teams beim Deathmatch inaktiv schalten)
+	for pid in NetworkManager.player_sessions.keys():
+		var p_team = _get_team_for_player(pid)
+		if is_deathmatch and not _is_team_in_deathmatch(p_team):
+			NetworkManager.send_to_player(pid, {
+				"type": "state_change",
+				"state": "inactive",
+				"title": "DEATHMATCH",
+				"message": "Deathmatch! Nur die führenden Teams spielen um den Sieg."
+			})
+		else:
+			var round_title = "TESTRUNDE" if is_practice_round else ("Runde %d" % current_round)
+			NetworkManager.send_to_player(pid, {
+				"type": "state_change",
+				"state": "waiting",
+				"title": "Merkphase" if not is_deathmatch else "DEATHMATCH",
+				"message": "Merke dir das Hexagon! %s" % ("DEATHMATCH" if is_deathmatch else round_title)
+			})
 
 func _generate_valid_board():
 	# Generiere 19 Zahlen von 1 bis 5, sodass mindestens eine Zielsumme >= 3-mal vorkommt
@@ -347,10 +469,20 @@ func _on_skip_memorize_pressed():
 
 func _start_quiz_phase():
 	current_phase = GamePhase.QUIZ
-	btn_skip_timer.visible = false
+	if skip_timer_container:
+		skip_timer_container.visible = false
+	if btn_skip_timer:
+		btn_skip_timer.visible = false
 	timer_container.visible = true
 	timer_desc.text = "Buzzer-Zeit:"
 	
+	# Rechtes Sidepanel und unterste Infobar einblenden
+	if right_panel:
+		right_panel.visible = true
+		right_panel.modulate.a = 1.0
+		right_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	if bottom_bar:
+		bottom_bar.visible = true
 	target_sum_card.visible = true
 	target_sum_label.text = str(current_target_sum)
 	# Keine Anzeige der Anzahl der Lösungen während dem Spiel!
@@ -359,11 +491,23 @@ func _start_quiz_phase():
 	gm_selection_card.visible = true
 	reveal_card.visible = false
 	btn_end_round.visible = true
+	btn_end_round.text = "RUNDE BEENDEN"
+	btn_next_round.visible = false
 	
 	_reset_buzzer_state()
 	
-	feedback_label.text = "Zielsumme: %d! Wer eine Kombination weiß: BUZZERN!" % current_target_sum
-	feedback_label.modulate = Color(1.0, 1.0, 1.0)
+	if is_deathmatch:
+		var dm_names = []
+		for t in deathmatch_active_teams:
+			dm_names.append(t.get("name", "Team"))
+		feedback_label.text = "DEATHMATCH: %s! Zielsumme %d: BUZZERN!" % [" vs ".join(dm_names), current_target_sum]
+		feedback_label.modulate = Color(1.0, 0.35, 0.35)
+	elif is_practice_round:
+		feedback_label.text = "TESTRUNDE (Zielsumme %d): Wer eine Kombination weiß, BUZZERN! (Keine Wertung)" % current_target_sum
+		feedback_label.modulate = Color(1.0, 0.85, 0.3)
+	else:
+		feedback_label.text = "Zielsumme: %d! Wer eine Kombination weiß: BUZZERN!" % current_target_sum
+		feedback_label.modulate = Color(1.0, 1.0, 1.0)
 	board_canvas.queue_redraw()
 
 func _reset_buzzer_state():
@@ -386,17 +530,27 @@ func _reset_buzzer_state():
 	btn_resolve.disabled = true
 	btn_clear.disabled = true
 	
-	# Handys für Buzzer freigeben (ohne Timer auf dem Handy per Regel 9)
-	NetworkManager.broadcast({
-		"type": "state_change",
-		"state": "buzzer",
-		"game": "hexagon",
-		"target_sum": current_target_sum,
-		"round": current_round
-	})
-	NetworkManager.broadcast({
-		"type": "buzzer_unlocked"
-	})
+	# Handys für Buzzer freigeben (nicht-spielende Teams beim Deathmatch inaktiv halten)
+	for pid in NetworkManager.player_sessions.keys():
+		var p_team = _get_team_for_player(pid)
+		if is_deathmatch and not _is_team_in_deathmatch(p_team):
+			NetworkManager.send_to_player(pid, {
+				"type": "state_change",
+				"state": "inactive",
+				"title": "DEATHMATCH",
+				"message": "Deathmatch! Nur die führenden Teams spielen um den Sieg."
+			})
+		else:
+			NetworkManager.send_to_player(pid, {
+				"type": "state_change",
+				"state": "buzzer",
+				"game": "hexagon",
+				"target_sum": current_target_sum,
+				"round": current_round
+			})
+			NetworkManager.send_to_player(pid, {
+				"type": "buzzer_unlocked"
+			})
 
 func _update_inactivity_timer_ui():
 	var sec = int(ceil(inactivity_time_left))
@@ -422,9 +576,23 @@ func _on_network_message(player_id: int, data: Dictionary):
 	var msg_type = data.get("type", "")
 	if msg_type == "buzz":
 		if current_phase == GamePhase.QUIZ and buzzer_active and buzzed_player_id == -1:
+			if is_deathmatch:
+				var p_team = _get_team_for_player(player_id)
+				if not _is_team_in_deathmatch(p_team):
+					return # Nicht-spielendes Team darf im Deathmatch nicht buzzern!
 			_handle_buzz(player_id)
 
-func _on_client_connected(player_id: int):
+func _on_client_connected(player_id: int, _player_name: String = ""):
+	var p_team = _get_team_for_player(player_id)
+	if is_deathmatch and not _is_team_in_deathmatch(p_team):
+		NetworkManager.send_to_player(player_id, {
+			"type": "state_change",
+			"state": "inactive",
+			"title": "DEATHMATCH",
+			"message": "Deathmatch! Nur die führenden Teams spielen um den Sieg."
+		})
+		return
+		
 	if current_phase == GamePhase.QUIZ and buzzer_active:
 		NetworkManager.send_to_player(player_id, {
 			"type": "state_change",
@@ -434,14 +602,24 @@ func _on_client_connected(player_id: int):
 			"round": current_round,
 			"time_left": int(ceil(inactivity_time_left))
 		})
+		if buzzed_player_id == -1:
+			NetworkManager.send_to_player(player_id, {
+				"type": "buzzer_unlocked"
+			})
 	else:
 		NetworkManager.send_to_player(player_id, {
 			"type": "state_change",
 			"state": "waiting",
+			"title": "Hexagon",
 			"message": "Hexagon läuft..."
 		})
 
 func _handle_buzz(player_id: int):
+	if is_deathmatch:
+		var p_team_check = _get_team_for_player(player_id)
+		if not _is_team_in_deathmatch(p_team_check):
+			return
+			
 	buzzer_active = false
 	buzzed_player_id = player_id
 	is_inactivity_timer_running = false # Timer pausieren
@@ -489,7 +667,10 @@ func _on_hex_canvas_gui_input(event: InputEvent):
 	if event is InputEventMouseMotion:
 		var local_mouse = event.position - (board_canvas.size * 0.5)
 		var prev_hover = hovered_hex_idx
-		hovered_hex_idx = _get_hex_at_point(local_mouse)
+		if current_phase == GamePhase.QUIZ and buzzed_player_id == -1:
+			hovered_hex_idx = -1
+		else:
+			hovered_hex_idx = _get_hex_at_point(local_mouse)
 		if hovered_hex_idx != prev_hover:
 			board_canvas.queue_redraw()
 			
@@ -497,6 +678,9 @@ func _on_hex_canvas_gui_input(event: InputEvent):
 		var local_mouse = event.position - (board_canvas.size * 0.5)
 		var clicked_idx = _get_hex_at_point(local_mouse)
 		if clicked_idx != -1 and current_phase == GamePhase.QUIZ:
+			if buzzed_player_id == -1:
+				# Niemand hat gebuzzert: Auswählen ist nicht erlaubt!
+				return
 			_toggle_hex_selection(clicked_idx)
 
 func _unhandled_key_input(event: InputEvent):
@@ -509,8 +693,12 @@ func _unhandled_key_input(event: InputEvent):
 		if not btn_resolve.disabled:
 			_on_resolve_pressed()
 	elif key_str == "BACKSPACE" or key_str == "ESCAPE":
-		_clear_letter_selection()
+		if buzzed_player_id != -1:
+			_clear_letter_selection()
 	elif key_str.length() == 1 and key_str >= "A" and key_str <= "S":
+		if buzzed_player_id == -1:
+			# Niemand hat gebuzzert: Tastatur-Eingabe blockiert!
+			return
 		var idx = HEX_LETTERS.find(key_str)
 		if idx != -1:
 			_toggle_hex_selection(idx)
@@ -523,6 +711,8 @@ func _get_hex_at_point(p: Vector2) -> int:
 	return -1
 
 func _toggle_hex_selection(idx: int):
+	if buzzed_player_id == -1:
+		return
 	if selected_hex_indices.has(idx):
 		selected_hex_indices.erase(idx)
 	else:
@@ -547,7 +737,8 @@ func _update_letter_slots_ui():
 	letter_slot_2.text = HEX_LETTERS[selected_hex_indices[1]] if s > 1 else "_"
 	letter_slot_3.text = HEX_LETTERS[selected_hex_indices[2]] if s > 2 else "_"
 	
-	btn_resolve.disabled = (s != 3)
+	btn_resolve.disabled = (s != 3 or buzzed_player_id == -1)
+	btn_clear.disabled = (s == 0 or buzzed_player_id == -1)
 
 func _on_resolve_pressed():
 	if selected_hex_indices.size() != 3 or current_phase != GamePhase.QUIZ:
@@ -556,7 +747,7 @@ func _on_resolve_pressed():
 	var sorted_selection = selected_hex_indices.duplicate()
 	sorted_selection.sort()
 	
-	var letters_str = "%s - %s - %s" % [HEX_LETTERS[sorted_selection[0]], HEX_LETTERS[sorted_selection[1]], HEX_LETTERS[sorted_selection[2]]]
+	var letters_str = "%s, %s, %s" % [HEX_LETTERS[sorted_selection[0]], HEX_LETTERS[sorted_selection[1]], HEX_LETTERS[sorted_selection[2]]]
 	var team = _get_team_for_player(buzzed_player_id)
 	var team_name = team.get("name", "Unbekannt")
 	
@@ -572,10 +763,13 @@ func _on_resolve_pressed():
 	if not is_straight_line:
 		# Keine gerade Linie -> Fehler (-1 Punkt, Minuspunkte möglich!)
 		AudioManager.play_sfx("missed_punch")
-		if team_name != "Unbekannt":
+		if not is_practice_round and team_name != "Unbekannt":
 			team_scores[team_name] -= 1
 			_update_team_scores_ui()
-		feedback_label.text = "FALSCH! (-1 Punkt für %s)" % team_name
+		if is_practice_round:
+			feedback_label.text = "FALSCH! (Testrunde: keine Minuspunkte)"
+		else:
+			feedback_label.text = "FALSCH! (-1 Punkt für %s)" % team_name
 		feedback_label.modulate = Color(1.0, 0.3, 0.3)
 		_flash_banner(Color(1.0, 0.3, 0.3))
 		_delayed_reset_buzzer()
@@ -598,7 +792,7 @@ func _on_resolve_pressed():
 	if actual_sum == current_target_sum:
 		# RICHTIG!
 		AudioManager.play_sfx("transformation")
-		if team_name != "Unbekannt":
+		if not is_practice_round and team_name != "Unbekannt":
 			team_scores[team_name] += 1
 			_update_team_scores_ui()
 			
@@ -611,7 +805,10 @@ func _on_resolve_pressed():
 		})
 		_update_found_list_ui()
 		
-		feedback_label.text = "RICHTIG! %s (%s) = %d! (+1 Punkt für %s)" % [letters_str, calc_str, current_target_sum, team_name]
+		if is_practice_round:
+			feedback_label.text = "RICHTIG! %s (%s) = %d! (Testrunde: keine Wertung)" % [letters_str, calc_str, current_target_sum]
+		else:
+			feedback_label.text = "RICHTIG! %s (%s) = %d! (+1 Punkt für %s)" % [letters_str, calc_str, current_target_sum, team_name]
 		feedback_label.modulate = Color(0.2, 1.0, 0.4)
 		_flash_banner(Color(0.2, 1.0, 0.4))
 		
@@ -624,10 +821,13 @@ func _on_resolve_pressed():
 		# FALSCH! Summe stimmt nicht (-1 Punkt, Minuspunkte möglich!)
 		# Wichtig: Keine Rechnung anzeigen, nur "FALSCH!", damit die geheimen Zahlen nicht verraten werden
 		AudioManager.play_sfx("hit")
-		if team_name != "Unbekannt":
+		if not is_practice_round and team_name != "Unbekannt":
 			team_scores[team_name] -= 1
 			_update_team_scores_ui()
-		feedback_label.text = "FALSCH! (-1 Punkt für %s)" % team_name
+		if is_practice_round:
+			feedback_label.text = "FALSCH! (Testrunde: keine Minuspunkte)"
+		else:
+			feedback_label.text = "FALSCH! (-1 Punkt für %s)" % team_name
 		feedback_label.modulate = Color(1.0, 0.3, 0.3)
 		_flash_banner(Color(1.0, 0.3, 0.3))
 		
@@ -663,30 +863,53 @@ func _end_round_to_reveal():
 	AudioManager.play_sfx("settings_open")
 	
 	# Handys informieren
+	var round_title = "Testrunde" if is_practice_round else ("Runde %d" % current_round)
 	NetworkManager.broadcast({
 		"type": "state_change",
 		"state": "waiting",
-		"message": "Runde %d beendet! Alle Lösungen werden auf dem Hexagon aufgedeckt." % current_round
+		"message": "%s beendet! Alle Lösungen werden auf dem Hexagon aufgedeckt." % round_title
 	})
 	
-	timer_desc.text = "Runde %d beendet" % current_round
-	timer_label.text = "--"
-	timer_bar.value = 0
-	btn_skip_timer.visible = false
+	# Timer in der Auflösungsphase ausblenden
+	timer_container.visible = false
+	if skip_timer_container:
+		skip_timer_container.visible = false
+	if btn_skip_timer:
+		btn_skip_timer.visible = false
 	
-	# Rechte Spalte: Zeige Reveal-Karte statt GM-Eingabe
+	if right_panel:
+		right_panel.visible = true
+		right_panel.modulate.a = 1.0
+		right_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	buzzer_card.visible = false
 	gm_selection_card.visible = false
 	btn_end_round.visible = false
 	reveal_card.visible = true
+	btn_next_round.visible = true
 	
-	reveal_summary_label.text = "Zielsumme %d:\n%d von %d Kombinationen wurden gefunden." % [current_target_sum, found_triplets.size(), valid_triplets_for_target.size()]
-	btn_next_round.text = "Nächste Runde" if current_round < MAX_ROUNDS else "Zum Gesamtergebnis"
+	reveal_summary_label.text = "%d von %d Kombinationen wurden gefunden." % [found_triplets.size(), valid_triplets_for_target.size()]
+	
+	var leading = _get_leading_teams()
+	if is_practice_round:
+		btn_next_round.text = "RUNDE 1 STARTEN"
+	elif current_round >= MAX_ROUNDS or is_deathmatch:
+		if leading.size() > 1:
+			btn_next_round.text = "ZUM DEATHMATCH"
+		else:
+			btn_next_round.text = "ZUM GESAMTERGEBNIS"
+	else:
+		btn_next_round.text = "NÄCHSTE RUNDE"
 	
 	_update_reveal_solutions_list_ui()
 	
-	feedback_label.text = "Zielsumme %d: Gefundene Kombinationen in Teamfarbe, ungelöste in Weiß!" % current_target_sum
-	feedback_label.modulate = Color(1.0, 0.85, 0.3)
+	if bottom_bar:
+		bottom_bar.visible = true
+	if is_practice_round:
+		feedback_label.text = "Testrunde beendet! Klicke auf 'RUNDE 1 STARTEN' für das echte Spiel."
+		feedback_label.modulate = Color(1.0, 0.85, 0.3)
+	else:
+		feedback_label.text = "Zielsumme %d: Gefundene Kombinationen in Teamfarbe, ungelöste in Weiß!" % current_target_sum
+		feedback_label.modulate = Color(1.0, 0.85, 0.3)
 	
 	board_canvas.queue_redraw()
 
@@ -730,10 +953,24 @@ func _update_reveal_solutions_list_ui():
 		solutions_list.add_child(btn)
 
 func _on_next_round_pressed():
-	if current_round < MAX_ROUNDS:
+	if is_practice_round:
+		is_practice_round = false
+		_start_round(1)
+	elif current_round < MAX_ROUNDS and not is_deathmatch:
 		_start_round(current_round + 1)
 	else:
-		_show_victory_podium()
+		var leading = _get_leading_teams()
+		if leading.size() > 1:
+			_start_deathmatch_round(leading)
+		else:
+			_show_victory_podium()
+
+func _start_deathmatch_round(leading_teams: Array):
+	is_deathmatch = true
+	deathmatch_round += 1
+	deathmatch_active_teams = leading_teams.duplicate()
+	AudioManager.play_sfx("warning")
+	_start_round(current_round + 1)
 
 # ==============================================================================
 # SIEGEREHRUNG & TURNIER-PUNKTE
@@ -741,9 +978,6 @@ func _on_next_round_pressed():
 
 func _show_victory_podium():
 	current_phase = GamePhase.VICTORY
-	victory_overlay.visible = true
-	
-	AudioManager.play_sfx("confetti_pop")
 	
 	# Gewinner ermitteln (höchste Punktzahl, Minuspunkte sortieren korrekt)
 	var sorted_teams = teams_cache.duplicate()
@@ -752,10 +986,10 @@ func _show_victory_podium():
 	)
 	
 	var best_team = sorted_teams[0] if not sorted_teams.is_empty() else null
+	var points = 2
 	
 	# Turnierpunkte vergeben (2 Punkte für Gewinner, 3 falls Wählerteam)
 	if best_team != null and NetworkManager.current_minigame_index != -1:
-		var points = 2
 		if NetworkManager.current_selecting_team_color == best_team["color"]:
 			points = 3
 			
@@ -772,64 +1006,14 @@ func _show_victory_podium():
 				
 		print("[Hexagon] Minigame gewonnen von %s (+%d Punkte)" % [best_team["name"], points])
 		
-	victory_title.text = "SIEG FÜR %s!" % (best_team["name"] if best_team else "NIEMAND")
-	victory_title.modulate = best_team["color"] if best_team else Color.WHITE
-	
-	# Podium befüllen
-	for child in victory_podium.get_children():
-		child.queue_free()
-		
-	for i in range(sorted_teams.size()):
-		var t = sorted_teams[i]
-		var score = team_scores.get(t["name"], 0)
-		
-		var card = VBoxContainer.new()
-		card.custom_minimum_size = Vector2(240, 180)
-		card.alignment = BoxContainer.ALIGNMENT_CENTER
-		card.add_theme_constant_override("separation", 8)
-		
-		var rank_lbl = Label.new()
-		rank_lbl.text = "Platz %d" % (i + 1)
-		rank_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		rank_lbl.add_theme_font_size_override("font_size", 28)
-		rank_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2) if i == 0 else Color.WHITE)
-		card.add_child(rank_lbl)
-		
-		var name_lbl = Label.new()
-		name_lbl.text = t["name"]
-		name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		name_lbl.add_theme_font_size_override("font_size", 24)
-		name_lbl.add_theme_color_override("font_color", t["color"])
-		card.add_child(name_lbl)
-		
-		var score_lbl = Label.new()
-		score_lbl.text = "%d Punkte" % score
-		score_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		score_lbl.add_theme_font_size_override("font_size", 22)
-		if score < 0:
-			score_lbl.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
-		card.add_child(score_lbl)
-		
-		# Erstplatzierten-Animation
-		if i == 0 and not t.get("players", []).is_empty():
-			var first_player = t["players"][0]
-			var char_name = first_player.get("character", "Cedric")
-			var char_icon = TextureRect.new()
-			char_icon.custom_minimum_size = Vector2(80, 80)
-			char_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			char_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			char_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			if NetworkManager.character_textures.has(char_name):
-				char_icon.texture = NetworkManager.character_textures[char_name]
-			card.add_child(char_icon)
-			MinigameResultHelper.celebrate_winner(char_icon, char_name)
-			
-		victory_podium.add_child(card)
+	if winner_overlay:
+		winner_overlay.setup_winner(best_team, points)
 
 func _on_back_to_main_board_pressed():
 	AudioManager.stop_music()
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")
@@ -841,7 +1025,8 @@ func _on_back_pressed():
 			if not NetworkManager.is_replaying_minigame:
 				NetworkManager.current_turn_number -= 1
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")
@@ -888,7 +1073,7 @@ func _on_hex_canvas_draw():
 	for i in range(19):
 		var pos = center_offset + hex_positions[i]
 		var is_selected = selected_hex_indices.has(i)
-		var is_hovered = (i == hovered_hex_idx and current_phase == GamePhase.QUIZ)
+		var is_hovered = (i == hovered_hex_idx and current_phase == GamePhase.QUIZ and buzzed_player_id != -1)
 		var is_in_highlighted = highlighted_solution_triplet.has(i)
 		
 		var fill_color = Color(0.1, 0.14, 0.22, 0.95)
@@ -975,23 +1160,17 @@ func _on_hex_canvas_draw():
 			# Extra deutliche Hervorhebung bei Auswahl in der Lösungsliste
 			board_canvas.draw_line(p1, p3, Color(1.0, 0.95, 0.4, 0.4), 28.0, true)
 			board_canvas.draw_line(p1, p3, Color(1.0, 0.98, 0.7, 1.0), 14.0, true)
-			for p in [p1, p2, p3]:
-				board_canvas.draw_circle(p, 16.0, Color(1.0, 0.98, 0.7, 1.0))
 		elif item["is_found"]:
 			# Erfolgreiche Kombination in TEAMFARBE
 			board_canvas.draw_line(p1, p3, Color(c.r, c.g, c.b, 0.35), 20.0, true)
 			board_canvas.draw_line(p1, p3, Color(c.r, c.g, c.b, 0.95), 8.0, true)
-			for p in [p1, p2, p3]:
-				board_canvas.draw_circle(p, 10.0, Color(c.r, c.g, c.b, 0.95))
 		else:
 			# Nicht gefundene Kombination in WEISS
 			board_canvas.draw_line(p1, p3, Color(1.0, 1.0, 1.0, 0.25), 18.0, true)
 			board_canvas.draw_line(p1, p3, Color(1.0, 1.0, 1.0, 0.88), 6.5, true)
-			for p in [p1, p2, p3]:
-				board_canvas.draw_circle(p, 8.5, Color(1.0, 1.0, 1.0, 0.88))
 
 	# -------------------------------------------------------------------------
-	# 3. Text & Zahlen (mit Kontrast-Pille über Verbindungslinien)
+	# 3. Text & Zahlen (stets im Vordergrund mit markantem Stroke)
 	# -------------------------------------------------------------------------
 	for i in range(19):
 		var pos = center_offset + hex_positions[i]
@@ -1000,46 +1179,40 @@ func _on_hex_canvas_draw():
 		if current_phase == GamePhase.MEMORIZE:
 			# Zahlen 1..5 groß und sauber zentriert anzeigen
 			var num_str = str(board_numbers[i]) if i < board_numbers.size() else "?"
-			var f_size = 42
+			var f_size = 46
 			var ascent = font.get_ascent(f_size)
-			var box_w = 64.0
+			var box_w = 80.0
 			var baseline = pos.y + ascent * 0.5 - 2.0
+			
+			board_canvas.draw_string_outline(font, Vector2(pos.x - box_w * 0.5, baseline), num_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size, 10, Color(0.02, 0.02, 0.04, 1.0))
 			board_canvas.draw_string(font, Vector2(pos.x - box_w * 0.5, baseline), num_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size, Color(1.0, 0.9, 0.4))
 			
 		elif current_phase == GamePhase.QUIZ:
-			# Buchstaben A..S mit dunklem Center-Badge pixelgenau in den Kreisen zentriert
-			var circle_r = 24.0
-			var circle_col = Color(0.06, 0.08, 0.14, 0.92)
-			var border_col = Color(1.0, 0.85, 0.2) if is_selected else Color(0.35, 0.45, 0.65, 0.75)
-			board_canvas.draw_circle(pos, circle_r, circle_col)
-			board_canvas.draw_arc(pos, circle_r, 0, TAU, 32, border_col, 2.0, true)
-			
+			# Buchstaben A..S direkt im Hexagon zentriert
 			var let_str = HEX_LETTERS[i]
-			var f_size = 32
+			var f_size = 42
 			var ascent = font.get_ascent(f_size)
-			var box_w = circle_r * 2.0
-			var baseline = pos.y + ascent * 0.5 - 1.0
+			var box_w = 80.0
+			var baseline = pos.y + ascent * 0.5 - 2.0
 			var text_color = Color(1.0, 0.85, 0.2) if is_selected else Color(0.9, 0.95, 1.0)
+			var outline_size = 12 if is_selected else 10
+			
+			board_canvas.draw_string_outline(font, Vector2(pos.x - box_w * 0.5, baseline), let_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size, outline_size, Color(0.02, 0.02, 0.04, 1.0))
 			board_canvas.draw_string(font, Vector2(pos.x - box_w * 0.5, baseline), let_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size, text_color)
 			
 		elif current_phase == GamePhase.REVEAL or current_phase == GamePhase.VICTORY:
-			# AUFLÖSUNG: Buchstabe oben, Zahl darunter mit abgedunkeltem Center-Badge
-			var circle_r = 30.0
-			board_canvas.draw_circle(pos, circle_r, Color(0.05, 0.07, 0.12, 0.92))
-			board_canvas.draw_arc(pos, circle_r, 0, TAU, 32, Color(0.4, 0.5, 0.7, 0.6), 2.0, true)
-			
+			# AUFLÖSUNG: Buchstabe oben, Zahl darunter direkt im Hexagon
 			var let_str = HEX_LETTERS[i]
 			var num_str = str(board_numbers[i]) if i < board_numbers.size() else "?"
-			var box_w = circle_r * 2.0
+			var box_w = 80.0
 			
-			var f_size_let = 22
+			var f_size_let = 24
 			var ascent_let = font.get_ascent(f_size_let)
-			var baseline_let = pos.y - 6.0 + ascent_let * 0.5
-			board_canvas.draw_string(font, Vector2(pos.x - box_w * 0.5, baseline_let), let_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size_let, Color(0.85, 0.92, 1.0))
+			var baseline_let = pos.y - 12.0 + ascent_let * 0.5
 			
-			var f_size_num = 26
+			var f_size_num = 34
 			var ascent_num = font.get_ascent(f_size_num)
-			var baseline_num = pos.y + 18.0 + ascent_num * 0.5
+			var baseline_num = pos.y + 16.0 + ascent_num * 0.5
 			
 			var num_color = Color(1.0, 0.85, 0.15)
 			if hex_found_colors.has(i):
@@ -1047,6 +1220,12 @@ func _on_hex_canvas_draw():
 			elif hex_unfound_count.get(i, 0) > 0:
 				num_color = Color.WHITE
 				
+			# Buchstabe oben mit Stroke
+			board_canvas.draw_string_outline(font, Vector2(pos.x - box_w * 0.5, baseline_let), let_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size_let, 8, Color(0.02, 0.02, 0.04, 1.0))
+			board_canvas.draw_string(font, Vector2(pos.x - box_w * 0.5, baseline_let), let_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size_let, Color(0.85, 0.92, 1.0))
+			
+			# Zahl unten mit Stroke
+			board_canvas.draw_string_outline(font, Vector2(pos.x - box_w * 0.5, baseline_num), num_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size_num, 10, Color(0.02, 0.02, 0.04, 1.0))
 			board_canvas.draw_string(font, Vector2(pos.x - box_w * 0.5, baseline_num), num_str, HORIZONTAL_ALIGNMENT_CENTER, box_w, f_size_num, num_color)
 
 func _draw_hexagon(canvas: Control, center: Vector2, radius: float, fill: Color, border: Color, border_w: float):
@@ -1128,7 +1307,35 @@ func _update_team_scores_ui():
 		hbox.add_child(score_lbl)
 		
 		badge.add_child(hbox)
+		
+		# Im Deathmatch: Nicht-teilnehmende Teams werden oben im Punktestand ausgegraut!
+		if is_deathmatch and not _is_team_in_deathmatch(team):
+			badge.modulate = Color(0.4, 0.4, 0.4, 0.45)
+		else:
+			badge.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			
 		score_container.add_child(badge)
+
+func _get_leading_teams() -> Array:
+	var max_score = -999999
+	for t in teams_cache:
+		var s = team_scores.get(t["name"], 0)
+		if s > max_score:
+			max_score = s
+	var leading = []
+	for t in teams_cache:
+		if team_scores.get(t["name"], 0) == max_score:
+			leading.append(t)
+	return leading
+
+func _is_team_in_deathmatch(team: Dictionary) -> bool:
+	if not is_deathmatch:
+		return true
+	var t_name = team.get("name", "")
+	for dm_t in deathmatch_active_teams:
+		if dm_t.get("name", "") == t_name:
+			return true
+	return false
 
 func _update_found_list_ui():
 	pass

@@ -14,8 +14,6 @@ const TOPICS = [
 	"Videospielkonsolen",
 	"Hunderassen",
 	"Marvel Superhelden oder Schurken",
-	"Bundesländer in Deutschland oder Kantone der Schweiz",
-	"Pizzabeläge",
 	"Gegenstände, die man im Badezimmer findet",
 	"Harry Potter Charaktere",
 	"Sportarten bei den Olympischen Sommerspielen",
@@ -24,26 +22,15 @@ const TOPICS = [
 	"Brettspiele",
 	"Musikinstrumente",
 	"Star Wars Charaktere",
-	"Früchte und Obstsorten",
 	"Länder, die mit einem 'M' beginnen",
-	"Dinge, die man im Flugzeug-Handgepäck NICHT mitnehmen darf",
 	"Schulfächer",
 	"Käsesorten",
-	"Europäische Fußballvereine",
-	"Dinge, die gelb sind",
+	"Deutsche Fußballvereine",
 	"Filme von Steven Spielberg oder Quentin Tarantino",
-	"Werkzeuge in einem Werkzeugkasten",
-	"Geflügel- und Vogelarten",
-	"Inselstaaten weltweit",
-	"Dinge, die man am Strand findet",
-	"Automodelle von Volkswagen oder BMW",
+	"Vogelarten",
 	"Tiere, die Winterschlaf halten",
 	"Flüsse in Europa",
-	"Gerichte mit Nudeln / Pasta",
 	"Eissorten",
-	"Körperteile des Menschen",
-	"Gemüsesorten",
-	"Tätigkeiten, die man im Dunkeln macht"
 ]
 
 const TARGET_IN_GAME_POINTS: int = 3
@@ -79,6 +66,11 @@ var chosen_team_name: String = ""
 var chosen_team_color: Color = Color.WHITE
 var target_count: int = 0
 var remaining_count: int = 0
+
+# Rangliste der Team-Gebote für diese Runde (höchstes Gebot zuerst, maximal 1x pro Team)
+var ranked_team_bets: Array = []
+# Teams, die in dieser Runde bereits angetreten sind
+var attempted_team_names: Array = []
 
 # 10-Sekunden Timer
 var challenge_timer: float = 10.0
@@ -176,6 +168,9 @@ func _setup_gameplay_background():
 @onready var result_desc = $GameMargin/GameContainer/ActionArea/RoundResultBox/VBox/ResultDesc
 @onready var btn_next_round = $GameMargin/GameContainer/ActionArea/RoundResultBox/VBox/BtnNextRound
 
+# Winner Overlay
+@onready var winner_overlay = get_node_or_null("MinigameWinnerOverlay")
+
 func _ready():
 	AudioManager.play_random_quiz_music()
 	_setup_gameplay_background()
@@ -192,9 +187,12 @@ func _ready():
 	intro_container.visible = true
 	game_margin.visible = false
 	game_container.visible = false
+	if winner_overlay:
+		winner_overlay.visible = false
 	if pixel_back_btn:
 		pixel_back_btn.visible = true
-		
+	_setup_intro_scroll()
+
 	# Handys in den Waiting-Screen schalten
 	NetworkManager.broadcast({
 		"type": "state_change",
@@ -261,9 +259,23 @@ func _connect_buttons_sfx(node: Node):
 	for child in node.get_children():
 		_connect_buttons_sfx(child)
 
+func _setup_intro_scroll():
+	var scroll_area = get_node_or_null("IntroContainer/VBox/ScrollArea")
+	var inst_lbl = get_node_or_null("IntroContainer/VBox/ScrollArea/InstructionContainer/Instruction")
+	if scroll_area and inst_lbl:
+		await get_tree().process_frame
+		if is_instance_valid(inst_lbl) and is_instance_valid(scroll_area):
+			var content_h = inst_lbl.get_minimum_size().y + 8.0
+			scroll_area.custom_minimum_size.y = clampf(content_h, 80.0, 480.0)
+
 func _process(delta):
 	if current_phase == Phase.COUNTDOWN and is_challenge_timer_running and not is_challenge_paused:
+		var prev_sec = int(ceil(challenge_timer))
 		challenge_timer -= delta
+		var curr_sec = int(ceil(challenge_timer))
+		if curr_sec != prev_sec and curr_sec in [3, 2, 1]:
+			AudioManager.play_sfx("timer_tick")
+			
 		if challenge_timer <= 0.0:
 			challenge_timer = 0.0
 			is_challenge_timer_running = false
@@ -291,7 +303,7 @@ func _input(event: InputEvent):
 func _on_start_game_pressed():
 	intro_container.visible = false
 	if pixel_back_btn:
-		pixel_back_btn.visible = false
+		pixel_back_btn.visible = true
 	if bg_tilemap:
 		bg_tilemap.visible = false
 	if gameplay_bg:
@@ -335,8 +347,12 @@ func _start_round(round_num: int):
 	challenge_box.visible = false
 	round_result_box.visible = false
 	tie_notice.visible = false
+	if winner_overlay:
+		winner_overlay.visible = false
 	
 	player_bets.clear()
+	ranked_team_bets.clear()
+	attempted_team_names.clear()
 	_setup_betting_participants()
 	_update_scoreboard_ui()
 	
@@ -344,6 +360,7 @@ func _start_round(round_num: int):
 	_broadcast_bet_phase()
 
 func _broadcast_bet_phase():
+	NetworkManager.current_game_state = "bet_buddy_bet"
 	for team in teams_cache:
 		var players = team.get("players", [])
 		for i in range(players.size()):
@@ -404,18 +421,22 @@ func _on_network_message(player_id: int, data: Dictionary):
 	var msg_type = data.get("type", "")
 	if msg_type == "bet_buddy_submit":
 		if current_phase == Phase.BETTING:
-			var bet_val = max(1, int(data.get("bet", 5)))
+			var bet_val = max(1, int(data.get("bet", 1)))
 			_register_player_bet(player_id, bet_val)
 
-func _on_client_connected(player_id: int):
+func _on_client_connected(player_id: int, _player_name: String = ""):
 	if current_phase == Phase.BETTING:
 		var p_info = _get_player_info_by_id(player_id)
+		var already_sub = player_bets.has(player_id)
+		var b_val = player_bets[player_id].get("bet", 1) if already_sub else 1
 		NetworkManager.send_to_player(player_id, {
 			"type": "state_change",
 			"state": "bet_buddy_bet",
 			"topic": current_topic,
 			"partner_name": p_info.get("partner_name", "Partner"),
-			"player_id": player_id
+			"player_id": player_id,
+			"already_submitted": already_sub,
+			"bet_val": b_val
 		})
 	elif current_phase == Phase.COUNTDOWN:
 		NetworkManager.send_to_player(player_id, {
@@ -463,10 +484,9 @@ func _check_all_bets_in():
 	
 	if submitted >= total_players and total_players > 0:
 		btn_reveal_bets.text = "Alle Wetten da! Aufdecken"
-		btn_reveal_bets.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4))
 	else:
 		btn_reveal_bets.text = "Wetten aufdecken (%d/%d)" % [submitted, total_players]
-		btn_reveal_bets.add_theme_color_override("font_color", Color.WHITE)
+	btn_reveal_bets.add_theme_color_override("font_color", Color.WHITE)
 
 func _update_scroll_container_height(count: int, columns: int):
 	if not scroll_container:
@@ -491,11 +511,11 @@ func _on_reveal_bets_pressed():
 	if current_phase != Phase.BETTING:
 		return
 		
-	# Falls noch nicht alle gewettet haben, fülle Defaults (5) ein
+	# Falls noch nicht alle gewettet haben, fülle Defaults (1) ein
 	var all_players = _get_all_players()
 	for p in all_players:
 		if not player_bets.has(p["id"]):
-			_register_player_bet(p["id"], 5)
+			_register_player_bet(p["id"], 1)
 			
 	current_phase = Phase.REVEAL
 	btn_reveal_bets.visible = false
@@ -503,20 +523,25 @@ func _on_reveal_bets_pressed():
 	status_label.add_theme_color_override("font_color", Color(0.4, 0.8, 1.0))
 	AudioManager.play_sfx("settings_open")
 	
-	var highest_bet = -1
-	var targets_with_highest_bet = [] # [{ "target_id", "target_name", "target_char", "team_name", "team_color", "bet", "bettor_name" }]
-	
+	# 1. Zeige alle Gebote auf den Teilnehmerkarten an
 	for pid in player_bets.keys():
 		var b = player_bets[pid]
 		var card = participant_cards.get(pid)
 		if card and is_instance_valid(card) and card.has_method("set_custom_answer"):
-			card.set_custom_answer("Wette auf %s:\n%d Begriffe" % [b["partner_name"], b["bet"]], 2) # 2 = REVEALED
+			card.set_custom_answer("%d Begriffe" % b["bet"], 2) # 2 = REVEALED
 		
-		# Höchste Wette ermitteln
+	# 2. Absolutes Höchstgebot unter ALLEN einzelnen Spielern ermitteln
+	var highest_bet = 1
+	for pid in player_bets.keys():
+		var b = player_bets[pid]
 		if b["bet"] > highest_bet:
 			highest_bet = b["bet"]
-			targets_with_highest_bet = [b]
-		elif b["bet"] == highest_bet:
+			
+	# 3. ALLE Spieler mit diesem Höchstgebot sammeln (für die Auslosung, falls Gleichstand)
+	var targets_with_highest_bet: Array = []
+	for pid in player_bets.keys():
+		var b = player_bets[pid]
+		if b["bet"] == highest_bet:
 			targets_with_highest_bet.append(b)
 			
 	# Auswertung & Gleichstands-Auflösung
@@ -532,8 +557,44 @@ func _on_reveal_bets_pressed():
 		_animate_tie_break(targets_with_highest_bet)
 	else:
 		tie_notice.visible = false
-		_select_challenger(targets_with_highest_bet[0])
+		var chosen = targets_with_highest_bet[0] if not targets_with_highest_bet.is_empty() else {}
+		ranked_team_bets = _build_ranked_team_bets(chosen)
+		_select_challenger(chosen)
 		btn_start_countdown.disabled = false
+
+func _build_ranked_team_bets(chosen: Dictionary) -> Array:
+	var result = []
+	result.append(chosen)
+	
+	# Für alle anderen Teams jeweils den besten Bieter ermitteln
+	var other_teams = {} # team_name -> Array of bets
+	for pid in player_bets.keys():
+		var b = player_bets[pid]
+		if b["team_name"] != chosen["team_name"]:
+			if not other_teams.has(b["team_name"]):
+				other_teams[b["team_name"]] = []
+			other_teams[b["team_name"]].append(b)
+			
+	var other_team_reps = []
+	for t_name in other_teams.keys():
+		var team_list = other_teams[t_name]
+		var max_team_bet = 1
+		for tb in team_list:
+			if tb["bet"] > max_team_bet:
+				max_team_bet = tb["bet"]
+		var best_in_team = []
+		for tb in team_list:
+			if tb["bet"] == max_team_bet:
+				best_in_team.append(tb)
+		best_in_team.shuffle()
+		other_team_reps.append(best_in_team[0])
+		
+	# Sortiere die anderen Teams nach ihrem Gebot absteigend
+	other_team_reps.sort_custom(func(a, b): return a["bet"] > b["bet"])
+	for rep in other_team_reps:
+		result.append(rep)
+		
+	return result
 
 func _animate_tie_break(candidates: Array):
 	var ticks = 14
@@ -552,16 +613,25 @@ func _animate_tie_break(candidates: Array):
 		await get_tree().create_timer(delay).timeout
 		delay += 0.02
 		
-	# Endgültige Wahl
+	# Endgültige Wahl aus ALLEN Spielern mit Höchstgebot
 	var chosen = candidates[randi() % candidates.size()]
 	AudioManager.play_sfx("transformation")
+	
+	ranked_team_bets = _build_ranked_team_bets(chosen)
+			
 	_select_challenger(chosen)
 	if tie_notice_label:
-		tie_notice_label.text = "LOS ENTSCHIEDEN! Zufall wählt: %s (%s)" % [chosen["partner_name"], chosen["team_name"]]
+		if chosen.get("player_name", "") != chosen.get("partner_name", ""):
+			tie_notice_label.text = "LOS ENTSCHIEDEN! %s wurde genommen, demnach muss %s (%s) aufzählen!" % [chosen["player_name"], chosen["partner_name"], chosen["team_name"]]
+		else:
+			tie_notice_label.text = "LOS ENTSCHIEDEN! %s (%s) wurde genommen und muss aufzählen!" % [chosen["player_name"], chosen["team_name"]]
 		tie_notice_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4))
 	btn_start_countdown.disabled = false
 
 func _select_challenger(b: Dictionary):
+	attempted_team_names.clear()
+	attempted_team_names.append(b["team_name"])
+	
 	chosen_player_id = b["partner_id"]
 	chosen_player_name = b["partner_name"]
 	chosen_team_name = b["team_name"]
@@ -576,9 +646,12 @@ func _select_challenger(b: Dictionary):
 			
 	var bettor_card = participant_cards.get(b["player_id"])
 	if bettor_card and is_instance_valid(bettor_card) and bettor_card.has_method("set_custom_answer"):
-		bettor_card.set_custom_answer("Höchstgebot: %d Begriffe" % target_count, 3) # 3 = SELECTED
+		bettor_card.set_custom_answer("%d Begriffe" % target_count, 3) # 3 = SELECTED
 		
-	status_label.text = "%s (%s) muss antreten und %d Begriffe aufzählen!" % [chosen_player_name, chosen_team_name, target_count]
+	if b.get("player_name", "") != b.get("partner_name", ""):
+		status_label.text = "%s wurde genommen, demnach muss %s (%s) antreten und %d Begriffe aufzählen!" % [b["player_name"], chosen_player_name, chosen_team_name, target_count]
+	else:
+		status_label.text = "%s (%s) muss antreten und %d Begriffe aufzählen!" % [chosen_player_name, chosen_team_name, target_count]
 	status_label.add_theme_color_override("font_color", chosen_team_color)
 
 # ==============================================================================
@@ -590,6 +663,17 @@ func _on_start_countdown_pressed():
 	btn_start_countdown.visible = false
 	challenge_box.visible = true
 	round_result_box.visible = false
+	tie_notice.visible = false
+	
+	# Nicht mehr der Wettgewinner leuchtet aktiv, sondern der Spieler, der aufzählen muss!
+	for pid in participant_cards.keys():
+		var card = participant_cards[pid]
+		if not is_instance_valid(card):
+			continue
+		if pid == chosen_player_id:
+			card.set_custom_answer("Noch %d" % target_count, 3) # 3 = SELECTED (leuchtet in Teamfarbe)
+		else:
+			card.set_state(2) # 2 = REVEALED (normale schwarze Karte mit Teamrahmen)
 	
 	challenger_label.text = "%s (%s) muss %d Begriffe aufzählen!" % [chosen_player_name, chosen_team_name, target_count]
 	challenger_label.add_theme_color_override("font_color", chosen_team_color)
@@ -654,6 +738,13 @@ func _on_hit_minus_pressed():
 		status_label.text = "Noch %d Begriff(e) benötigt!" % remaining_count
 		status_label.add_theme_color_override("font_color", Color(0.85, 0.88, 0.95))
 		
+	var challenger_card = participant_cards.get(chosen_player_id)
+	if challenger_card and is_instance_valid(challenger_card):
+		if remaining_count <= 0:
+			challenger_card.set_custom_answer("Geschafft!", 3)
+		else:
+			challenger_card.set_custom_answer("Noch %d" % remaining_count, 3)
+		
 	# Controller benachrichtigen
 	NetworkManager.broadcast({
 		"type": "bet_buddy_timer_update",
@@ -667,6 +758,10 @@ func _on_undo_plus_pressed():
 	remaining_count += 1
 	AudioManager.play_sfx("button_press")
 	_update_counter_display()
+	
+	var challenger_card = participant_cards.get(chosen_player_id)
+	if challenger_card and is_instance_valid(challenger_card):
+		challenger_card.set_custom_answer("Noch %d" % remaining_count, 3)
 	
 	# Controller benachrichtigen
 	NetworkManager.broadcast({
@@ -697,16 +792,80 @@ func _update_challenge_timer_ui():
 		timer_bar.modulate = Color(1.0, 1.0, 1.0)
 
 func _handle_challenge_timeout():
-	# 10s ohne Begriff abgelaufen -> verloren (-1 Punkt)!
 	AudioManager.play_sfx("hit")
-	_resolve_round(false, "ZEIT ABGELAUFEN! 10 Sekunden ohne neuen Begriff.")
+	_handle_challenge_failed("ZEIT ABGELAUFEN! 10 Sekunden ohne neuen Begriff.")
 
 func _on_give_up_pressed():
 	if current_phase != Phase.COUNTDOWN:
 		return
-	is_challenge_timer_running = false
 	AudioManager.play_sfx("hit")
-	_resolve_round(false, "%s hat aufgegeben!" % chosen_player_name)
+	_handle_challenge_failed("%s hat aufgegeben!" % chosen_player_name)
+
+func _handle_challenge_failed(reason_msg: String):
+	if current_phase != Phase.COUNTDOWN:
+		return
+	is_challenge_timer_running = false
+	
+	# Bisherigen Challenger auf der Karte als nicht geschafft markieren
+	var prev_card = participant_cards.get(chosen_player_id)
+	if prev_card and is_instance_valid(prev_card):
+		prev_card.set_custom_answer("Vorbei", 2)
+		
+	# Nächstes Team mit dem höchsten Gebot suchen, das noch nicht an der Reihe war
+	var next_candidate = null
+	for c in ranked_team_bets:
+		if not attempted_team_names.has(c["team_name"]):
+			next_candidate = c
+			break
+			
+	if next_candidate != null:
+		_takeover_challenge(next_candidate, reason_msg)
+	else:
+		# Alle Teams hatten ihre Chance und sind gescheitert -> Runde ohne Punkte beenden
+		_resolve_round(false, "Kein Team konnte die verbleibenden Begriffe aufzählen!")
+
+func _takeover_challenge(next_candidate: Dictionary, reason_msg: String):
+	var prev_player = chosen_player_name
+	var prev_team = chosen_team_name
+	
+	attempted_team_names.append(next_candidate["team_name"])
+	chosen_player_id = next_candidate["partner_id"]
+	chosen_player_name = next_candidate["partner_name"]
+	chosen_team_name = next_candidate["team_name"]
+	chosen_team_color = next_candidate["team_color"]
+	
+	# Challenger Card aktualisieren (neuer Spieler leuchtet in Teamfarbe)
+	for pid in participant_cards.keys():
+		var card = participant_cards[pid]
+		if not is_instance_valid(card):
+			continue
+		if pid == chosen_player_id:
+			card.set_custom_answer("Noch %d" % remaining_count, 3) # 3 = SELECTED
+		else:
+			card.set_state(2)
+			
+	challenger_label.text = "%s (%s) übernimmt! Noch %d Begriffe aufzählen." % [chosen_player_name, chosen_team_name, remaining_count]
+	challenger_label.add_theme_color_override("font_color", chosen_team_color)
+	
+	status_label.text = "%s (%s) ist raus! %s (%s) übernimmt die restlichen %d Begriffe." % [prev_player, prev_team, chosen_player_name, chosen_team_name, remaining_count]
+	status_label.add_theme_color_override("font_color", chosen_team_color)
+	
+	# 10s Timer für den neuen Herausforderer zurücksetzen und pausieren
+	challenge_timer = COUNTDOWN_INTERVAL
+	is_challenge_timer_running = true
+	is_challenge_paused = true
+	btn_toggle_pause.text = "Timer Starten"
+	_update_challenge_timer_ui()
+	_update_counter_display()
+	
+	AudioManager.play_sfx("transformation")
+	
+	# Mobile Controller informieren
+	NetworkManager.broadcast({
+		"type": "bet_buddy_timer_update",
+		"remaining": remaining_count,
+		"time_left": int(ceil(challenge_timer))
+	})
 
 func _on_success_pressed():
 	if current_phase != Phase.COUNTDOWN or remaining_count > 0:
@@ -728,14 +887,19 @@ func _resolve_round(success: bool, reason_msg: String):
 		result_desc.text = "%s\n+1 Punkt für %s!" % [reason_msg, chosen_team_name]
 		status_label.text = "Runde gewonnen! +1 Punkt für %s." % chosen_team_name
 		status_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4))
+		var card = participant_cards.get(chosen_player_id)
+		if card and is_instance_valid(card):
+			card.set_custom_answer("Geschafft! (+1)", 3)
 	else:
-		# Minuspunkte möglich!
-		in_game_scores[chosen_team_name] -= 1
+		# KEIN Minuspunkt mehr!
 		result_title.text = "NICHT GESCHAFFT!"
 		result_title.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
-		result_desc.text = "%s\n-1 Punkt für %s!" % [reason_msg, chosen_team_name]
-		status_label.text = "Runde nicht geschafft! -1 Punkt für %s." % chosen_team_name
+		result_desc.text = "%s\nKeine Punkte in dieser Runde." % reason_msg
+		status_label.text = "Runde beendet! Keine Punkte vergeben."
 		status_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+		var card = participant_cards.get(chosen_player_id)
+		if card and is_instance_valid(card):
+			card.set_custom_answer("Vorbei", 2)
 		
 	_update_scoreboard_ui()
 	
@@ -748,16 +912,19 @@ func _resolve_round(success: bool, reason_msg: String):
 			break
 			
 	if winner_team != null:
-		result_title.text = "%s GEWINNT DAS MINISPIEL!" % winner_team.get("name", "Team")
-		result_title.add_theme_color_override("font_color", winner_team.get("color", Color(1, 0.85, 0.2, 1)))
-		result_desc.text = "%s hat zuerst %d Punkte erreicht und gewinnt Bet Buddy Extreme!" % [winner_team.get("name", "Team"), TARGET_IN_GAME_POINTS]
-		status_label.text = "%s gewinnt das Minispiel!" % winner_team.get("name", "Team")
-		status_label.add_theme_color_override("font_color", winner_team.get("color", Color.WHITE))
+		current_phase = Phase.VICTORY
+		round_result_box.visible = false
 		
-		AudioManager.play_sfx("confetti_pop")
+		# Handys sofort informieren, dass das Spiel vorbei ist
+		NetworkManager.broadcast({
+			"type": "state_change",
+			"state": "waiting",
+			"title": "SPIEL BEENDET",
+			"message": "%s gewinnt Bet Buddy Extreme!" % winner_team.get("name", "Team")
+		})
 		
+		var points = 2
 		if NetworkManager.current_minigame_index != -1:
-			var points = 2
 			if NetworkManager.current_selecting_team_color == winner_team["color"]:
 				points = 3
 			NetworkManager.minigame_winners[NetworkManager.current_minigame_index] = {
@@ -765,10 +932,23 @@ func _resolve_round(success: bool, reason_msg: String):
 				"points": points,
 				"selecting_color": NetworkManager.current_selecting_team_color
 			}
-			
-		btn_next_round.text = "Zurück zum Spielbrett"
+			for p in winner_team.get("players", []):
+				var pid = _get_player_id(p)
+				if pid != -1 and NetworkManager.player_sessions.has(pid):
+					NetworkManager.player_sessions[pid]["score"] += points
+					
+		if winner_overlay:
+			winner_overlay.visible = true
+			winner_overlay.setup_winner(winner_team, points)
 	else:
 		btn_next_round.text = "Nächste Runde starten"
+		var round_msg = "+1 Punkt für %s!" % chosen_team_name if success else "Keine Punkte in dieser Runde."
+		NetworkManager.broadcast({
+			"type": "state_change",
+			"state": "waiting",
+			"title": "RUNDE BEENDET",
+			"message": round_msg + " Bitte auf den Hauptbildschirm schauen."
+		})
 
 func _on_next_round_pressed():
 	var winner_team = null
@@ -785,20 +965,36 @@ func _on_next_round_pressed():
 
 func _on_back_to_main_board_pressed():
 	AudioManager.stop_music()
+	NetworkManager.current_game_state = "waiting"
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	NetworkManager.broadcast({
+		"type": "state_change",
+		"state": "waiting",
+		"title": "SPIELBRETT",
+		"message": "Zurück auf dem Spielbrett! Bitte auf den Hauptbildschirm schauen."
+	})
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")
 
 func _on_back_pressed():
 	AudioManager.stop_music()
+	NetworkManager.current_game_state = "waiting"
+	NetworkManager.broadcast({
+		"type": "state_change",
+		"state": "waiting",
+		"title": "SPIELBRETT",
+		"message": "Zurück auf dem Spielbrett! Bitte auf den Hauptbildschirm schauen."
+	})
 	if NetworkManager.current_turn_number > 0:
 		if NetworkManager.current_minigame_index == -1 or not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
 			if not NetworkManager.is_replaying_minigame:
 				NetworkManager.current_turn_number -= 1
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")

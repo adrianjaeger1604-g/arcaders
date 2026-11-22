@@ -39,12 +39,14 @@ var game_locked = false
 var quiz_questions_count = 5
 var minigames_count = 24
 var team_assignment_mode: String = "quiz_ranking" # "quiz_ranking" oder "manual"
+var quiz_anonymous_answers: bool = false
 
 # Charakter-Texturen vorausschauend laden
 var character_textures = {
 	"Aaron": preload("res://assets/characters/sprites/spr_aaron_idle_1.png"),
 	"Anna": preload("res://assets/characters/sprites/spr_anna_idle_1.png"),
 	"Cedi": preload("res://assets/characters/sprites/spr_cedric_idle_1.png"),
+	"Cedric": preload("res://assets/characters/sprites/spr_cedric_idle_1.png"),
 	"Finnja": preload("res://assets/characters/sprites/spr_finnja_idle_1.png"),
 	"Jan": preload("res://assets/characters/sprites/spr_jan_idle_1.png"),
 	"Janek": preload("res://assets/characters/sprites/spr_janek_idle_1.png"),
@@ -71,11 +73,11 @@ var is_replaying_minigame = false # Flag ob ein bereits gespieltes Spiel wiederh
 var minigame_pool = [
 	"res://scenes/minigames/Minigame10Sec.tscn",
 	"res://scenes/minigames/MinigameCookieClickers.tscn",
-	"res://scenes/minigames/VideoGameQuiz.tscn",
 	"res://scenes/minigames/MinigameFireEmblem.tscn",
 	"res://scenes/minigames/MinigameIceClimbers.tscn",
 	"res://scenes/minigames/MinigameHexagon.tscn",
-	"res://scenes/minigames/MinigameBetBuddyExtreme.tscn"
+	"res://scenes/minigames/MinigameBetBuddyExtreme.tscn",
+	"res://scenes/minigames/MinigameSchmierig.tscn"
 ]
 var board_layout = [] # Array of scene paths, index corresponds to card number
 
@@ -235,6 +237,9 @@ func compute_teams():
 	for p_id in player_sessions:
 		var p_data = player_sessions[p_id].duplicate()
 		p_data["id"] = p_id
+		if p_data.get("character", "") == "" or p_data.get("character", "") == "unknown":
+			p_data["character"] = "Cedi"
+			player_sessions[p_id]["character"] = "Cedi"
 		players.append(p_data)
 		
 	players.sort_custom(func(a, b): return a.get("score", 0) > b.get("score", 0))
@@ -494,7 +499,10 @@ func _handle_packet(peer: WebSocketPeer, data_string: String):
 			if p_id == -1 and peer_to_player_id.has(peer):
 				p_id = peer_to_player_id[peer]
 			if p_id != -1 and player_sessions.has(p_id):
-				player_sessions[p_id]["character"] = data.get("character", "Cedric")
+				var chosen_char = data.get("character", "Cedi")
+				if chosen_char == "" or chosen_char == "unknown":
+					chosen_char = "Cedi"
+				player_sessions[p_id]["character"] = chosen_char
 				print("Spieler ", player_sessions[p_id]["name"], " hat Charakter gewaehlt: ", player_sessions[p_id]["character"])
 				emit_signal("character_selected", p_id, player_sessions[p_id]["character"])
 			else:

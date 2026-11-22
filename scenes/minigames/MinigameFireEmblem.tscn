@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/minigames/MinigameFireEmblem.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="2_btn"]
 [ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="3_theme"]
 [ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="4_tileset"]
 [ext_resource type="PackedScene" path="res://scenes/ui/PixelBackButton.tscn" id="5_back"]
+[ext_resource type="PackedScene" uid="uid://c6v2n7m9q1k4w" path="res://scenes/ui/MinigameWinnerOverlay.tscn" id="6_winner_overlay"]
 [ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="bg_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SidePanel"]
@@ -61,7 +62,7 @@ mouse_filter = 2
 [node name="VBox" type="VBoxContainer" parent="IntroContainer"]
 custom_minimum_size = Vector2(1040, 0)
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 48
 
 [node name="Title" type="Label" parent="IntroContainer/VBox"]
 layout_mode = 2
@@ -83,9 +84,9 @@ vertical_scroll_mode = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_bottom = 0
 
 [node name="Instruction" type="Label" parent="IntroContainer/VBox/ScrollArea/InstructionContainer"]
 layout_mode = 2
@@ -308,3 +309,5 @@ text = "WEITER"
 
 [node name="PixelBackButton" parent="." instance=ExtResource("5_back")]
 layout_mode = 0
+
+[node name="MinigameWinnerOverlay" parent="." instance=ExtResource("6_winner_overlay")]

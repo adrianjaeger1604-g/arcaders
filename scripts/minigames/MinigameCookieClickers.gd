@@ -106,7 +106,7 @@ func _connect_buttons_sfx(node: Node):
 func _on_start_pressed():
 	AudioManager.play_music("cookie_clickers")
 	if pixel_back_btn:
-		pixel_back_btn.visible = false
+		pixel_back_btn.visible = true
 	phase = "countdown"
 	countdown_time = 3.0
 	start_btn.visible = false
@@ -177,7 +177,8 @@ func _on_timer_tick():
 			phase = "play"
 			play_time_left = 15.0
 			status_label.text = "GO!"
-			status_label.modulate = Color(1.0, 0.9, 0.2)
+			status_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
+			status_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
 			
 			# Jetzt die Handys freischalten
 			NetworkManager.broadcast({
@@ -201,19 +202,42 @@ func _on_timer_tick():
 		
 		if play_time_left <= 0:
 			round_timer.stop()
-			phase = "end"
-			_end_game()
+			phase = "await_final"
+			status_label.text = "STOP!"
+			
+			# Sofort Handys sperren und zur finalen Klick-Übermittlung auffordern
+			NetworkManager.broadcast({
+				"type": "state_change",
+				"state": "minigame_cookie_clickers",
+				"enabled": false,
+				"countdown_text": "STOP!"
+			})
+			
+			# Kurze Gnadenfrist (0.35s), damit die letzten WebSocket-Pakete der Handys garantiert eintreffen
+			var timer = get_tree().create_timer(0.35)
+			timer.timeout.connect(func():
+				if phase == "await_final":
+					phase = "end"
+					_end_game()
+			)
 
 func _on_message_received(player_id, data):
 	var msg_type = data.get("type", "")
-	if (msg_type in ["cookie_clickers_click", "tip_fast_click", "cookie_clicker_click", "coockie_clickers_click"]) and phase == "play":
+	var is_click_msg = msg_type in [
+		"cookie_clickers_click", "tip_fast_click", "cookie_clicker_click", "coockie_clickers_click",
+		"cookie_clickers_clicks_batch", "tip_fast_clicks_batch", "cookie_clicker_clicks_batch", "coockie_clickers_clicks_batch"
+	]
+	if is_click_msg and (phase == "play" or phase == "await_final" or phase == "end"):
 		if not player_clicks.has(player_id):
 			player_clicks[player_id] = 0
-		player_clicks[player_id] += 1
-	elif (msg_type in ["cookie_clickers_clicks_batch", "tip_fast_clicks_batch", "cookie_clicker_clicks_batch", "coockie_clickers_clicks_batch"]) and phase == "play":
-		if not player_clicks.has(player_id):
-			player_clicks[player_id] = 0
-		player_clicks[player_id] += int(data.get("clicks", 0))
+			
+		if data.has("total_clicks"):
+			var tot = int(data.get("total_clicks", 0))
+			if tot > player_clicks[player_id]:
+				player_clicks[player_id] = tot
+		else:
+			var clicks_delta = int(data.get("clicks", 1))
+			player_clicks[player_id] += clicks_delta
 
 func _update_player_ui(p_id, text_to_show):
 	var node_name = "Player_" + str(p_id)
@@ -247,8 +271,10 @@ func _end_game():
 	if inst_box:
 		inst_box.visible = false
 	
+	status_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
 	status_label.add_theme_font_size_override("font_size", 40)
 	status_label.text = "ZEIT ABGELAUFEN!"
+	status_label.add_theme_color_override("font_color", Color(1.0, 0.96, 0.84))
 	status_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	status_label.add_theme_constant_override("outline_size", 8)
 	status_label.remove_theme_color_override("font_shadow_color")
@@ -305,7 +331,8 @@ func _end_game():
 	var max_expected_clicks = max(1, best_clicks)
 		
 	# Aufsteigender Spannungs-Sound synchron zu den Balken
-	AudioManager.play_rising_sfx(MinigameResultHelper.RISE_DURATION)
+	if best_clicks > 0:
+		AudioManager.play_rising_sfx(MinigameResultHelper.RISE_DURATION)
 	
 	var i = 0
 	for p_data in sorted_players:
@@ -336,8 +363,8 @@ func _end_game():
 		status_label.add_theme_constant_override("shadow_offset_x", 0)
 		status_label.add_theme_constant_override("shadow_offset_y", 0)
 		
-		# Verstecke das Label initial, um es am Ende der Animation einzublenden
-		status_label.modulate.a = 0.0
+		# Verstecke das Label initial, um es am Ende der Animation einzublenden (in reiner Teamfarbe ohne Farbstich)
+		status_label.modulate = Color(1.0, 1.0, 1.0, 0.0)
 		
 		var win_tween = create_tween()
 		win_tween.tween_interval(MinigameResultHelper.RISE_DURATION + 0.1)
@@ -471,7 +498,8 @@ func _on_back_pressed():
 			if not NetworkManager.is_replaying_minigame:
 				NetworkManager.current_turn_number -= 1
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")

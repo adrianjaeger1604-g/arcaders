@@ -1,7 +1,7 @@
 extends CanvasLayer
 
 @onready var overlay = $SettingsOverlay
-@onready var gear_button = $MarginContainer/SettingsButton
+@onready var gear_button = $SettingsButton if has_node("SettingsButton") else $MarginContainer/SettingsButton
 @onready var close_button = $SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/CloseSettingsButton
 
 @onready var music_mute_btn = $SettingsOverlay/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/MusicRow/MusicMuteButton
@@ -68,9 +68,33 @@ func _ready():
 	
 	_update_ui_state()
 	_connect_buttons_sfx(self)
+	_setup_gear_button()
 	
 	get_tree().tree_changed.connect(_update_gear_visibility)
 	_update_gear_visibility()
+
+var _gear_hover_tween: Tween = null
+
+func _setup_gear_button():
+	if gear_button == null:
+		return
+	gear_button.pivot_offset = Vector2(32, 32)
+	if not gear_button.mouse_entered.is_connected(_on_gear_mouse_entered):
+		gear_button.mouse_entered.connect(_on_gear_mouse_entered)
+	if not gear_button.mouse_exited.is_connected(_on_gear_mouse_exited):
+		gear_button.mouse_exited.connect(_on_gear_mouse_exited)
+
+func _on_gear_mouse_entered():
+	if _gear_hover_tween:
+		_gear_hover_tween.kill()
+	_gear_hover_tween = create_tween()
+	_gear_hover_tween.tween_property(gear_button, "scale", Vector2(1.08, 1.08), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func _on_gear_mouse_exited():
+	if _gear_hover_tween:
+		_gear_hover_tween.kill()
+	_gear_hover_tween = create_tween()
+	_gear_hover_tween.tween_property(gear_button, "scale", Vector2.ONE, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 func _connect_buttons_sfx(node: Node):
 	if node is BaseButton:

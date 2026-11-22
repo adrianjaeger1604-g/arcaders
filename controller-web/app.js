@@ -71,8 +71,13 @@ const FE_RPS_ICON_KEYS = {
 function logDebug(msg) {
     const el = document.getElementById('debug-log');
     if (el) {
-        el.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
-        el.scrollTop = el.scrollHeight;
+        const isNearBottom = (el.scrollHeight - el.scrollTop - el.clientHeight) < 50;
+        const div = document.createElement('div');
+        div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        el.appendChild(div);
+        if (isNearBottom) {
+            el.scrollTop = el.scrollHeight;
+        }
     }
 }
 
@@ -114,10 +119,24 @@ function updateUserBadge(currentScreen) {
 updateUserBadge();
 
 function showScreen(screenName) {
+    // Wenn 'waiting' aufgerufen wird, aber noch gar kein Spielername existiert,
+    // darf der Spieler nicht im 'Warten'-Screen feststecken, sondern muss den Namen wählen!
+    if (screenName === 'waiting' && !myPlayerName) {
+        screenName = 'join';
+    }
+
     logDebug("Switching to: " + screenName);
     
     // Clear Cookie Clickers click batching if switching away
     if (screenName !== 'minigameCookieClickers' && screenName !== 'minigameTipFast') {
+        if (cookieClickersClicks > 0 || cookieTotalClicks > 0) {
+            sendMessage({
+                type: "cookie_clickers_clicks_batch",
+                clicks: cookieClickersClicks,
+                total_clicks: cookieTotalClicks,
+                is_final: true
+            });
+        }
         if (cookieClickersInterval) {
             clearInterval(cookieClickersInterval);
             cookieClickersInterval = null;
@@ -140,6 +159,26 @@ function showScreen(screenName) {
         stopBuzzerCountdown(false);
     }
     
+    if (screenName !== 'betBuddy') {
+        const bbInputSec = document.getElementById('bet-buddy-input-section');
+        const bbSubmittedBox = document.getElementById('bet-buddy-submitted-box');
+        const bbSpectatorBox = document.getElementById('bet-buddy-spectator-box');
+        const bbTopicTitle = document.getElementById('bet-buddy-topic-title');
+        const bbSpecPlayer = document.getElementById('bet-buddy-spec-player');
+        const bbSpecCount = document.getElementById('bet-buddy-spec-count');
+        const bbBtnSubmit = document.getElementById('btn-submit-bet');
+        if (bbInputSec) bbInputSec.style.display = 'flex';
+        if (bbSubmittedBox) bbSubmittedBox.style.display = 'none';
+        if (bbSpectatorBox) bbSpectatorBox.style.display = 'none';
+        if (bbTopicTitle) bbTopicTitle.textContent = "Thema lädt...";
+        if (bbSpecPlayer) bbSpecPlayer.textContent = "";
+        if (bbSpecCount) bbSpecCount.textContent = "";
+        if (bbBtnSubmit) {
+            bbBtnSubmit.disabled = false;
+            bbBtnSubmit.textContent = "WETTE EINLOGGEN";
+        }
+    }
+    
     Object.values(screens).forEach(s => {
         if (s) s.classList.remove('active');
     });
@@ -150,14 +189,10 @@ function showScreen(screenName) {
         console.error("Screen nicht gefunden: " + screenName);
     }
 
-    // Score-Anzeige nur beim Allgemeinwissen-Quiz anzeigen
+    // Score-Anzeige auf dem Handy nicht anzeigen
     const scoreDisplay = document.getElementById('score-display');
     if (scoreDisplay) {
-        if (screenName === 'quiz') {
-            scoreDisplay.style.display = 'block';
-        } else {
-            scoreDisplay.style.display = 'none';
-        }
+        scoreDisplay.style.display = 'none';
     }
 
     // Ice Climbers Eingaben zurücksetzen beim Screen-Wechsel
@@ -166,9 +201,10 @@ function showScreen(screenName) {
     // Benutzeranzeige oben rechts aktualisieren
     updateUserBadge(screenName);
 
-    // Abmelden-Button nur anzeigen, wenn man eingeloggt ist und nicht auf dem Join- oder Connection-Screen
+    // Abmelden-Button nur auf dem Join- oder Connection-Screen ausblenden.
+    // Auf ALLEN anderen Screens (auch 'waiting') ist er stets sichtbar!
     if (btnLogout) {
-        if (screenName === 'join' || screenName === 'connection' || !myPlayerName) {
+        if (screenName === 'join' || screenName === 'connection') {
             btnLogout.style.display = 'none';
         } else {
             btnLogout.style.display = 'block';
@@ -279,7 +315,13 @@ function sendMessage(msgObj) {
 function handleServerMessage(msg) {
     // Example: Server tells us to switch state
     if (msg.type === "state_change") {
-        if (msg.state === "waiting") showScreen('waiting');
+        if (msg.state === "waiting" || msg.state === "inactive") {
+            const waitTitle = document.getElementById('waiting-title');
+            const waitMsg = document.getElementById('waiting-message');
+            if (waitTitle) waitTitle.innerText = msg.title || (msg.state === "inactive" ? "DEATHMATCH" : "Warten...");
+            if (waitMsg) waitMsg.innerText = msg.message || "Bitte schau auf den Hauptbildschirm.";
+            showScreen('waiting');
+        }
         else if (msg.state === "character_select") showScreen('characterSelect');
         else if (msg.state === "quiz") {
             document.getElementById('quiz-question').innerText = msg.question || "Neue Frage!";
@@ -316,7 +358,7 @@ function handleServerMessage(msg) {
         }
         else if (msg.state === "ice_climbers") {
             const isEnabled = msg.enabled !== false;
-            setIceClimbersState(isEnabled, msg.countdown_text || (isEnabled ? "GO!" : "READY"));
+            setIceClimbersState(isEnabled, msg.countdown_text || (isEnabled ? "GO!" : "READY"), msg.banner_text);
             showScreen('iceClimbers');
         }
         else if (msg.state === "bet_buddy_bet") {
@@ -372,7 +414,7 @@ function handleServerMessage(msg) {
         }
         else if (msg.current_state === "ice_climbers") {
             const isEnabled = msg.enabled !== false;
-            setIceClimbersState(isEnabled, msg.countdown_text || (isEnabled ? "GO!" : "READY"));
+            setIceClimbersState(isEnabled, msg.countdown_text || (isEnabled ? "GO!" : "READY"), msg.banner_text);
             showScreen('iceClimbers');
         }
         else if (msg.current_state === "bet_buddy_bet") {
@@ -665,6 +707,7 @@ function getCharSpritePath(charId) {
         Aaron: "sprites/spr_aaron_idle_1.png",
         Anna: "sprites/spr_anna_idle_1.png",
         Cedi: "sprites/spr_cedric_idle_1.png",
+        Cedric: "sprites/spr_cedric_idle_1.png",
         Finnja: "sprites/spr_finnja_idle_1.png",
         Jan: "sprites/spr_jan_idle_1.png",
         Janek: "sprites/spr_janek_idle_1.png",
@@ -1110,15 +1153,25 @@ if (btnFeTurnSubmit) {
 // UI Event Listeners
 const btnLogout = document.getElementById('btn-logout');
 const btnToggleDebug = document.getElementById('btn-toggle-debug');
+const btnReload = document.getElementById('btn-reload');
 const debugLog = document.getElementById('debug-log');
 
 if (btnToggleDebug && debugLog) {
     btnToggleDebug.addEventListener('click', () => {
-        if (debugLog.style.display === 'none') {
-            debugLog.style.display = 'block';
-        } else {
-            debugLog.style.display = 'none';
+        const isHidden = debugLog.style.display === 'none' || getComputedStyle(debugLog).display === 'none';
+        debugLog.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+            debugLog.scrollTop = debugLog.scrollHeight;
         }
+    });
+}
+
+if (btnReload) {
+    btnReload.addEventListener('click', () => {
+        btnReload.classList.add('is-spinning');
+        setTimeout(() => {
+            window.location.reload();
+        }, 120);
     });
 }
 
@@ -1148,9 +1201,11 @@ if (btnLogout) {
     }
 }
 
-const btnWaitingChangeName = document.getElementById('btn-waiting-change-name');
-if (btnWaitingChangeName) {
-    btnWaitingChangeName.addEventListener('click', performLogout);
+const userBadgeElement = document.getElementById('user-badge');
+if (userBadgeElement) {
+    userBadgeElement.style.cursor = 'pointer';
+    userBadgeElement.title = "Klicken zum Abmelden / Name ändern";
+    userBadgeElement.addEventListener('click', performLogout);
 }
 
 if (btnJoin && playerNameInput) {
@@ -1233,11 +1288,19 @@ function stopBuzzerCountdown(isPaused = false) {
 
 function setupBuzzerScreen(info) {
     const buzzerHeader = document.getElementById('buzzer-header');
+    const buzzerGameTitle = document.getElementById('buzzer-game-title');
     const buzzerTargetVal = document.getElementById('buzzer-target-value');
+    const buzzerTargetContainer = document.getElementById('buzzer-target-container');
     const buzzerLockedBadge = document.getElementById('buzzer-locked-badge');
     
-    if (info && info.target_sum) {
+    if (info && info.game === "schmierig") {
         if (buzzerHeader) buzzerHeader.style.display = 'flex';
+        if (buzzerGameTitle) buzzerGameTitle.innerText = "SCHMIERIG";
+        if (buzzerTargetContainer) buzzerTargetContainer.style.display = 'none';
+    } else if (info && info.target_sum) {
+        if (buzzerHeader) buzzerHeader.style.display = 'flex';
+        if (buzzerGameTitle) buzzerGameTitle.innerText = "HEXAGON";
+        if (buzzerTargetContainer) buzzerTargetContainer.style.display = 'flex';
         if (buzzerTargetVal) buzzerTargetVal.innerText = info.target_sum;
     } else {
         if (buzzerHeader) buzzerHeader.style.display = 'none';
@@ -1337,30 +1400,47 @@ function setCookieClickerState(enabled, statusText) {
 
         cookieClickersClicks = 0;
         tipFastClicks = 0;
+        cookieTotalClicks = 0;
+        const cookieCounter = document.getElementById('cookie-click-count');
+        if (cookieCounter) cookieCounter.textContent = "0";
+
         if (cookieClickersInterval) clearInterval(cookieClickersInterval);
         if (tipFastInterval) clearInterval(tipFastInterval);
         cookieClickersInterval = setInterval(() => {
-            if (cookieClickersClicks > 0) {
-                sendMessage({ type: "cookie_clickers_clicks_batch", clicks: cookieClickersClicks });
+            if (cookieClickersClicks > 0 || cookieTotalClicks > 0) {
+                sendMessage({
+                    type: "cookie_clickers_clicks_batch",
+                    clicks: cookieClickersClicks,
+                    total_clicks: cookieTotalClicks
+                });
                 cookieClickersClicks = 0;
                 tipFastClicks = 0;
             }
-        }, 200);
+        }, 120);
         tipFastInterval = cookieClickersInterval;
     } else {
         if (mashArea) mashArea.classList.add('disabled');
         if (lockBadge) {
             lockBadge.classList.remove('hidden', 'go');
             if (lockIcon) lockIcon.textContent = '🔒';
-            if (lockText) lockText.textContent = statusText || 'READY';
+            if (lockText) lockText.textContent = statusText || 'STOP!';
         }
-        if (subtitle) subtitle.textContent = "Bereit machen... Warten auf GO!";
+        if (subtitle) {
+            subtitle.textContent = (statusText === 'STOP!' || statusText === 'ZEIT UM!') ? "Zeit abgelaufen!" : "Bereit machen... Warten auf GO!";
+        }
 
-        cookieClickersClicks = 0;
-        tipFastClicks = 0;
-        cookieTotalClicks = 0;
-        const cookieCounter = document.getElementById('cookie-click-count');
-        if (cookieCounter) cookieCounter.textContent = "0";
+        // Vor dem Stoppen: Letzte gepufferte Klicks mit dem verbindlichen Gesamtzähler senden!
+        if (cookieTotalClicks > 0 || cookieClickersClicks > 0) {
+            sendMessage({
+                type: "cookie_clickers_clicks_batch",
+                clicks: cookieClickersClicks,
+                total_clicks: cookieTotalClicks,
+                is_final: true
+            });
+            cookieClickersClicks = 0;
+            tipFastClicks = 0;
+        }
+
         if (cookieClickersInterval) {
             clearInterval(cookieClickersInterval);
             cookieClickersInterval = null;
@@ -1509,12 +1589,11 @@ if (charGrid) {
 }
 
 // =========================================================================
-// ICE CLIMBERS REAL-TIME CONTROLLER (HORIZONTAL JOYSTICK & JUMP BUTTON)
+// ICE CLIMBERS REAL-TIME CONTROLLER (ARCADE RETRO D-PAD & JUMP BUTTON)
 // =========================================================================
 let icState = { left: false, right: false, jump: false, dir: 0 };
-let icJumpTimer = null;
 
-function setIceClimbersState(enabled, statusText) {
+function setIceClimbersState(enabled, statusText, customBannerText) {
     isIceClimbersEnabled = enabled;
     const gamepad = document.getElementById('ic-gamepad-bottom');
     const lockBadge = document.getElementById('ic-lock-badge');
@@ -1527,7 +1606,7 @@ function setIceClimbersState(enabled, statusText) {
         if (lockBadge) {
             lockBadge.classList.remove('hidden');
             lockBadge.classList.add('go');
-            if (lockIcon) lockIcon.textContent = '⚡';
+            if (lockIcon) lockIcon.src = 'assets/icons/star.svg';
             if (lockText) lockText.textContent = statusText || 'GO!';
             setTimeout(() => {
                 if (isIceClimbersEnabled && lockBadge) {
@@ -1535,16 +1614,16 @@ function setIceClimbersState(enabled, statusText) {
                 }
             }, 650);
         }
-        if (bannerText) bannerText.textContent = "Klettere nach oben! Nicht abstürzen!";
+        if (bannerText) bannerText.textContent = customBannerText || "Klettere nach oben! Nicht abstürzen!";
     } else {
         resetIceClimbersInput();
         if (gamepad) gamepad.classList.add('disabled');
         if (lockBadge) {
             lockBadge.classList.remove('hidden', 'go');
-            if (lockIcon) lockIcon.textContent = '🔒';
+            if (lockIcon) lockIcon.src = 'assets/icons/lock.svg';
             if (lockText) lockText.textContent = statusText || 'READY';
         }
-        if (bannerText) bannerText.textContent = "Bereithalten... Countdown läuft!";
+        if (bannerText) bannerText.textContent = customBannerText || "Bereithalten... Countdown läuft!";
     }
 }
 
@@ -1553,211 +1632,200 @@ function resetIceClimbersInput() {
     icState.right = false;
     icState.jump = false;
     icState.dir = 0;
-    if (icJumpTimer) {
-        clearTimeout(icJumpTimer);
-        icJumpTimer = null;
+    const knob = document.getElementById('ic-joystick-knob');
+    if (knob) {
+        knob.style.transition = 'transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        knob.style.transform = 'translateX(0px)';
+        knob.classList.remove('active-touch');
     }
-    const thumb = document.getElementById('ic-joystick-thumb');
-    if (thumb) {
-        thumb.style.transform = 'translateX(0px)';
-        thumb.classList.remove('active-drag');
-    }
-    const arrowLeft = document.getElementById('ic-joy-arrow-left');
-    const arrowRight = document.getElementById('ic-joy-arrow-right');
+    const arrowLeft = document.querySelector('.ic-guide-left');
+    const arrowRight = document.querySelector('.ic-guide-right');
     if (arrowLeft) arrowLeft.classList.remove('active');
     if (arrowRight) arrowRight.classList.remove('active');
-
-    const jumpBtn = document.getElementById('ic-btn-jump');
-    if (jumpBtn) {
-        jumpBtn.classList.remove('active-touch');
-        jumpBtn.classList.remove('jump-pulse');
-    }
+    const btnJump = document.getElementById('ic-btn-jump');
+    if (btnJump) btnJump.classList.remove('active-touch');
 }
 
 function sendIceClimbersInput() {
     if (!isIceClimbersEnabled) return;
-    let dir = icState.dir;
-    if (icState.left && !icState.right) dir = -1;
-    else if (icState.right && !icState.left) dir = 1;
     sendMessage({
         type: "ice_climbers_input",
-        dir: dir,
+        dir: icState.dir,
         jump: icState.jump,
         player_id: myPlayerId
     });
 }
 
-function setupIceClimbersHorizontalJoystick() {
-    const zone = document.getElementById('ic-joystick-zone');
-    const thumb = document.getElementById('ic-joystick-thumb');
-    const arrowLeft = document.getElementById('ic-joy-arrow-left');
-    const arrowRight = document.getElementById('ic-joy-arrow-right');
-    if (!zone || !thumb) return;
+function setupIceClimbersControls() {
+    const track = document.getElementById('ic-joystick-track');
+    const knob = document.getElementById('ic-joystick-knob');
+    const arrowLeft = document.querySelector('.ic-guide-left');
+    const arrowRight = document.querySelector('.ic-guide-right');
+    const btnJump = document.getElementById('ic-btn-jump');
 
-    const maxOffset = 36; // Maximale Auslenkung in Pixeln nach links und rechts
-    let activeTouchId = null;
-    let isMouseDown = false;
-    let cachedCenterX = 0;
+    if (!track || !knob || !btnJump) return;
 
-    function handleStart(clientX) {
+    let joystickTouchId = null;
+    let isMouseDragging = false;
+    let lastVibratedDir = 0;
+
+    function updateJoystickPosition(clientX) {
         if (!isIceClimbersEnabled) return;
-        const rect = zone.getBoundingClientRect();
-        cachedCenterX = rect.left + rect.width / 2;
-        updatePosition(clientX - cachedCenterX);
-        thumb.classList.add('active-drag');
-    }
+        const rect = track.getBoundingClientRect();
+        const centerX = rect.left + rect.width * 0.5;
+        const knobWidth = knob.offsetWidth || 66;
+        const maxDist = Math.max(30, (rect.width - knobWidth) * 0.5 - 4);
 
-    function handleMove(clientX) {
-        if (!isIceClimbersEnabled) return;
-        if (!cachedCenterX) {
-            const rect = zone.getBoundingClientRect();
-            cachedCenterX = rect.left + rect.width / 2;
+        const deltaX = Math.max(-maxDist, Math.min(maxDist, clientX - centerX));
+        knob.style.transition = 'none';
+        knob.style.transform = `translateX(${deltaX}px)`;
+        knob.classList.add('active-touch');
+
+        const normX = deltaX / maxDist; // -1.0 bis +1.0
+        let dir = 0.0;
+        if (Math.abs(normX) >= 0.15) {
+            // Nach Überwindung der Deadzone (15%) sanfte Skalierung bis zum Vollausschlag ab 60%
+            if (Math.abs(normX) >= 0.60) {
+                dir = Math.sign(normX) * 1.0;
+            } else {
+                dir = Math.sign(normX) * ((Math.abs(normX) - 0.15) / (0.60 - 0.15));
+                dir = Math.round(dir * 100) / 100;
+            }
         }
-        updatePosition(clientX - cachedCenterX);
-    }
 
-    function handleEnd() {
-        activeTouchId = null;
-        isMouseDown = false;
-        cachedCenterX = 0;
-        thumb.classList.remove('active-drag');
-        thumb.style.transform = 'translateX(0px)';
-        if (arrowLeft) arrowLeft.classList.remove('active');
-        if (arrowRight) arrowRight.classList.remove('active');
+        const activeDirSign = (dir < -0.1) ? -1 : (dir > 0.1 ? 1 : 0);
+        if (arrowLeft) arrowLeft.classList.toggle('active', activeDirSign === -1);
+        if (arrowRight) arrowRight.classList.toggle('active', activeDirSign === 1);
 
-        if (icState.left || icState.right || icState.dir !== 0) {
-            icState.left = false;
-            icState.right = false;
-            icState.dir = 0;
+        if (activeDirSign !== 0 && activeDirSign !== lastVibratedDir) {
+            lastVibratedDir = activeDirSign;
+            if (navigator.vibrate) try { navigator.vibrate(10); } catch(e) {}
+        } else if (activeDirSign === 0) {
+            lastVibratedDir = 0;
+        }
+
+        const changed = (icState.dir !== dir);
+        icState.dir = dir;
+        icState.left = dir < -0.1;
+        icState.right = dir > 0.1;
+        track.setAttribute('aria-valuenow', String(dir));
+
+        if (changed) {
             sendIceClimbersInput();
         }
     }
 
-    function updatePosition(offsetX) {
-        // Streng horizontal beschränkt (Y-Achse wird komplett ignoriert)
-        const clampedX = Math.max(-maxOffset, Math.min(maxOffset, offsetX));
-        thumb.style.transform = `translateX(${clampedX}px)`;
+    function releaseJoystick() {
+        joystickTouchId = null;
+        isMouseDragging = false;
+        lastVibratedDir = 0;
+        knob.style.transition = 'transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        knob.style.transform = 'translateX(0px)';
+        knob.classList.remove('active-touch');
+        if (arrowLeft) arrowLeft.classList.remove('active');
+        if (arrowRight) arrowRight.classList.remove('active');
+        track.setAttribute('aria-valuenow', '0');
 
-        // Feinfühlige Deadzone von 5px für sofortiges Ansprechen ohne Verzögerung
-        const deadzone = 5;
-        let newDir = 0;
-        if (clampedX < -deadzone) {
-            newDir = -1;
-            if (arrowLeft) arrowLeft.classList.add('active');
-            if (arrowRight) arrowRight.classList.remove('active');
-        } else if (clampedX > deadzone) {
-            newDir = 1;
-            if (arrowRight) arrowRight.classList.add('active');
-            if (arrowLeft) arrowLeft.classList.remove('active');
-        } else {
-            newDir = 0;
-            if (arrowLeft) arrowLeft.classList.remove('active');
-            if (arrowRight) arrowRight.classList.remove('active');
-        }
+        const changed = (icState.dir !== 0.0);
+        icState.dir = 0.0;
+        icState.left = false;
+        icState.right = false;
 
-        const prevDir = icState.left ? -1 : (icState.right ? 1 : 0);
-        if (newDir !== prevDir) {
-            icState.left = newDir < 0;
-            icState.right = newDir > 0;
-            icState.dir = newDir;
-            sendIceClimbersInput(); // Sofort an den Server senden!
-            if (newDir !== 0 && navigator.vibrate) {
-                try { navigator.vibrate(12); } catch(e) {}
-            }
+        if (changed) {
+            sendIceClimbersInput();
         }
     }
 
-    // Touch Events
-    zone.addEventListener('touchstart', (e) => {
+    // Touch Handling (Multi-touch fähig: Links Joystick, Rechts Jump)
+    track.addEventListener('touchstart', (e) => {
         if (e.cancelable) e.preventDefault();
-        if (activeTouchId !== null) return;
+        if (joystickTouchId !== null) return;
         const touch = e.changedTouches[0];
-        activeTouchId = touch.identifier;
-        handleStart(touch.clientX);
+        joystickTouchId = touch.identifier;
+        updateJoystickPosition(touch.clientX);
     }, { passive: false });
 
-    zone.addEventListener('touchmove', (e) => {
+    track.addEventListener('touchmove', (e) => {
         if (e.cancelable) e.preventDefault();
         for (let i = 0; i < e.changedTouches.length; i++) {
-            const touch = e.changedTouches[i];
-            if (touch.identifier === activeTouchId) {
-                handleMove(touch.clientX);
+            if (e.changedTouches[i].identifier === joystickTouchId) {
+                updateJoystickPosition(e.changedTouches[i].clientX);
                 break;
             }
         }
     }, { passive: false });
 
-    const endTouch = (e) => {
+    const onTouchEnd = (e) => {
         if (e.cancelable) e.preventDefault();
         for (let i = 0; i < e.changedTouches.length; i++) {
-            if (e.changedTouches[i].identifier === activeTouchId) {
-                handleEnd();
+            if (e.changedTouches[i].identifier === joystickTouchId) {
+                releaseJoystick();
                 break;
             }
         }
     };
-    zone.addEventListener('touchend', endTouch, { passive: false });
-    zone.addEventListener('touchcancel', endTouch, { passive: false });
+    track.addEventListener('touchend', onTouchEnd, { passive: false });
+    track.addEventListener('touchcancel', onTouchEnd, { passive: false });
 
-    // Mouse Fallback
-    zone.addEventListener('mousedown', (e) => {
+    // Maus-Handling (für PC / Browser-Tests)
+    track.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        isMouseDown = true;
-        handleStart(e.clientX);
+        isMouseDragging = true;
+        updateJoystickPosition(e.clientX);
     });
 
     window.addEventListener('mousemove', (e) => {
-        if (!isMouseDown) return;
-        handleMove(e.clientX);
+        if (isMouseDragging) {
+            updateJoystickPosition(e.clientX);
+        }
     });
 
     window.addEventListener('mouseup', () => {
-        if (!isMouseDown) return;
-        handleEnd();
+        if (isMouseDragging) {
+            releaseJoystick();
+        }
     });
-}
 
-function setupIceClimbersJumpButton() {
-    const btn = document.getElementById('ic-btn-jump');
-    if (!btn) return;
-
-    const press = (e) => {
-        if (e && e.cancelable) e.preventDefault();
-        if (!isIceClimbersEnabled) return;
-        if (icJumpTimer) {
-            clearTimeout(icJumpTimer);
-            icJumpTimer = null;
-        }
-        icState.jump = true;
-        btn.classList.add('active-touch');
-        sendIceClimbersInput(); // Sofort senden vor der Vibration!
-        if (navigator.vibrate) {
-            try { navigator.vibrate(25); } catch(err) {}
-        }
-    };
-
-    const release = (e) => {
-        if (e && e.cancelable) e.preventDefault();
-        if (icJumpTimer) {
-            clearTimeout(icJumpTimer);
-            icJumpTimer = null;
-        }
-        if (icState.jump) {
-            icState.jump = false;
-            btn.classList.remove('active-touch');
+    // Jump Button Handling
+    function setJump(active) {
+        if (!isIceClimbersEnabled && active) return;
+        const changed = (icState.jump !== active);
+        icState.jump = active;
+        btnJump.classList.toggle('active-touch', active);
+        if (changed) {
             sendIceClimbersInput();
-        } else {
-            btn.classList.remove('active-touch');
+            if (active && navigator.vibrate) {
+                try { navigator.vibrate(25); } catch(e) {}
+            }
         }
-    };
+    }
 
-    btn.addEventListener('touchstart', press, { passive: false });
-    btn.addEventListener('touchend', release, { passive: false });
-    btn.addEventListener('touchcancel', release, { passive: false });
+    btnJump.addEventListener('touchstart', (e) => {
+        if (e.cancelable) e.preventDefault();
+        setJump(true);
+    }, { passive: false });
+    btnJump.addEventListener('touchend', (e) => {
+        if (e.cancelable) e.preventDefault();
+        setJump(false);
+    }, { passive: false });
+    btnJump.addEventListener('touchcancel', (e) => {
+        if (e.cancelable) e.preventDefault();
+        setJump(false);
+    }, { passive: false });
 
-    btn.addEventListener('mousedown', press);
-    btn.addEventListener('mouseup', release);
-    btn.addEventListener('mouseleave', release);
+    btnJump.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        setJump(true);
+    });
+    btnJump.addEventListener('mouseup', (e) => {
+        e.preventDefault();
+        setJump(false);
+    });
+    btnJump.addEventListener('mouseleave', () => {
+        if (icState.jump) {
+            setJump(false);
+        }
+    });
 }
 
 // =========================================================================
@@ -1779,14 +1847,23 @@ const betBuddySpecCount = document.getElementById('bet-buddy-spec-count');
 function setupBetBuddyScreen(msg) {
     if (betBuddyTopicTitle) betBuddyTopicTitle.textContent = msg.topic || "Thema";
     if (betBuddyPartnerName) betBuddyPartnerName.textContent = msg.partner_name || "Partner";
-    if (betBuddyInput) betBuddyInput.value = "5";
     
-    if (betBuddyInputSec) betBuddyInputSec.style.display = 'flex';
-    if (betBuddySubmittedBox) betBuddySubmittedBox.style.display = 'none';
-    if (betBuddySpectatorBox) betBuddySpectatorBox.style.display = 'none';
-    if (btnSubmitBet) {
-        btnSubmitBet.disabled = false;
-        btnSubmitBet.textContent = "WETTE EINLOGGEN";
+    if (msg.already_submitted) {
+        if (betBuddyInputSec) betBuddyInputSec.style.display = 'none';
+        if (betBuddySubmittedBox) {
+            betBuddySubmittedBox.style.display = 'flex';
+            if (betBuddyLockedVal) betBuddyLockedVal.textContent = msg.bet_val || 1;
+        }
+        if (betBuddySpectatorBox) betBuddySpectatorBox.style.display = 'none';
+    } else {
+        if (betBuddyInput) betBuddyInput.value = (msg.bet_val !== undefined && msg.bet_val > 0) ? msg.bet_val : "1";
+        if (betBuddyInputSec) betBuddyInputSec.style.display = 'flex';
+        if (betBuddySubmittedBox) betBuddySubmittedBox.style.display = 'none';
+        if (betBuddySpectatorBox) betBuddySpectatorBox.style.display = 'none';
+        if (btnSubmitBet) {
+            btnSubmitBet.disabled = false;
+            btnSubmitBet.textContent = "WETTE EINLOGGEN";
+        }
     }
     showScreen('betBuddy');
 }
@@ -1839,8 +1916,7 @@ if (btnSubmitBet && betBuddyInput) {
     });
 }
 
-setupIceClimbersHorizontalJoystick();
-setupIceClimbersJumpButton();
+setupIceClimbersControls();
 
 // Start
 initWebSocket();

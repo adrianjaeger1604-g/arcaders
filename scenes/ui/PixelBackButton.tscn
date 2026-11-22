@@ -1,17 +1,19 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/ui/shared/pixel_back_normal.png" id="1_normal"]
 [ext_resource type="Texture2D" path="res://assets/ui/shared/pixel_back_pressed.png" id="2_pressed"]
 [ext_resource type="Texture2D" path="res://assets/ui/shared/pixel_back_hover.png" id="3_hover"]
 [ext_resource type="Script" path="res://scripts/ui/PixelBackButton.gd" id="4_script"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="5_theme"]
+[ext_resource type="StyleBox" uid="uid://d1x8j2n7p9k3q" path="res://resources/panel_modal_style.tres" id="6_modal"]
 
 [node name="PixelBackButton" type="TextureButton"]
-z_index = 10
-custom_minimum_size = Vector2(80, 80)
-offset_left = 20.0
-offset_top = 20.0
-offset_right = 100.0
-offset_bottom = 100.0
+z_index = 25
+custom_minimum_size = Vector2(64, 64)
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 78.0
+offset_bottom = 78.0
 mouse_default_cursor_shape = 2
 texture_normal = ExtResource("1_normal")
 texture_pressed = ExtResource("2_pressed")
@@ -19,3 +21,86 @@ texture_hover = ExtResource("3_hover")
 ignore_texture_size = true
 stretch_mode = 5
 script = ExtResource("4_script")
+
+[node name="ConfirmLayer" type="CanvasLayer" parent="."]
+layer = 95
+visible = false
+
+[node name="DimBackdrop" type="ColorRect" parent="ConfirmLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.08, 0.88)
+theme = ExtResource("5_theme")
+
+[node name="CenterContainer" type="CenterContainer" parent="ConfirmLayer/DimBackdrop"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ModalPanel" type="PanelContainer" parent="ConfirmLayer/DimBackdrop/CenterContainer"]
+custom_minimum_size = Vector2(680, 340)
+layout_mode = 2
+theme_override_styles/panel = ExtResource("6_modal")
+
+[node name="Margin" type="MarginContainer" parent="ConfirmLayer/DimBackdrop/CenterContainer/ModalPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 32
+
+[node name="VBox" type="VBoxContainer" parent="ConfirmLayer/DimBackdrop/CenterContainer/ModalPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="Title" type="Label" parent="ConfirmLayer/DimBackdrop/CenterContainer/ModalPanel/Margin/VBox"]
+layout_mode = 2
+theme_type_variation = &"H2"
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 36
+text = "MINISPIEL BEENDEN?"
+horizontal_alignment = 1
+
+[node name="Message" type="Label" parent="ConfirmLayer/DimBackdrop/CenterContainer/ModalPanel/Margin/VBox"]
+custom_minimum_size = Vector2(580, 0)
+layout_mode = 2
+theme_type_variation = &"H3"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22
+text = "Der aktuelle Spielfortschritt dieser Runde geht verloren!
+
+Möchtest du wirklich zum Spielbrett zurückkehren?"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="ButtonsHBox" type="HBoxContainer" parent="ConfirmLayer/DimBackdrop/CenterContainer/ModalPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="CancelBtn" type="Button" parent="ConfirmLayer/DimBackdrop/CenterContainer/ModalPanel/Margin/VBox/ButtonsHBox"]
+custom_minimum_size = Vector2(220, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 20
+text = "ABBRECHEN"
+
+[node name="ConfirmBtn" type="Button" parent="ConfirmLayer/DimBackdrop/CenterContainer/ModalPanel/Margin/VBox/ButtonsHBox"]
+custom_minimum_size = Vector2(240, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_type_variation = &"DangerButton"
+theme_override_font_sizes/font_size = 20
+text = "JA, ZUM BRETT"

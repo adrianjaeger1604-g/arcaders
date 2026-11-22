@@ -1,0 +1,394 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/minigames/MinigameSchmierig.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://dd6a17ffebae1" path="res://resources/global_button_theme.tres" id="2_theme"]
+[ext_resource type="TileSet" uid="uid://c5xk8j2p1n1q4" path="res://resources/supermario_tileset.tres" id="3_tileset"]
+[ext_resource type="Script" path="res://scripts/ui/BackgroundTileMap.gd" id="4_bg"]
+[ext_resource type="PackedScene" uid="uid://cax2j4f2e2n4c" path="res://scenes/ui/GameButton.tscn" id="5_btn"]
+[ext_resource type="PackedScene" uid="uid://b2x7m8p9q4k1s" path="res://scenes/ui/SecondaryButton.tscn" id="6_sec_btn"]
+[ext_resource type="PackedScene" path="res://scenes/ui/PixelBackButton.tscn" id="7_back"]
+[ext_resource type="StyleBox" uid="uid://c6f2y8p1n5m4a" path="res://resources/panel_side_style.tres" id="8_panel_side"]
+[ext_resource type="Material" uid="uid://d3m8y1q6b5k4s" path="res://resources/blur_image_material.tres" id="9_blur_mat"]
+[ext_resource type="PackedScene" uid="uid://c6v2n7m9q1k4w" path="res://scenes/ui/MinigameWinnerOverlay.tscn" id="10_winner_overlay"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_bg"]
+bg_color = Color(0.06, 0.08, 0.12, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.35, 0.48, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_progress_fill"]
+bg_color = Color(0.88, 0.74, 0.28, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="MinigameSchmierig" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="BlackBackground" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="BackgroundTileMap" type="TileMap" parent="."]
+scale = Vector2(4, 4)
+tile_set = ExtResource("3_tileset")
+format = 2
+script = ExtResource("4_bg")
+
+[node name="IntroContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 80.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="IntroContainer"]
+custom_minimum_size = Vector2(1040, 0)
+layout_mode = 2
+theme_override_constants/separation = 48
+
+[node name="Title" type="Label" parent="IntroContainer/VBox"]
+layout_mode = 2
+theme_type_variation = &"H1"
+theme_override_font_sizes/font_size = 72
+text = "Schmierig"
+horizontal_alignment = 1
+
+[node name="ScrollArea" type="ScrollContainer" parent="IntroContainer/VBox"]
+custom_minimum_size = Vector2(1040, 480)
+layout_mode = 2
+size_flags_horizontal = 4
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="InstructionContainer" type="MarginContainer" parent="IntroContainer/VBox/ScrollArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 0
+
+[node name="Instruction" type="Label" parent="IntroContainer/VBox/ScrollArea/InstructionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"H3"
+theme_override_constants/line_spacing = 8
+text = "1. Das Spielprinzip:
+Ein stark verschwommenes Bild wird Sekunde für Sekunde schärfer. Erkennt so schnell wie möglich, was auf dem Bild zu sehen ist!
+
+2. Der Buzzer:
+Sobald du glaubst, das Motiv zu erkennen, drücke sofort den Buzzer auf deinem Smartphone.
+
+3. Sichtschutz beim Überlegen:
+Sobald gebuzzert wurde, wird das Bild sofort wieder unscharf maskiert, damit niemand beim Überlegen weiterschauen kann. Nenne deine Antwort laut dem Spielleiter!
+
+4. Ein Versuch pro Team:
+Antwortet das Team richtig, erhält es einen Punkt. Antwortet das Team falsch, wird der Buzzer des gesamten Teams für dieses Bild gesperrt. Die anderen Teams dürfen weiterraten.
+
+5. Spielziel:
+Das erste Team, das 3 Punkte erreicht, gewinnt das Minispiel!"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="StartGameButton" parent="IntroContainer/VBox" instance=ExtResource("5_btn")]
+custom_minimum_size = Vector2(360, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "SPIEL STARTEN"
+
+[node name="GameplayContainer" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopHeader" type="VBoxContainer" parent="GameplayContainer"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 20.0
+offset_bottom = 70.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="ScoreContainer" type="HBoxContainer" parent="GameplayContainer/TopHeader"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="CenterBoard" type="VBoxContainer" parent="GameplayContainer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -492.0
+offset_top = -324.0
+offset_right = 492.0
+offset_bottom = 324.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="RoundLabel" type="Label" parent="GameplayContainer/CenterBoard"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 28
+text = "Runde 1"
+horizontal_alignment = 1
+
+[node name="SolutionLabel" type="Label" parent="GameplayContainer/CenterBoard"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 1, 0.5, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 32
+text = "LÖSUNG: Super Mario Pilz"
+horizontal_alignment = 1
+
+[node name="ImageFrame" type="PanelContainer" parent="GameplayContainer/CenterBoard"]
+custom_minimum_size = Vector2(984, 564)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/panel = ExtResource("8_panel_side")
+
+[node name="ImageRect" type="TextureRect" parent="GameplayContainer/CenterBoard/ImageFrame"]
+material = ExtResource("9_blur_mat")
+custom_minimum_size = Vector2(960, 540)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BuzzedShieldOverlay" type="ColorRect" parent="GameplayContainer/CenterBoard/ImageFrame"]
+visible = false
+layout_mode = 2
+color = Color(0.04, 0.05, 0.08, 0.96)
+
+[node name="Center" type="CenterContainer" parent="GameplayContainer/CenterBoard/ImageFrame/BuzzedShieldOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="GameplayContainer/CenterBoard/ImageFrame/BuzzedShieldOverlay/Center"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="ShieldTitle" type="Label" parent="GameplayContainer/CenterBoard/ImageFrame/BuzzedShieldOverlay/Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 40
+text = "GEBUZZERT!"
+horizontal_alignment = 1
+
+[node name="ShieldDesc" type="Label" parent="GameplayContainer/CenterBoard/ImageFrame/BuzzedShieldOverlay/Center/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.8, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+text = "Sichtschutz aktiv während der Antwort"
+horizontal_alignment = 1
+
+[node name="UnblurProgressBar" type="ProgressBar" parent="GameplayContainer/CenterBoard"]
+custom_minimum_size = Vector2(984, 14)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_progress_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_progress_fill")
+show_percentage = false
+
+[node name="BottomPanel" type="PanelContainer" parent="GameplayContainer"]
+custom_minimum_size = Vector2(1040, 110)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -520.0
+offset_top = -128.0
+offset_right = 520.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = ExtResource("8_panel_side")
+
+[node name="Margin" type="MarginContainer" parent="GameplayContainer/BottomPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="GameplayContainer/BottomPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="UnblurControls" type="VBoxContainer" parent="GameplayContainer/BottomPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="UnblurStatusLabel" type="Label" parent="GameplayContainer/BottomPanel/Margin/VBox/UnblurControls"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 22
+text = "Buzzer aktiv! Wer erkennt das Motiv zuerst?"
+horizontal_alignment = 1
+
+[node name="Center" type="CenterContainer" parent="GameplayContainer/BottomPanel/Margin/VBox/UnblurControls"]
+layout_mode = 2
+
+[node name="BtnCloseRound" type="Button" parent="GameplayContainer/BottomPanel/Margin/VBox/UnblurControls/Center"]
+custom_minimum_size = Vector2(240, 44)
+layout_mode = 2
+theme_type_variation = &"SecondaryButton"
+theme_override_font_sizes/font_size = 20
+text = "Runde schließen"
+
+[node name="BuzzedControls" type="HBoxContainer" parent="GameplayContainer/BottomPanel/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="PlayerBox" type="HBoxContainer" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="CharIcon" type="TextureRect" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls/PlayerBox"]
+texture_filter = 1
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VBox" type="VBoxContainer" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls/PlayerBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="PlayerNameLabel" type="Label" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls/PlayerBox/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 22
+text = "Spielername"
+
+[node name="TeamBadge" type="Label" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls/PlayerBox/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 16
+text = "Team Rot"
+
+[node name="EvalButtons" type="HBoxContainer" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BtnCorrect" type="Button" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls/EvalButtons"]
+custom_minimum_size = Vector2(170, 36)
+layout_mode = 2
+theme_type_variation = &"SmallButton"
+theme_override_colors/font_color = Color(0.45, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 16
+text = "Richtig (+1 Punkt)"
+
+[node name="BtnWrong" type="Button" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls/EvalButtons"]
+custom_minimum_size = Vector2(190, 36)
+layout_mode = 2
+theme_type_variation = &"SmallButton"
+theme_override_colors/font_color = Color(1.0, 0.55, 0.55, 1)
+theme_override_font_sizes/font_size = 16
+text = "Falsch (Buzzer sperren)"
+
+[node name="BtnCloseRoundBuzzed" type="Button" parent="GameplayContainer/BottomPanel/Margin/VBox/BuzzedControls/EvalButtons"]
+custom_minimum_size = Vector2(160, 36)
+layout_mode = 2
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 16
+text = "Runde schließen"
+
+[node name="ResolvedControls" type="VBoxContainer" parent="GameplayContainer/BottomPanel/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="ResolvedSummaryLabel" type="Label" parent="GameplayContainer/BottomPanel/Margin/VBox/ResolvedControls"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.04, 0.06, 0.96)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 20
+text = "Richtig erraten!"
+horizontal_alignment = 1
+
+[node name="Center" type="CenterContainer" parent="GameplayContainer/BottomPanel/Margin/VBox/ResolvedControls"]
+layout_mode = 2
+
+[node name="BtnNextRound" parent="GameplayContainer/BottomPanel/Margin/VBox/ResolvedControls/Center" instance=ExtResource("5_btn")]
+custom_minimum_size = Vector2(240, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "NÄCHSTES BILD"
+
+[node name="PixelBackButton" parent="." instance=ExtResource("7_back")]
+layout_mode = 0
+offset_left = 14.0
+offset_top = 14.0
+offset_right = 78.0
+offset_bottom = 78.0
+auto_return_to_main_board = true
+
+[node name="MinigameWinnerOverlay" parent="." instance=ExtResource("10_winner_overlay")]
+visible = false
+layout_mode = 1

@@ -14,21 +14,32 @@ var answered_players = [] # Merken, wer schon geantwortet hat
 var pending_points = {} # Merken, wem der GM Punkte in dieser Runde geben will: { player_id: punkte }
 
 var question_pool = [
-	{"q": "Was ist die Hauptstadt von Frankreich?", "a": "Paris"},
-	{"q": "Wie viele Planeten hat unser Sonnensystem?", "a": "Acht (8)"},
-	{"q": "Welches ist das größte Säugetier der Welt?", "a": "Blauwal"},
-	{"q": "Wie heißt das flächenmäßig kleinste Land der Erde?", "a": "Vatikanstadt"},
-	{"q": "Welcher Kontinent ist der größte?", "a": "Asien"},
-	{"q": "In welchem Jahr fiel die Berliner Mauer?", "a": "1989"},
-	{"q": "Wie alt ist die Erde ca. (in Milliarden Jahren)?", "a": "4,6 Milliarden"},
-	{"q": "Was ist das chemische Symbol für Gold?", "a": "Au"},
-	{"q": "Wer malte die Mona Lisa?", "a": "Leonardo da Vinci"},
-	{"q": "Welcher Planet ist der Sonne am nächsten?", "a": "Merkur"},
-	{"q": "Wie nennt man ein Dreieck mit drei gleich langen Seiten?", "a": "Gleichseitiges Dreieck"},
-	{"q": "Welches Tier ist das Wappentier von Berlin?", "a": "Bär"},
-	{"q": "Aus wie vielen Quadraten besteht ein Schachbrett?", "a": "64"},
-	{"q": "Wie viele Tasten hat ein klassisches Klavier?", "a": "88"},
-	{"q": "Welches Element macht den größten Teil der Erdatmosphäre aus?", "a": "Stickstoff"}
+	{"q": "Welche deutsche Marke wirbt mit einer blauen Dose?", "a": "Nivea"},
+	{"q": "Welcher Autohersteller baute den Käfer?", "a": "Volkswagen"},
+	{"q": "Wie nennt man die Grundform eines Verbs?", "a": "Infinitiv"},
+	{"q": "Wer schrieb \"Wilhelm Tell\"?", "a": "Friedrich Schiller"},
+	{"q": "Welche Serie spielt in der fiktiven Stadt Hawkins?", "a": "Stranger Things"},
+	{"q": "Wer spielte die Hauptrolle in \"Forrest Gump\"?", "a": "Tom Hanks"},
+	{"q": "Wie viele Mitgliedstaaten hat die EU?", "a": "27"},
+	{"q": "Welches Gericht ist die höchste Instanz in Zivilsachen?", "a": "Der Bundesgerichtshof (BGH)"},
+	{"q": "Welcher Verein gewann die meisten deutschen Fußballmeisterschaften?", "a": "Bayern München"},
+	{"q": "Wie viele Punkte gibt ein Touchdown im American Football?", "a": "Sechs"},
+	{"q": "Was bedeutet die Abkürzung \"SUV\"?", "a": "Sport Utility Vehicle"},
+	{"q": "Welche Zutat ist Hauptbestandteil von Guacamole?", "a": "Avocado"},
+	{"q": "Aus welchem Land stammen die Beatles?", "a": "Großbritannien"},
+	{"q": "Welche Musikrichtung entstand in den 1950er-Jahren in den USA mit Elvis Presley?", "a": "Rock 'n' Roll"},
+	{"q": "Wie heißt die Zahl Pi gerundet auf zwei Stellen?", "a": "3,14"},
+	{"q": "Welches Tier ist das schnellste Landtier?", "a": "Der Gepard"},
+	{"q": "Welches Säugetier legt Eier?", "a": "Das Schnabeltier"},
+	{"q": "Welche Blutgruppe gilt als Universalspender?", "a": "0 negativ"},
+	{"q": "Welches Organ filtert das Blut?", "a": "Die Niere"},
+	{"q": "Wer erfand das Telefon?", "a": "Alexander Graham Bell"},
+	{"q": "Wie heißt die kleinste Speichereinheit eines Computers?", "a": "Das Bit"},
+	{"q": "Welches Buch ist die heilige Schrift des Islam?", "a": "Der Koran"},
+	{"q": "Wie nennt man die Steigerung des allgemeinen Preisniveaus?", "a": "Inflation"},
+	{"q": "Wie heißt \"Hallo\" auf Spanisch?", "a": "Hola"},
+	{"q": "Welches Gebäude ist das höchste der Welt?", "a": "Burj Khalifa, Dubai"},
+	{"q": "Wie heißt die Lehre vom richtigen Handeln?", "a": "Ethik"}
 ]
 
 var selected_questions = []
@@ -60,6 +71,12 @@ func _ready():
 	var bg_tilemap = get_node_or_null("BackgroundTileMap")
 	if bg_tilemap:
 		bg_tilemap.visible = false
+	var gameplay_bg = get_node_or_null("GameplayBG")
+	if gameplay_bg:
+		if not gameplay_bg.texture:
+			gameplay_bg.texture = load("res://assets/quiz/qualifikationsquiz_bg.jpg")
+		gameplay_bg.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		gameplay_bg.visible = true
 	_connect_buttons_sfx(self)
 
 func _connect_buttons_sfx(node: Node):
@@ -180,7 +197,10 @@ func _on_close_round_pressed():
 	is_round_open = false
 	close_round_btn.visible = false
 	next_round_btn.visible = true
-	answers_title.text = "Eingegangene Antworten (GM wählt Punkte):"
+	if NetworkManager.quiz_anonymous_answers:
+		answers_title.text = "Eingegangene Antworten (Anonym):"
+	else:
+		answers_title.text = "Eingegangene Antworten (GM wählt Punkte):"
 	
 	# Lösung auf dem Monitor anzeigen (ohne Layout-Shift)
 	var question_dict = selected_questions[current_round]
@@ -196,7 +216,17 @@ func _on_close_round_pressed():
 	})
 	
 	# Mache alle Antwort-Karten anklickbar und decke die Antworten auf
-	for card in answers_list.get_children():
+	var cards = answers_list.get_children()
+	if NetworkManager.quiz_anonymous_answers:
+		randomize()
+		cards.shuffle()
+		for i in range(cards.size()):
+			answers_list.move_child(cards[i], i)
+			var card = cards[i]
+			if card.has_method("set_anonymous"):
+				card.set_anonymous(true, "Antwort %d" % (i + 1))
+	
+	for card in cards:
 		if card.has_method("set_state"):
 			card.disabled = false
 			card.set_state(2) # 2 = REVEALED

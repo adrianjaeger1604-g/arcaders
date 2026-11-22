@@ -15,11 +15,26 @@ static func get_player_team_color(p_id: int, fallback: Color = Color(0.42, 0.24,
 
 # Ermittelt den Asset-Ordnernamen (z.B. "cedric") aus der Idle-Textur
 static func get_sprite_base(character_name: String) -> String:
-	var tex = NetworkManager.character_textures.get(character_name)
+	var c_clean = character_name.strip_edges()
+	if c_clean == "" or c_clean.to_lower() == "unknown" or c_clean.to_lower() == "cedi" or c_clean.to_lower() == "cedric":
+		return "cedric"
+		
+	var tex = NetworkManager.character_textures.get(c_clean)
 	if tex == null:
-		return ""
+		for k in NetworkManager.character_textures.keys():
+			if k.to_lower() == c_clean.to_lower():
+				tex = NetworkManager.character_textures[k]
+				break
+	if tex == null:
+		var c_low = c_clean.to_lower()
+		if c_low == "cedi" or c_low == "cedric" or c_low == "" or c_low == "unknown":
+			return "cedric"
+		return c_low
 	var file = tex.resource_path.get_file().get_basename()
-	return file.trim_prefix("spr_").get_slice("_idle", 0)
+	var base = file.trim_prefix("spr_").get_slice("_idle", 0)
+	if base.is_empty() or base == "cedi":
+		return "cedric"
+	return base
 
 static func load_idle_frames(base: String) -> Array:
 	var frames = []
@@ -49,6 +64,14 @@ static func celebrate_winner(char_icon: TextureRect, character_name: String):
 		return
 		
 	var base = get_sprite_base(character_name)
+	if base.is_empty():
+		base = "cedric"
+		
+	if char_icon.texture == null:
+		if NetworkManager.character_textures.has(character_name):
+			char_icon.texture = NetworkManager.character_textures[character_name]
+		elif NetworkManager.character_textures.has("Cedi"):
+			char_icon.texture = NetworkManager.character_textures["Cedi"]
 	var drink_frames = load_drink_frames(base)
 	if drink_frames.is_empty():
 		drink_frames = load_idle_frames(base)

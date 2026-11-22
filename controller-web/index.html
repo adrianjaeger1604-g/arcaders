@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Arcaders Controller</title>
-    <link rel="stylesheet" href="style.css?v=32">
+    <link rel="stylesheet" href="style.css?v=38">
 </head>
 
 <body>
@@ -15,6 +15,9 @@
         <div id="top-bar" class="header-left px-top-bar">
             <button id="btn-logout" class="btn px-mini-btn px-mini-btn--danger" style="display: none;">Abmelden</button>
             <button id="btn-toggle-debug" class="btn px-mini-btn">Debug</button>
+            <button id="btn-reload" class="btn px-mini-btn px-icon-btn" title="Neu laden" aria-label="Neu laden">
+                <img src="assets/icons/reload.svg" alt="Neu laden" class="px-mini-icon" />
+            </button>
         </div>
         <div id="top-right-bar" class="header-right px-top-right-bar">
             <div id="user-badge" class="px-user-badge" style="display: none;">
@@ -56,12 +59,19 @@
         <div id="buzzer-header" class="buzzer-header" style="display: none;">
             <div id="buzzer-game-title" class="buzzer-game-title">HEXAGON</div>
             <div id="buzzer-target-container" class="buzzer-target-container">
-                <span class="buzzer-target-label">ZIEL-SUMME</span>
+                <span class="buzzer-target-label">GESUCHTE ZIEL-SUMME</span>
                 <span id="buzzer-target-value" class="buzzer-target-value">10</span>
             </div>
         </div>
         <div id="buzzer-locked-badge" class="buzzer-locked-badge" style="display: none;"></div>
-        <button id="btn-buzzer" class="btn buzzer"></button>
+        <div class="buzzer-btn-wrapper">
+            <button id="btn-buzzer" class="btn buzzer" type="button">
+                <span class="buzzer-btn-inner">
+                    <span class="buzzer-btn-label">BUZZER</span>
+                    <span class="buzzer-btn-sub">DRÜCKEN ZUM ANTWORTEN</span>
+                </span>
+            </button>
+        </div>
     </div>
 
     <div id="bet-buddy-screen" class="screen">
@@ -75,21 +85,21 @@
         </div>
         <div id="bet-buddy-input-section" class="bet-buddy-input-section">
             <div class="bet-stepper">
-                <button type="button" id="btn-bet-minus" class="btn bet-step-btn">-</button>
-                <input type="number" id="bet-buddy-input" class="bet-number-input" value="5" min="1" max="99" inputmode="numeric" />
-                <button type="button" id="btn-bet-plus" class="btn bet-step-btn">+</button>
+                <button type="button" id="btn-bet-minus" class="bet-step-btn" aria-label="Minus"><span>−</span></button>
+                <input type="number" id="bet-buddy-input" class="bet-number-input" value="1" min="1" max="99" inputmode="numeric" />
+                <button type="button" id="btn-bet-plus" class="bet-step-btn" aria-label="Plus"><span>+</span></button>
             </div>
             <button type="button" id="btn-submit-bet" class="btn primary bet-submit-btn">WETTE EINLOGGEN</button>
         </div>
         <div id="bet-buddy-submitted-box" class="bet-buddy-submitted-box" style="display:none;">
-            <div class="bet-buddy-check">✓</div>
+            <div class="bet-buddy-check-icon"><img class="px-icon px-icon--l" src="assets/icons/check.svg" alt="Check"></div>
             <div class="bet-buddy-locked-label">WETTE EINGELOGGT</div>
-            <div id="bet-buddy-locked-value" class="bet-buddy-locked-value">5</div>
+            <div id="bet-buddy-locked-value" class="bet-buddy-locked-value">1</div>
             <p class="bet-buddy-wait-text">Warte auf die anderen Teams... Bitte nicht vorsagen!</p>
         </div>
         <div id="bet-buddy-spectator-box" class="bet-buddy-spectator-box" style="display:none;">
             <div id="bet-buddy-spec-player" class="bet-buddy-spec-player">Spieler ist dran!</div>
-            <div id="bet-buddy-spec-count" class="bet-buddy-spec-count">Noch 5 Begriffe</div>
+            <div id="bet-buddy-spec-count" class="bet-buddy-spec-count">Noch 1 Begriff</div>
         </div>
     </div>
 
@@ -230,66 +240,69 @@
         <div class="fe-bottom-spacer"></div>
     </div>
 
-    <!-- Ice Climbers Real-Time Controller (Hochformat: Horizontaler Joystick unten links, Jump-Button unten rechts) -->
+    <!-- Ice Climbers Real-Time Controller (Arcade D-Pad Links & Arcade Jump Button Rechts) -->
     <div id="ice-climbers-screen" class="screen ic-screen">
         <div class="ic-header">
-            <div class="ic-title">ICE CLIMBERS</div>
+            <div class="ic-tag">ICE CLIMBERS</div>
+            <div class="ic-subtitle" id="ic-banner-text">Klettere nach oben! Nicht abstürzen!</div>
         </div>
 
-        <div class="ic-stage-banner">
-            <span class="ic-mountain-icon">🏔️</span>
-            <span class="ic-banner-text" id="ic-banner-text">Klettere nach oben! Nicht abstürzen!</span>
+        <div class="ic-center-area">
+            <!-- Lock Badge während des Countdowns -->
+            <div id="ic-lock-badge" class="ic-lock-badge hidden">
+                <span class="ic-lock-icon-wrap"><img id="ic-lock-icon" class="px-icon px-icon--m" src="assets/icons/lock.svg" alt="Status"></span>
+                <span id="ic-lock-text" class="ic-lock-text">READY</span>
+            </div>
+
+            <div class="ic-tip-box" id="ic-tip-box">
+                <span class="ic-tip-text">TIPP: Kurzer Tap = kleiner Sprung<br>Gedrückt halten = voller Sprung</span>
+            </div>
         </div>
 
-        <!-- Lock Badge während des Countdowns (wie bei Cookie Clickers) -->
-        <div id="ic-lock-badge" class="ic-lock-badge hidden">
-            <span id="ic-lock-icon" class="ic-lock-icon">🔒</span>
-            <span id="ic-lock-text" class="ic-lock-text">READY</span>
-        </div>
-
-        <!-- Gamepad Controls: Horizontaler Joystick unten links & Jump Button unten rechts -->
-        <div class="ic-gamepad-bottom">
-            <!-- Horizontal-Only Joystick (Unten Links) -->
-            <div class="ic-joystick-wrapper">
-                <div id="ic-joystick-zone" class="ic-joystick-zone">
-                    <span id="ic-joy-arrow-left" class="ic-joy-arrow left">◀</span>
-                    <div id="ic-joystick-track" class="ic-joystick-track">
-                        <div id="ic-joystick-thumb" class="ic-joystick-thumb">
-                            <div class="ic-joystick-thumb-inner"></div>
+        <!-- Gamepad Controls: Pixel Horizontal Joystick Links & Arcade Jump Button Rechts -->
+        <div id="ic-gamepad-bottom" class="ic-gamepad-bottom">
+            <!-- Pixel Horizontal Joystick (Links / Rechts) -->
+            <div class="ic-control-group ic-joystick-group">
+                <div id="ic-joystick-track" class="ic-joystick-track" role="slider" aria-label="Laufen Joystick" aria-valuemin="-1" aria-valuemax="1" aria-valuenow="0">
+                    <div class="ic-joystick-guide-arrow ic-guide-left">
+                        <img class="px-icon px-icon--s" src="assets/icons/arrow_left.svg" alt="Links">
+                    </div>
+                    <div class="ic-joystick-slot">
+                        <div class="ic-joystick-center-mark"></div>
+                    </div>
+                    <div id="ic-joystick-knob" class="ic-joystick-knob">
+                        <div class="ic-knob-grip">
+                            <span></span><span></span><span></span>
                         </div>
                     </div>
-                    <span id="ic-joy-arrow-right" class="ic-joy-arrow right">▶</span>
+                    <div class="ic-joystick-guide-arrow ic-guide-right">
+                        <img class="px-icon px-icon--s" src="assets/icons/arrow_right.svg" alt="Rechts">
+                    </div>
                 </div>
                 <div class="ic-pad-sublabel">LAUFEN</div>
             </div>
 
-            <!-- Arcade Pixel Jump Button (Unten Rechts) -->
-            <div class="ic-jump-wrapper">
-                <button id="ic-btn-jump" class="ic-arcade-jump-btn" type="button" aria-label="Springen">
-                    <span class="ic-arcade-jump-icon">▲</span>
-                    <span class="ic-arcade-jump-text">JUMP</span>
+            <!-- Arcade Jump Button (Rechts) -->
+            <div class="ic-control-group ic-jump-group">
+                <button id="ic-btn-jump" class="ic-jump-btn" type="button" aria-label="Springen">
+                    <img class="px-icon px-icon--l" src="assets/icons/arrow_up.svg" alt="Sprung">
                 </button>
-                <div class="ic-pad-sublabel">SPRUNG</div>
+                <div class="ic-pad-sublabel">SPRINGEN</div>
             </div>
         </div>
     </div>
 
     <div id="waiting-screen" class="screen">
-        <h1>Warten...</h1>
-        <p>Bitte schau auf den Hauptbildschirm.</p>
-        <div style="margin-top: 28px;">
-            <button id="btn-waiting-change-name" class="btn secondary" style="font-size: 13px; padding: 8px 16px; width: auto;">NAME ÄNDERN / ABMELDEN</button>
-        </div>
+        <h1 id="waiting-title">Warten...</h1>
+        <p id="waiting-message">Bitte schau auf den Hauptbildschirm.</p>
     </div>
 
     <!-- On-Screen Debug Log -->
-    <div id="debug-log"
-        style="position: fixed; bottom: 0; left: 0; right: 0; height: 120px; background: rgba(0,0,0,0.8); color: lime; font-family: 'BoldPixels', monospace; font-size: 11px; overflow-y: auto; z-index: 9999; padding: 5px; pointer-events: none; display: none;">
-    </div>
+    <div id="debug-log" class="debug-log"></div>
 
     <audio id="audio-jump" src="assets/jump.mp3" preload="auto"></audio>
 
-    <script src="app.js?v=31"></script>
+    <script src="app.js?v=39"></script>
 </body>
 
 </html>

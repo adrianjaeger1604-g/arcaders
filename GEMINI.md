@@ -22,6 +22,7 @@ Bevor **irgendein neues UI-Element** erstellt oder geskriptet wird:
    - `SecondaryButton.tscn` (`res://scenes/ui/SecondaryButton.tscn` | UID: `uid://b2x7m8p9q4k1s`) – Für alle Sekundäraktionen ("ABBRECHEN", "SCHLIESSEN", "SPIELSTAND LADEN", "ÜBERSPRINGEN", "AUFGEBEN", "ZURÜCKSETZEN", etc. im stilvollen Schieferblau-Design mit Gold-Hover).
    - `DangerButton` Theme-Variation – Für alle Straf-/Aufgabe-Aktionen ("Aufgeben (-1 Punkt)", "Runde abbrechen" im dunklen Karminrot-Slate mit leuchtendem Rubin-Hover).
    - `SuccessButton` Theme-Variation – Für Bestätigungs-/Erfolgs-Aktionen ("Geschafft! (+1 Punkt)" im Smaragdgrün-Look).
+   - `SmallButton` & `SmallPrimaryButton` Theme-Variationen – Für kompakte In-Game Tool-, Stepper- und Hilfsaktionen ("Timer Pausieren", "+1 Korrektur", "Treffer" etc. mit schlanker 34-36px Mindesthöhe, 2px Rahmen und 16px Schriftgröße, um Dashboard-Boxen und Counter nicht zu überfrachten).
    - `PixelBackButton.tscn` (`res://scenes/ui/PixelBackButton.tscn`) – Zentraler pixelartiger Zurück-Button für alle Bildschirme.
    - `QuizParticipantCard.tscn` (`res://scenes/minigames/QuizParticipantCard.tscn` | UID: `uid://d3j5a8q2qar7b`) – Jeder Spieler/jedes Team erhält bei quiz-/rundenbasierten Minispielen eine solche Karte mit animiertem Charakter-Sprite, Teamrahmen und Status!
    - `panel_side_style.tres` (`res://resources/panel_side_style.tres` | UID: `uid://c6f2y8p1n5m4a`) – Verbindlicher Standard für alle In-Game Extra-Info Panels, Side-Panels, Challenge-Boxen und Status-Dashboards (Fire Emblem Standard: 3px Gold-Rahmen, dunkles Glas, 10px Radius).
@@ -43,6 +44,7 @@ Bevor **irgendein neues UI-Element** erstellt oder geskriptet wird:
 - **H3 (Untertitel & Fließtext)**: Zeilenabstand `line_spacing = 8`, gut lesbar, niemals überladen.
 - **Buttons**: Einheitliche Mindesthöhen (z. B. `360 x 60 px` für Start-Buttons, `200-240 x 48 px` für In-Game-Aktionen).
 - **Audio-Feedback**: Alle klickbaren Buttons müssen mit `_connect_buttons_sfx(self)` den einheitlichen Sound `button_press` abspielen.
+- **Absolutes Verbot von Gedankenstrichen in Texten**: In allen Spieltexten, Spielregeln, Beschreibungen, Dialogen, Labels, Statusmeldungen, HUDs und Buttons dürfen **keine Gedankenstriche** (wie `–`, `—` oder getrennte ` - ` als Gedankenstrich) verwendet werden! Verwende stattdessen klare, vollständige Sätze, Doppelpunkte (`:`), Kommas oder Klammern. (Mathematische Vorzeichen wie `-1 Punkt` sind davon ausgenommen).
 
 ---
 
@@ -53,17 +55,18 @@ Jedes Minispiel beginnt **ausnahmslos** mit einer Erklärseite, die dem Layout v
 ### Scene-Tree Struktur der Erklärseite:
 ```text
 IntroContainer (CenterContainer, anchors preset 15, offset_top 80, offset_bottom -80)
- └── VBox (VBoxContainer, custom_minimum_size: Vector2(1040, 0), separation: 20)
+ └── VBox (VBoxContainer, custom_minimum_size: Vector2(1040, 0), separation: 48)
       ├── Title (Label, theme_type_variation: "H1", font_size: 72, horizontal_alignment: 1)
       ├── ScrollArea (ScrollContainer, custom_minimum_size: Vector2(1040, 480), size_flags_horizontal: 4)
-      │    └── InstructionContainer (MarginContainer, margin_left: 20, margin_top: 10, margin_right: 32, margin_bottom: 10)
+      │    └── InstructionContainer (MarginContainer, margin_left: 20, margin_top: 0, margin_right: 32, margin_bottom: 0)
       │         └── Instruction (Label, theme_type_variation: "H3", line_spacing: 8, autowrap_mode: 2, horizontal_alignment: 1)
       └── StartGameButton (Instance von res://scenes/ui/GameButton.tscn, custom_minimum_size: Vector2(360, 60), size_flags: 4)
 PixelBackButton (Instance von res://scenes/ui/PixelBackButton.tscn, Position 14, 14, 64, 64)
 ```
+- **Einheitliche Abstände**: Der Abstand zwischen Titel und Erklärtext sowie zwischen Erklärtext und StartGameButton beträgt einheitlich 48px (`separation = 48` im `VBoxContainer`, vertikale Margins im `InstructionContainer` = `0`). Dadurch hat der Button genügend Abstand zum Text und das Layout ist perfekt ausbalanciert.
 
 ### Schreibstil der Spielregeln:
-- **Nummerierte, klare Abschnitte** (`1.`, `2.`, `3.`, `4.`, `5.`) mit prägnanter Überschrift und anschließendem kurzem Erklärtext.
+- **Nummerierte, klare Abschnitte** (`1.`, `2.`, `3.`, `4.`, `5.`) mit prägnanter Überschrift und anschließendem kurzem Erklärtext. Doppelpunkte nach der Überschrift nutzen, niemals Gedankenstriche (z. B. `4. Die Aufzählung: 10 Sekunden pro Begriff:` statt `4. Die Aufzählung – 10 Sekunden...`).
 - Wichtige Regeln (z. B. "Nicht im Team absprechen!", Timer, Punkte) werden explizit hervorgehoben.
 - Punktesystem am Ende aufführen (z. B. *Geschafft: +1 Punkt | Zeit abgelaufen: -1 Punkt*).
 
@@ -115,7 +118,11 @@ PixelBackButton (Instance von res://scenes/ui/PixelBackButton.tscn, Position 14,
 
 ## 8. Navigations- & Zurück-Button-Sicherheit
 
-- `PixelBackButton.gd` besitzt `auto_return_to_main_board = true` und bricht die Runde eigenständig sauber ab.
+- `PixelBackButton.gd` ist der einheitliche Zurück-Button für alle Bildschirme.
+- **Konsistente Sichtbarkeit**: `PixelBackButton` bleibt sowohl auf der Erklärseite als auch während des gesamten Minispiels sichtbar (`pixel_back_btn.visible = true`). Er darf beim Spielstart nicht ausgeblendet werden!
+- **Sicherheitsabfrage vor Abbruch**: Besitzt `auto_return_to_main_board = true`, blendet ein Klick automatisch das integrierte Vollbild-Modal (`ConfirmLayer`, `panel_modal_style.tres`) ein ("MINISPIEL BEENDEN?"), bevor das Spiel abgebrochen wird.
+  - "ABBRECHEN" (`SecondaryButton`) schließt das Modal und setzt das Spiel fort.
+  - "JA, ZUM BRETT" (`DangerButton`) bricht das Spiel sauber ab.
 - **Verbinde niemals `pixel_back_btn.pressed` mit einem zweiten Szenenwechsel**, wenn `auto_return_to_main_board` aktiv ist.
 - Vor JEDEM `change_scene_to_file(...)` MUSS geprüft werden:
   ```gdscript
@@ -146,7 +153,17 @@ PixelBackButton (Instance von res://scenes/ui/PixelBackButton.tscn, Position 14,
 
 ---
 
-## 11. Checkliste vor dem Abschließen eines Tasks
+## 11. Deathmatch-Regel (Gleichstand bei Minispielen)
+
+- **Deathmatch bei Gleichstand**: Herrscht nach der regulären Rundenanzahl (z. B. nach 5 Runden) Gleichstand auf Platz 1 zwischen zwei oder mehr führenden Teams, startet ein Deathmatch (Zusatzrunde) zwischen diesen führenden Teams, bis ein eindeutiger Sieger feststeht.
+- **Nicht-teilnehmende Teams sperren & ausgrauen**:
+  - Teams, die nicht am Deathmatch teilnehmen, werden oben im Punktestand (`ScoreContainer`) ausgegraut (`badge.modulate = Color(0.4, 0.4, 0.4, 0.45)`).
+  - Auf den Smartphones der nicht-teilnehmenden Teams wird die Interaktion gesperrt (`state: "inactive"`, Meldung: "Deathmatch! Nur die führenden Teams spielen um den Sieg.").
+  - Server-/Minigame-Skripte ignorieren Eingaben/Buzzer von nicht-teilnehmenden Teams strikt.
+
+---
+
+## 12. Checkliste vor dem Abschließen eines Tasks
 
 1. Wurden bestehende Komponenten (`GameButton`, `SecondaryButton`, `QuizParticipantCard`) wiederverwendet?
 2. Wurde der Ice-Climbers-Stil für die Erklärseite exakt eingehalten?
@@ -155,3 +172,5 @@ PixelBackButton (Instance von res://scenes/ui/PixelBackButton.tscn, Position 14,
 5. Wurde `MinigameResultHelper.award_points` vermieden und stattdessen `NetworkManager.minigame_winners[...]` befüllt?
 6. Ist das Smartphone-Interface aufgeräumt und responsiv?
 7. Wurden alle Unicode-Emojis vermieden und stattdessen standardisierte Pixel-Art-Icons (`assets/ui/icons/pixel/`) verwendet?
+8. Wurde bei Minispielen mit Deathmatch beachtet, dass nicht-teilnehmende Teams nicht agieren können und oben ausgegraut sind?
+9. Wurden alle Gedankenstriche (`–`, `—`, ` - `) in allen Texten vermieden und stattdessen Doppelpunkte, Kommas oder Klammern verwendet?

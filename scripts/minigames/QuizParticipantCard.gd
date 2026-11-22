@@ -20,6 +20,8 @@ var submitted_text = "Eingereicht!"
 var current_icon_name = ""
 var team_color = Color(0.2, 0.8, 0.2, 1) # Default Grün für Allgemeinwissen
 var is_active = true # Wird false, wenn die Runde schließt und keine Antwort kam
+var is_anonymous: bool = false
+var anonymous_label: String = "Antwort"
 
 func _ensure_references():
 	if name_label == null:
@@ -46,9 +48,15 @@ func setup(display_name: String, characters: Array, t_color: Color = Color(0.2, 
 	submitted_text = "Eingereicht!"
 	current_state = State.WAITING
 	is_active = true
+	is_anonymous = false
+	anonymous_label = "Antwort"
 	
 	# Load and spawn character sprites
-	for char_name in characters:
+	var char_list = characters.duplicate()
+	if char_list.is_empty():
+		char_list.append("Cedric")
+		
+	for char_name in char_list:
 		var formatted_name = char_name
 		if formatted_name == "" or formatted_name == "unknown" or formatted_name == "Cedi":
 			formatted_name = "Cedric"
@@ -95,6 +103,11 @@ func set_custom_answer(answer: String, new_state: int = -1, icon: String = ""):
 
 func set_state(new_state: int):
 	current_state = new_state
+	_update_visuals()
+
+func set_anonymous(enabled: bool, anon_title: String = "Antwort"):
+	is_anonymous = enabled
+	anonymous_label = anon_title
 	_update_visuals()
 
 func _update_visuals():
@@ -177,8 +190,9 @@ func _update_visuals():
 			answer_label.remove_theme_constant_override("outline_size")
 			answer_label.remove_theme_color_override("font_outline_color")
 			
+			var stroke_color = Color(0.35, 0.45, 0.65, 1.0) if is_anonymous else team_color
 			style.bg_color = Color(0.1, 0.1, 0.1, 1) # Schwarz
-			style.border_color = team_color # Team-Stroke
+			style.border_color = stroke_color
 			style.border_width_left = 4
 			style.border_width_right = 4
 			style.border_width_top = 4
@@ -213,9 +227,9 @@ func _update_visuals():
 			answer_label.remove_theme_constant_override("outline_size")
 			answer_label.remove_theme_color_override("font_outline_color")
 			
-			# Fill-Farbe ist dieselbe wie die Teamfarbe (Stroke), kein Drop-Shadow
-			style.bg_color = team_color
-			style.border_color = team_color
+			var sel_color = Color(0.18, 0.65, 0.35, 1.0) if is_anonymous else team_color
+			style.bg_color = sel_color
+			style.border_color = sel_color
 			style.border_width_left = 4
 			style.border_width_right = 4
 			style.border_width_top = 4
@@ -232,6 +246,16 @@ func _update_visuals():
 			answer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			ic_name = "" # Kein Haken-Icon beim Verteilen!
 			_set_characters_animation("drink")
+			
+	# Anonymisierungs-Tarnung anwenden
+	if is_anonymous and (current_state == State.REVEALED or current_state == State.SELECTED):
+		if name_label:
+			name_label.text = anonymous_label
+		if chars_container:
+			chars_container.visible = false
+	else:
+		if chars_container:
+			chars_container.visible = true
 			
 	# Pixel-Icon anwenden
 	if status_icon != null:

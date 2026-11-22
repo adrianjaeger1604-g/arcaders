@@ -115,6 +115,7 @@ const SPECIAL_TYPES = {
 @onready var log_label: RichTextLabel = $BattleContainer/MainHBox/RightPanel/Margin/VBox/LogPanel/Margin/CombatLog
 @onready var execute_turn_btn: Button = $BattleContainer/MainHBox/RightPanel/Margin/VBox/ExecuteTurnButton
 @onready var back_to_board_btn: Button = $BattleContainer/MainHBox/RightPanel/Margin/VBox/BackToBoardButton
+@onready var winner_overlay = get_node_or_null("MinigameWinnerOverlay")
 
 var current_phase: Phase = Phase.INTRO
 var round_number: int = 1
@@ -413,6 +414,8 @@ func _ready():
 	equip_action_btn.pressed.connect(_on_equip_action_pressed)
 	execute_turn_btn.pressed.connect(_on_execute_turn_pressed)
 	back_to_board_btn.pressed.connect(_on_back_pressed)
+	if winner_overlay:
+		winner_overlay.visible = false
 	
 	_setup_phase_backgrounds()
 	_set_phase_background("intro")
@@ -440,7 +443,7 @@ func _setup_intro_scroll():
 	if scroll_area and inst_lbl:
 		await get_tree().process_frame
 		if is_instance_valid(inst_lbl) and is_instance_valid(scroll_area):
-			var content_h = inst_lbl.get_minimum_size().y + 32.0
+			var content_h = inst_lbl.get_minimum_size().y + 8.0
 			scroll_area.custom_minimum_size.y = clampf(content_h, 80.0, 480.0)
 
 func _setup_static_pixel_icons():
@@ -579,7 +582,7 @@ func _get_player_id(player_dict: Dictionary) -> int:
 
 func _on_start_equipment_pressed():
 	if pixel_back_btn:
-		pixel_back_btn.visible = false
+		pixel_back_btn.visible = true
 	AudioManager.play_music("fire_emblem")
 	_set_phase_background("barracks")
 	_init_fe_players()
@@ -618,19 +621,32 @@ func _refresh_equipment_ui(reveal: bool):
 	
 	for pid in pids:
 		var p = fe_players[pid]
+		var is_ready = p.get("equip_ready", false)
 		var card = PanelContainer.new()
 		card.custom_minimum_size = Vector2(460, 140)
 		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.10, 0.12, 0.20, 0.95)
+		
+		# Stroke immer in Teamfarbe mit 4px Rahmen (wie bei QuizParticipantCard)
 		style.border_width_left = 4
 		style.border_width_top = 4
 		style.border_width_right = 4
 		style.border_width_bottom = 4
-		style.border_color = p["team_color"] if (reveal or p["equip_ready"]) else Color(0.4, 0.45, 0.55, 0.7)
+		style.border_color = p["team_color"]
 		style.corner_radius_top_left = 10
 		style.corner_radius_top_right = 10
 		style.corner_radius_bottom_right = 10
 		style.corner_radius_bottom_left = 10
+		style.shadow_size = 0
+		
+		# Füllung: Wenn jemand bereit ist: weiß. Sonst (warten oder aufdecken): schwarz
+		if not reveal:
+			if is_ready:
+				style.bg_color = Color(1.0, 1.0, 1.0, 1.0) # Weiß bei Bereitschaft
+			else:
+				style.bg_color = Color(0.1, 0.1, 0.1, 1.0) # Schwarz beim Warten
+		else:
+			style.bg_color = Color(0.1, 0.1, 0.1, 1.0) # Schwarz beim Aufdecken (kein Dunkelblau)
+			
 		card.add_theme_stylebox_override("panel", style)
 		
 		var margin = MarginContainer.new()
@@ -662,26 +678,37 @@ func _refresh_equipment_ui(reveal: bool):
 		var name_lbl = Label.new()
 		name_lbl.text = "%s (%s)" % [p["name"], p["team_name"]]
 		name_lbl.add_theme_font_size_override("font_size", 24)
-		name_lbl.add_theme_color_override("font_color", p["team_color"])
-		vbox.add_child(name_lbl)
 		
 		if not reveal:
-			var st_row = HBoxContainer.new()
-			st_row.add_theme_constant_override("separation", 8)
-			var st_icon = PixelIcon.create("check" if p["equip_ready"] else "hourglass", "S")
-			st_row.add_child(st_icon)
-			
-			var st_lbl = Label.new()
-			if p["equip_ready"]:
-				st_lbl.text = "Eingeloggt & Bereit!"
-				st_lbl.add_theme_color_override("font_color", Color(0.35, 0.95, 0.45, 1.0))
+			if is_ready:
+				# Weißer Hintergrund: Dunkler Name und grüner Statustext ohne Outline (QuizParticipantCard Standard)
+				name_lbl.add_theme_color_override("font_color", Color(0.08, 0.08, 0.08, 1.0))
+				name_lbl.add_theme_constant_override("outline_size", 0)
+				name_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0))
+				vbox.add_child(name_lbl)
+				
+				var st_lbl = Label.new()
+				st_lbl.text = "Eingereicht!"
+				st_lbl.add_theme_color_override("font_color", Color(0.08, 0.55, 0.18, 1.0))
+				st_lbl.add_theme_font_size_override("font_size", 20)
+				st_lbl.add_theme_constant_override("outline_size", 0)
+				st_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0))
+				vbox.add_child(st_lbl)
 			else:
-				st_lbl.text = "Wählt noch aus..."
-				st_lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9, 0.75))
-			st_lbl.add_theme_font_size_override("font_size", 20)
-			st_row.add_child(st_lbl)
-			vbox.add_child(st_row)
+				# Schwarzer Hintergrund: Weißer Name und grauer Statustext
+				name_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+				vbox.add_child(name_lbl)
+				
+				var st_lbl = Label.new()
+				st_lbl.text = "Tippt gerade..."
+				st_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6, 1.0))
+				st_lbl.add_theme_font_size_override("font_size", 20)
+				vbox.add_child(st_lbl)
 		else:
+			# Schwarzer Hintergrund beim Aufdecken: Weißer Name
+			name_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+			vbox.add_child(name_lbl)
+			
 			var rps_info = RPS_CONFIG.get(p["rps"], RPS_CONFIG["rock"])
 			var role_info = ROLE_CONFIG.get(p["role"], ROLE_CONFIG["tank"])
 			
@@ -831,7 +858,7 @@ func _get_cell_quadrant(c: Vector2i) -> int:
 	else:
 		return 3 # Bottom-Right
 
-func _find_best_special_tile_cell(st_type: String, preferred_quadrant: int = -1) -> Vector2i:
+func _find_best_special_tile_cell(st_type: String, preferred_quadrant: int = -1, collected_at: Vector2i = Vector2i(-1, -1), collector_pos: Vector2i = Vector2i(-1, -1)) -> Vector2i:
 	var occupied: Dictionary = {}
 	var player_positions: Array[Vector2i] = []
 	for pid in fe_players:
@@ -851,18 +878,51 @@ func _find_best_special_tile_cell(st_type: String, preferred_quadrant: int = -1)
 			var q = _get_cell_quadrant(s_pos)
 			quadrant_counts[q] += 1
 			
-	# Wenn kein bevorzugter Quadrant vorgegeben ist, wähle den mit den wenigsten Sonderfeldern
+	# Positionen, von denen das neue Sonderfeld weit entfernt spawnen soll
+	var avoid_points: Array[Vector2i] = []
+	if collected_at != Vector2i(-1, -1):
+		avoid_points.append(collected_at)
+	if collector_pos != Vector2i(-1, -1) and not avoid_points.has(collector_pos):
+		avoid_points.append(collector_pos)
+
+	# Wenn kein bevorzugter Quadrant vorgegeben ist, wähle einen geeigneten Zielquadranten:
 	var target_quadrant = preferred_quadrant
 	if target_quadrant < 0:
-		var min_c = 999
-		var best_quads: Array[int] = []
-		for q in range(4):
-			if quadrant_counts[q] < min_c:
-				min_c = quadrant_counts[q]
-				best_quads = [q]
-			elif quadrant_counts[q] == min_c:
-				best_quads.append(q)
-		target_quadrant = best_quads[randi() % best_quads.size()]
+		if not avoid_points.is_empty():
+			var ref_pos = collector_pos if collector_pos != Vector2i(-1, -1) else collected_at
+			var from_quad = _get_cell_quadrant(ref_pos)
+			var opp_quad = 3 - from_quad # 0 <-> 3, 1 <-> 2
+			
+			# Die 3 anderen Quadranten (Quadrant des Aufsammelns/Spielers strikt ausschließen!)
+			var candidate_quads = [opp_quad]
+			for q in range(4):
+				if q != from_quad and q != opp_quad:
+					candidate_quads.append(q)
+			
+			# Finde unter den anderen Quadranten die mit den wenigsten Sonderfeldern
+			var min_c = 999
+			var best_quads = []
+			for q in candidate_quads:
+				if quadrant_counts[q] < min_c:
+					min_c = quadrant_counts[q]
+					best_quads = [q]
+				elif quadrant_counts[q] == min_c:
+					best_quads.append(q)
+			
+			if best_quads.has(opp_quad):
+				target_quadrant = opp_quad
+			else:
+				target_quadrant = best_quads[randi() % best_quads.size()]
+		else:
+			var min_c = 999
+			var best_quads = []
+			for q in range(4):
+				if quadrant_counts[q] < min_c:
+					min_c = quadrant_counts[q]
+					best_quads = [q]
+				elif quadrant_counts[q] == min_c:
+					best_quads.append(q)
+			target_quadrant = best_quads[randi() % best_quads.size()]
 		
 	# Sammle alle gültigen Kandidaten
 	var all_candidates: Array[Vector2i] = []
@@ -886,46 +946,104 @@ func _find_best_special_tile_cell(st_type: String, preferred_quadrant: int = -1)
 	if all_candidates.is_empty():
 		return Vector2i(-1, -1)
 		
+	# Mindestabstände zum Aufsammelort (große Distanzen zuerst, z. B. >= 7, 6, 5, 4, 3)
+	var from_dists = [7, 6, 5, 4, 3] if not avoid_points.is_empty() else [0]
+		
 	# Filtere/Priorisiere Kandidaten:
 	# 1. Bevorzuge den Ziel-Quadranten
-	# 2. Mindestabstand zu existierenden Sonderfeldern (optimal >= 3, mindestens >= 2)
-	# 3. Mindestabstand zu Spielern (nicht direkt vor den Füßen, >= 2)
-	for min_special_dist in [3, 2, 1]:
-		for min_player_dist in [2, 1, 0]:
-			var filtered: Array[Vector2i] = []
+	# 2. Mindestabstand zu Aufsammelort & Sammler (>= 7, >= 6, >= 5, >= 4, >= 3)
+	# 3. Mindestabstand zu existierenden Sonderfeldern (optimal >= 3, mindestens >= 2)
+	# 4. Mindestabstand zu Spielern (nicht direkt vor den Füßen, >= 2)
+	for min_from_dist in from_dists:
+		for min_special_dist in [3, 2, 1]:
+			for min_player_dist in [2, 1, 0]:
+				var filtered: Array[Vector2i] = []
+				for c in all_candidates:
+					if target_quadrant >= 0 and _get_cell_quadrant(c) != target_quadrant:
+						continue
+					var ok = true
+					for ap in avoid_points:
+						if min_from_dist > 0 and manhattan_dist(c, ap) < min_from_dist:
+							ok = false
+							break
+					if not ok:
+						continue
+					for s_pos in existing_special_positions:
+						if manhattan_dist(c, s_pos) < min_special_dist:
+							ok = false
+							break
+					if not ok:
+						continue
+					for p_pos in player_positions:
+						if manhattan_dist(c, p_pos) < min_player_dist:
+							ok = false
+							break
+					if ok:
+						filtered.append(c)
+						
+				if not filtered.is_empty():
+					# Unter den besten Kandidaten die am weitesten vom Sammler entfernten bevorzugen
+					if not avoid_points.is_empty():
+						filtered.sort_custom(func(a: Vector2i, b: Vector2i):
+							var da = 0
+							var db = 0
+							for ap in avoid_points:
+								da += manhattan_dist(a, ap)
+								db += manhattan_dist(b, ap)
+							return da > db
+						)
+						var top_count = min(3, filtered.size())
+						return filtered[randi() % top_count]
+					return filtered[randi() % filtered.size()]
+					
+	# Fallback 1: Falls im Zielquadranten kein Platz mit Abstand ist, andere Quadranten durchsuchen
+	# (aber immer noch den Quadranten des Aufsammelns ausschließen!)
+	var from_quad = _get_cell_quadrant(avoid_points[0]) if not avoid_points.is_empty() else -1
+	for min_from_dist in from_dists:
+		for min_special_dist in [3, 2, 1]:
+			var fallback_filtered: Array[Vector2i] = []
 			for c in all_candidates:
-				if target_quadrant >= 0 and _get_cell_quadrant(c) != target_quadrant:
+				if from_quad >= 0 and _get_cell_quadrant(c) == from_quad:
 					continue
 				var ok = true
-				for s_pos in existing_special_positions:
-					if manhattan_dist(c, s_pos) < min_special_dist:
+				for ap in avoid_points:
+					if min_from_dist > 0 and manhattan_dist(c, ap) < min_from_dist:
 						ok = false
 						break
 				if not ok:
 					continue
-				for p_pos in player_positions:
-					if manhattan_dist(c, p_pos) < min_player_dist:
+				for s_pos in existing_special_positions:
+					if manhattan_dist(c, s_pos) < min_special_dist:
 						ok = false
 						break
 				if ok:
-					filtered.append(c)
-					
-			if not filtered.is_empty():
-				return filtered[randi() % filtered.size()]
+					fallback_filtered.append(c)
+			if not fallback_filtered.is_empty():
+				if not avoid_points.is_empty():
+					fallback_filtered.sort_custom(func(a: Vector2i, b: Vector2i):
+						var da = 0
+						var db = 0
+						for ap in avoid_points:
+							da += manhattan_dist(a, ap)
+							db += manhattan_dist(b, ap)
+						return da > db
+					)
+					var top_count = min(3, fallback_filtered.size())
+					return fallback_filtered[randi() % top_count]
+				return fallback_filtered[randi() % fallback_filtered.size()]
 				
-	# Fallback: Falls im Zielquadranten kein Platz mit Abstand ist, ohne Quadranten-Filter suchen
-	for min_special_dist in [3, 2, 1]:
-		var fallback_filtered: Array[Vector2i] = []
-		for c in all_candidates:
-			var ok = true
-			for s_pos in existing_special_positions:
-				if manhattan_dist(c, s_pos) < min_special_dist:
-					ok = false
-					break
-			if ok:
-				fallback_filtered.append(c)
-		if not fallback_filtered.is_empty():
-			return fallback_filtered[randi() % fallback_filtered.size()]
+	# Fallback 2: Ohne Quadranten-Filter, aber immer noch maximale Distanz zu avoid_points wählen
+	if not avoid_points.is_empty():
+		all_candidates.sort_custom(func(a: Vector2i, b: Vector2i):
+			var da = 0
+			var db = 0
+			for ap in avoid_points:
+				da += manhattan_dist(a, ap)
+				db += manhattan_dist(b, ap)
+			return da > db
+		)
+		var top_count = min(3, all_candidates.size())
+		return all_candidates[randi() % top_count]
 			
 	return all_candidates[randi() % all_candidates.size()]
 
@@ -950,9 +1068,9 @@ func _spawn_initial_special_tiles():
 			if cell != Vector2i(-1, -1):
 				special_tiles["%d,%d" % [cell.x, cell.y]] = st_type
 
-func _spawn_single_special_tile(st_type: String):
-	# Spawnt ein einzelnes Sonderfeld im Quadranten mit den wenigsten aktiven Sonderfeldern
-	var cell = _find_best_special_tile_cell(st_type, -1)
+func _spawn_single_special_tile(st_type: String, collected_at: Vector2i = Vector2i(-1, -1), collector_pos: Vector2i = Vector2i(-1, -1)):
+	# Spawnt ein einzelnes Sonderfeld weit entfernt vom Aufsammelort & Sammler
+	var cell = _find_best_special_tile_cell(st_type, -1, collected_at, collector_pos)
 	if cell != Vector2i(-1, -1):
 		special_tiles["%d,%d" % [cell.x, cell.y]] = st_type
 
@@ -1798,7 +1916,7 @@ func _resolve_turn():
 		await get_tree().create_timer(0.42).timeout
 		_refresh_board_visuals()
 		
-		# Prüfe, ob im nächsten Schritt noch jemand läuft - falls nein, Laufsound sofort beenden
+		# Prüfe, ob im nächsten Schritt noch jemand läuft: falls nein, Laufsound sofort beenden
 		var will_continue_walking = false
 		if step_idx + 1 < max_possible_steps:
 			for pid in fe_players:
@@ -1829,9 +1947,10 @@ func _resolve_turn():
 		if special_tiles.has(key):
 			any_special_triggered = true
 			var st_type = special_tiles[key]
+			var pickup_pos: Vector2i = p["pos"]
 			special_tiles.erase(key)
 			await _trigger_special_tile(pid, st_type)
-			_spawn_single_special_tile(st_type)
+			_spawn_single_special_tile(st_type, pickup_pos, p["pos"])
 			
 	if any_special_triggered:
 		await _reset_camera(0.38)
@@ -1843,7 +1962,7 @@ func _resolve_turn():
 			return
 		
 	# 3. GLEICHZEITIGE ANGRIFFSPHASE (logisch gleichzeitig, aber visuell nacheinander mit Kamera-Zoom gezeigt!)
-	# Alle Spieler, die zu Beginn der Angriffsphase gelebt haben, führen ihren Schlag aus –
+	# Alle Spieler, die zu Beginn der Angriffsphase gelebt haben, führen ihren Schlag aus:
 	# auch dann, wenn sie durch einen früher gezeigten Angriff in derselben Runde bereits auf 0 HP gefallen sind.
 	var alive_before_attacks = _get_alive_pids()
 	var any_attack_shown = false
@@ -2442,8 +2561,8 @@ func _append_log(bbcode_line: String):
 # PHASE 4: SIEGEREHRUNG & PUNKTEVERGABE (INKL. SUDDEN DEATH BEI DOPPEL-K.O.)
 # ==============================================================================
 
-func _get_alive_pids() -> Array[int]:
-	var res: Array[int] = []
+func _get_alive_pids() -> Array:
+	var res: Array = []
 	for pid in fe_players:
 		if fe_players[pid]["alive"]:
 			res.append(int(pid))
@@ -2456,7 +2575,7 @@ func _get_alive_team_count() -> int:
 			alive_teams[fe_players[pid]["team_index"]] = true
 	return alive_teams.size()
 
-func _trigger_sudden_death_revive(last_alive_pids: Array[int]):
+func _trigger_sudden_death_revive(last_alive_pids: Array):
 	var revived_names: Array[String] = []
 	for pid in last_alive_pids:
 		if not fe_players.has(pid):
@@ -2492,12 +2611,7 @@ func _check_for_game_over() -> bool:
 	current_phase = Phase.GAME_OVER
 	is_resolving_turn = false
 	execute_turn_btn.visible = false
-	back_to_board_btn.visible = true
-	
-	NetworkManager.broadcast({
-		"type": "state_change",
-		"state": "waiting"
-	})
+	back_to_board_btn.visible = false
 	
 	var winning_team_idx = alive_teams.keys()[0]
 		
@@ -2507,16 +2621,11 @@ func _check_for_game_over() -> bool:
 		turn_banner.add_theme_color_override("font_color", winning_team["color"])
 		_append_log("\n[color=#ffd866][b][icon=trophy:M] %s gewinnt Fire Emblem![/b][/color]" % winning_team["name"])
 		
-		AudioManager.play_sfx("confetti-pop-sound-effect")
-		if winning_team.has("players"):
-			for p in winning_team["players"]:
-				if p.has("character"):
-					AudioManager.play_character_sfx(p["character"], "win")
-					
+		var points = 2
+		if NetworkManager.current_selecting_team_color == winning_team["color"]:
+			points = 3
+			
 		if NetworkManager.current_minigame_index != -1:
-			var points = 2
-			if NetworkManager.current_selecting_team_color == winning_team["color"]:
-				points = 3
 			NetworkManager.minigame_winners[NetworkManager.current_minigame_index] = {
 				"color": winning_team["color"],
 				"points": points,
@@ -2526,8 +2635,13 @@ func _check_for_game_over() -> bool:
 				var p_id = _get_player_id(p)
 				if p_id != -1 and NetworkManager.player_sessions.has(p_id):
 					NetworkManager.player_sessions[p_id]["score"] += points
+					
+		if winner_overlay:
+			winner_overlay.setup_winner(winning_team, points, "Letztes überlebendes Team auf dem Schlachtfeld!")
 	else:
 		turn_banner.text = "Unentschieden!"
+		if winner_overlay:
+			winner_overlay.setup_winner(null, 0, "Alle Einheiten sind auf dem Schlachtfeld gefallen!")
 		
 	_refresh_sidebar_status()
 	return true
@@ -2539,8 +2653,8 @@ func _on_back_pressed():
 			if not NetworkManager.is_replaying_minigame:
 				NetworkManager.current_turn_number -= 1
 	NetworkManager.is_replaying_minigame = false
-	NetworkManager.current_minigame_index = -1
+	if not NetworkManager.minigame_winners.has(NetworkManager.current_minigame_index):
+		NetworkManager.current_minigame_index = -1
 	var tree = get_tree()
 	if tree:
 		tree.change_scene_to_file("res://scenes/MainBoard.tscn")
-

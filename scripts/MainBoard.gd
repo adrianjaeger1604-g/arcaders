@@ -37,6 +37,12 @@ var team_colors = [
 func _ready():
 	AudioManager.play_random_mainboard_music()
 	NetworkManager.is_replaying_minigame = false
+	NetworkManager.broadcast({
+		"type": "state_change",
+		"state": "waiting",
+		"title": "SPIELBRETT",
+		"message": "Das Spielbrett ist bereit! Bitte auf den Hauptbildschirm schauen."
+	})
 	if repeat_confirm_overlay:
 		repeat_confirm_overlay.visible = false
 	if btn_confirm_repeat:
@@ -146,8 +152,6 @@ func _populate_grid():
 			thumb_tex = _get_thumbnail_safe("res://assets/minigames/cookie_clickers/cookie_clickers_thumbnail.png")
 			if not thumb_tex:
 				thumb_tex = _get_thumbnail_safe("res://assets/minigames/tip_fast/tip_fast_thumbnail.png")
-		elif "VideoGameQuiz" in scene_file:
-			thumb_tex = _get_thumbnail_safe("res://assets/minigames/video_game_quiz/video_game_quiz_thumbnail.png")
 		elif "FireEmblem" in scene_file:
 			thumb_tex = _get_thumbnail_safe("res://assets/minigames/fire_emblem/fire_emblem_thumbnail.png")
 		elif "IceClimbers" in scene_file:
@@ -158,6 +162,10 @@ func _populate_grid():
 				thumb_tex = _get_thumbnail_safe("res://assets/minigames/hexagon/hexagon_thumbnail.jpg")
 		elif "BetBuddyExtreme" in scene_file or "BetBuddy" in scene_file:
 			thumb_tex = _get_thumbnail_safe("res://assets/minigames/bet_buddy_extreme/bet_buddy_extreme_thumbnail.png")
+		elif "Schmierig" in scene_file:
+			thumb_tex = _get_thumbnail_safe("res://assets/minigames/schmierig/schmierig_thumbnail.png")
+			if not thumb_tex:
+				thumb_tex = _get_thumbnail_safe("res://assets/minigames/schmierig/schmierig_thumbnail.jpg")
 			if not thumb_tex:
 				thumb_tex = _get_thumbnail_safe("res://assets/minigames/bet_buddy_extreme/bet_buddy_extreme_thumbnail.jpg")
 			
@@ -249,13 +257,16 @@ func _populate_grid():
 				
 				bg_panel.add_child(team_badge)
 				
-			# 5. Punktzahl gut lesbar und zentriert anzeigen
+			# 5. Punktzahl gut lesbar und exakt zentriert anzeigen
 			var points_label = Label.new()
 			points_label.text = "+" + str(points_won)
 			points_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			points_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			points_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-			points_label.offset_bottom = -14 # Leicht nach oben versetzt für perfekten Ausgleich mit dem Team-Badge
+			points_label.offset_left = 0
+			points_label.offset_top = 0
+			points_label.offset_right = 0
+			points_label.offset_bottom = 0
 			points_label.add_theme_font_size_override("font_size", 48)
 			points_label.add_theme_color_override("font_color", Color(1, 1, 1, 1)) # Weiss
 			points_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1)) # Schwarze Kontur
@@ -293,7 +304,7 @@ func _populate_grid():
 				
 				# Starte die Slam- und Shake-Animation zeitversetzt
 				var anim_tween = create_tween()
-				anim_tween.tween_interval(0.8)
+				anim_tween.tween_interval(0.4)
 				
 				# Einfliegen / Draufklatschen (Slam) in 0.35s
 				anim_tween.tween_property(points_label, "scale", Vector2(1, 1), 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
@@ -339,8 +350,6 @@ func _on_played_minigame_pressed(minigame_index: int):
 			game_name = "10 Sekunden"
 		elif "CookieClickers" in base or "TipFast" in base or "CookieClicker" in base:
 			game_name = "Cookie Clickers"
-		elif "VideoGameQuiz" in base:
-			game_name = "Videospielquiz"
 		elif "FireEmblem" in base:
 			game_name = "Fire Emblem"
 		elif "IceClimbers" in base:
@@ -349,6 +358,8 @@ func _on_played_minigame_pressed(minigame_index: int):
 			game_name = "Hexagon"
 		elif "BetBuddyExtreme" in base or "BetBuddy" in base:
 			game_name = "Bet Buddy Extreme"
+		elif "Schmierig" in base:
+			game_name = "Schmierig"
 		elif "Quiz" in base or "Qualifikationsquiz" in base:
 			game_name = "Quiz"
 	

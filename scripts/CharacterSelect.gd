@@ -86,6 +86,18 @@ func _add_or_update_player_ui(p_id, p_name, character):
 func _on_next_pressed():
 	print("Lobby Auswahl beendet.")
 	NetworkManager.game_locked = true # Ab jetzt keine neuen Spieler mehr
+	
+	# Allen Spielern, die keinen Charakter gewählt haben, standardmäßig "Cedi" zuweisen
+	for p_id in NetworkManager.player_sessions.keys():
+		var c = NetworkManager.player_sessions[p_id].get("character", "")
+		if c == "" or c == "unknown":
+			NetworkManager.player_sessions[p_id]["character"] = "Cedi"
+			NetworkManager.send_to_player(p_id, {
+				"type": "character_assigned",
+				"character": "Cedi"
+			})
+			print("[CharacterSelect] Spieler %s hat keinen Charakter gewählt -> Standard 'Cedi' zugewiesen." % NetworkManager.player_sessions[p_id].get("name", p_id))
+			
 	if NetworkManager.team_assignment_mode == "manual":
 		print("Manuelle Teamauswahl aktiv -> wechsle zur Zuweisungsszene...")
 		get_tree().change_scene_to_file("res://scenes/ManualTeamAssignment.tscn")

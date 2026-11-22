@@ -10,12 +10,17 @@ func _ready():
 	if bb:
 		bb.queue_free()
 		
+	if scale == Vector2.ONE:
+		scale = Vector2(4, 4)
+		
 	_update_layout()
 	get_tree().root.size_changed.connect(_update_layout)
 
 func _update_layout():
+	if scale == Vector2.ONE:
+		scale = Vector2(4, 4)
 	var vp_size = get_viewport_rect().size
-	var s = scale.x if scale.x > 0.0 else 4.0
+	var s = scale.x if scale.x > 1.0 else 4.0
 	var tile_screen_px = 16.0 * s # 64 px at scale 4
 	var cols = int(ceil(vp_size.x / tile_screen_px)) + 4
 	var rows = int(ceil(vp_size.y / tile_screen_px)) + 2

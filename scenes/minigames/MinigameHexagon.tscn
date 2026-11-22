@@ -9,6 +9,7 @@
 [ext_resource type="StyleBox" uid="uid://c6f2y8p1n5m4a" path="res://resources/panel_side_style.tres" id="7_panel_side"]
 [ext_resource type="StyleBox" uid="uid://d1x8j2n7p9k3q" path="res://resources/panel_modal_style.tres" id="8_panel_modal"]
 [ext_resource type="Texture2D" path="res://assets/ui/icons/pixel/hourglass.svg" id="9_hourglass"]
+[ext_resource type="PackedScene" uid="uid://c6v2n7m9q1k4w" path="res://scenes/ui/MinigameWinnerOverlay.tscn" id="10_winner_overlay"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
 bg_color = Color(0.04, 0.05, 0.08, 0.5)
@@ -60,7 +61,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.121569, 0.12549, 0.180392, 1)
+color = Color(0, 0, 0, 1)
 
 [node name="BackgroundTileMap" type="TileMap" parent="."]
 script = ExtResource("6_bg")
@@ -81,7 +82,7 @@ grow_vertical = 2
 [node name="VBox" type="VBoxContainer" parent="IntroContainer"]
 custom_minimum_size = Vector2(1040, 0)
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 48
 
 [node name="Title" type="Label" parent="IntroContainer/VBox"]
 layout_mode = 2
@@ -101,9 +102,9 @@ vertical_scroll_mode = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 10
+theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_bottom = 0
 
 [node name="Instruction" type="Label" parent="IntroContainer/VBox/ScrollArea/InstructionContainer"]
 layout_mode = 2
@@ -126,7 +127,7 @@ Wer eine gültige Dreier-Reihe weiß, buzzert auf dem Handy und nennt dem Game M
 • Richtig: +1 Punkt für das Team!
 • Falsch: -1 Punkt Abzug (Minuspunkte sind möglich!).
 • Wenn 30 Sekunden lang niemand buzzert, werden alle restlichen Kombinationen direkt auf dem Hexagon aufgedeckt.
-• Das Team mit den meisten Punkten nach 5 Runden gewinnt das Minispiel!"
+• Das Team mit den meisten Punkten nach 3 Runden gewinnt das Minispiel!"
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -142,68 +143,294 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_top = 16.0
-offset_bottom = 88.0
+offset_bottom = 60.0
 grow_horizontal = 2
-theme_override_constants/separation = 4
 alignment = 1
-
-[node name="RoundLabel" type="Label" parent="TopHeader"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 22
-text = "Runde 1 / 5"
-horizontal_alignment = 1
 
 [node name="ScoreContainer" type="HBoxContainer" parent="TopHeader"]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="MainLayout" type="HBoxContainer" parent="."]
+[node name="BoardArea" type="Control" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 30.0
-offset_top = 96.0
-offset_right = -30.0
-offset_bottom = -70.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 24
+mouse_filter = 2
 
-[node name="CenterArea" type="VBoxContainer" parent="MainLayout"]
+[node name="RoundLabel" type="Label" parent="BoardArea"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -350.0
+offset_right = 300.0
+offset_bottom = -312.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"H3"
+theme_override_colors/font_color = Color(0.8, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Runde 1 / 5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BoardContainer" type="CenterContainer" parent="BoardArea"]
+custom_minimum_size = Vector2(820, 600)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -410.0
+offset_top = -300.0
+offset_right = 410.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HexCanvas" type="Control" parent="BoardArea/BoardContainer"]
+custom_minimum_size = Vector2(820, 600)
+layout_mode = 2
+
+[node name="RightPanel" type="PanelContainer" parent="."]
+visible = false
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -410.0
+offset_top = 76.0
+offset_right = -30.0
+offset_bottom = -30.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_styles/panel = ExtResource("7_panel_side")
+
+[node name="VBox" type="VBoxContainer" parent="RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TargetSumCard" type="PanelContainer" parent="RightPanel/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="RightPanel/VBox/TargetSumCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="RightPanel/VBox/TargetSumCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "GESUCHTE ZIEL-SUMME"
+horizontal_alignment = 1
+
+[node name="TargetSumLabel" type="Label" parent="RightPanel/VBox/TargetSumCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.1, 1)
+theme_override_font_sizes/font_size = 54
+text = "10"
+horizontal_alignment = 1
+
+[node name="BuzzerCard" type="PanelContainer" parent="RightPanel/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="RightPanel/VBox/BuzzerCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BuzzerStatusLabel" type="Label" parent="RightPanel/VBox/BuzzerCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "BUZZER AKTIV"
+horizontal_alignment = 1
+
+[node name="PlayerNameLabel" type="Label" parent="RightPanel/VBox/BuzzerCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "Warte auf Buzzer..."
+horizontal_alignment = 1
+
+[node name="TeamBadge" type="Label" parent="RightPanel/VBox/BuzzerCard/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Team"
+horizontal_alignment = 1
+
+[node name="CharIcon" type="TextureRect" parent="RightPanel/VBox/BuzzerCard/VBox"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GMCard" type="PanelContainer" parent="RightPanel/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="RightPanel/VBox/GMCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="GMTitle" type="Label" parent="RightPanel/VBox/GMCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "GAME MASTER EINGABE"
+horizontal_alignment = 1
+
+[node name="Slots" type="HBoxContainer" parent="RightPanel/VBox/GMCard/VBox"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 16
+
+[node name="Slot1" type="Label" parent="RightPanel/VBox/GMCard/VBox/Slots"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 38
+text = "_"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot2" type="Label" parent="RightPanel/VBox/GMCard/VBox/Slots"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 38
+text = "_"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Slot3" type="Label" parent="RightPanel/VBox/GMCard/VBox/Slots"]
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 38
+text = "_"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="RightPanel/VBox/GMCard/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BtnResolve" type="Button" parent="RightPanel/VBox/GMCard/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 12
-alignment = 1
+theme_type_variation = &"SmallPrimaryButton"
+theme_override_font_sizes/font_size = 16
+text = "Auflösen"
 
-[node name="BoardContainer" type="CenterContainer" parent="MainLayout/CenterArea"]
+[node name="BtnClear" type="Button" parent="RightPanel/VBox/GMCard/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"SmallButton"
+theme_override_font_sizes/font_size = 16
+text = "Löschen"
+
+[node name="RevealCard" type="PanelContainer" parent="RightPanel/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="VBox" type="VBoxContainer" parent="RightPanel/VBox/RevealCard"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RevealCardTitle" type="Label" parent="RightPanel/VBox/RevealCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "RUNDEN-AUFLÖSUNG"
+horizontal_alignment = 1
+
+[node name="RevealSummaryLabel" type="Label" parent="RightPanel/VBox/RevealCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Alle Kombinationen aufgedeckt."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SolutionsScroll" type="ScrollContainer" parent="RightPanel/VBox/RevealCard/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SolutionsList" type="VBoxContainer" parent="RightPanel/VBox/RevealCard/VBox/SolutionsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Spacer" type="Control" parent="RightPanel/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HexCanvas" type="Control" parent="MainLayout/CenterArea/BoardContainer"]
-custom_minimum_size = Vector2(760, 540)
+[node name="BtnEndRound" type="Button" parent="RightPanel/VBox"]
+custom_minimum_size = Vector2(0, 52)
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "RUNDE BEENDEN"
 
-[node name="TimerContainer" type="PanelContainer" parent="MainLayout/CenterArea"]
-custom_minimum_size = Vector2(520, 0)
+[node name="BtnNextRound" type="Button" parent="RightPanel/VBox"]
+visible = false
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "NÄCHSTE RUNDE"
+
+[node name="BottomContainer" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -560.0
+offset_top = -225.0
+offset_right = 560.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 10
+alignment = 2
+
+[node name="TimerContainer" type="PanelContainer" parent="BottomContainer"]
+custom_minimum_size = Vector2(540, 0)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+theme_override_styles/panel = ExtResource("7_panel_side")
 
-[node name="VBox" type="VBoxContainer" parent="MainLayout/CenterArea/TimerContainer"]
+[node name="VBox" type="VBoxContainer" parent="BottomContainer/TimerContainer"]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="TimerDisplayHBox" type="HBoxContainer" parent="MainLayout/CenterArea/TimerContainer/VBox"]
+[node name="TimerDisplayHBox" type="HBoxContainer" parent="BottomContainer/TimerContainer/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="HourglassIcon" type="TextureRect" parent="MainLayout/CenterArea/TimerContainer/VBox/TimerDisplayHBox"]
+[node name="HourglassIcon" type="TextureRect" parent="BottomContainer/TimerContainer/VBox/TimerDisplayHBox"]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 size_flags_vertical = 4
@@ -214,21 +441,21 @@ stretch_mode = 5
 texture_filter = 1
 modulate = Color(0.85, 0.88, 0.95, 0.9)
 
-[node name="TimerDesc" type="Label" parent="MainLayout/CenterArea/TimerContainer/VBox/TimerDisplayHBox"]
+[node name="TimerDesc" type="Label" parent="BottomContainer/TimerContainer/VBox/TimerDisplayHBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.82, 0.9, 1)
 theme_override_font_sizes/font_size = 20
 text = "Merkzeit:"
 vertical_alignment = 1
 
-[node name="TimerLabel" type="Label" parent="MainLayout/CenterArea/TimerContainer/VBox/TimerDisplayHBox"]
+[node name="TimerLabel" type="Label" parent="BottomContainer/TimerContainer/VBox/TimerDisplayHBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 38
 text = "60 s"
 vertical_alignment = 1
 
-[node name="TimerBar" type="ProgressBar" parent="MainLayout/CenterArea/TimerContainer/VBox"]
+[node name="TimerBar" type="ProgressBar" parent="BottomContainer/TimerContainer/VBox"]
 custom_minimum_size = Vector2(480, 16)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -239,7 +466,11 @@ step = 0.1
 value = 60.0
 show_percentage = false
 
-[node name="BtnSkipTimer" type="Button" parent="MainLayout/CenterArea/TimerContainer/VBox"]
+[node name="SkipTimerContainer" type="MarginContainer" parent="BottomContainer/TimerContainer/VBox"]
+layout_mode = 2
+theme_override_constants/margin_top = 22
+
+[node name="BtnSkipTimer" type="Button" parent="BottomContainer/TimerContainer/VBox/SkipTimerContainer"]
 custom_minimum_size = Vector2(260, 44)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -247,208 +478,16 @@ theme_type_variation = &"SecondaryButton"
 theme_override_font_sizes/font_size = 18
 text = "Merkzeit überspringen"
 
-[node name="RightPanel" type="PanelContainer" parent="MainLayout"]
-custom_minimum_size = Vector2(380, 0)
-layout_mode = 2
-theme_override_styles/panel = ExtResource("7_panel_side")
-
-[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="TargetSumCard" type="PanelContainer" parent="MainLayout/RightPanel/VBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
-
-[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/TargetSumCard"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="Title" type="Label" parent="MainLayout/RightPanel/VBox/TargetSumCard/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 18
-text = "GESUCHTE ZIEL-SUMME"
-horizontal_alignment = 1
-
-[node name="TargetSumLabel" type="Label" parent="MainLayout/RightPanel/VBox/TargetSumCard/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.1, 1)
-theme_override_font_sizes/font_size = 54
-text = "10"
-horizontal_alignment = 1
-
-[node name="BuzzerCard" type="PanelContainer" parent="MainLayout/RightPanel/VBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
-
-[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/BuzzerCard"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="BuzzerStatusLabel" type="Label" parent="MainLayout/RightPanel/VBox/BuzzerCard/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
-theme_override_font_sizes/font_size = 20
-text = "BUZZER AKTIV"
-horizontal_alignment = 1
-
-[node name="PlayerNameLabel" type="Label" parent="MainLayout/RightPanel/VBox/BuzzerCard/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 24
-text = "Warte auf Buzzer..."
-horizontal_alignment = 1
-
-[node name="TeamBadge" type="Label" parent="MainLayout/RightPanel/VBox/BuzzerCard/VBox"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "Team"
-horizontal_alignment = 1
-
-[node name="CharIcon" type="TextureRect" parent="MainLayout/RightPanel/VBox/BuzzerCard/VBox"]
-custom_minimum_size = Vector2(64, 64)
+[node name="BottomBar" type="PanelContainer" parent="BottomContainer"]
+custom_minimum_size = Vector2(1000, 48)
 layout_mode = 2
 size_flags_horizontal = 4
-expand_mode = 1
-stretch_mode = 5
+theme_override_styles/panel = ExtResource("7_panel_side")
 
-[node name="GMCard" type="PanelContainer" parent="MainLayout/RightPanel/VBox"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
-
-[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/GMCard"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="GMTitle" type="Label" parent="MainLayout/RightPanel/VBox/GMCard/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.9, 0.5, 1)
-theme_override_font_sizes/font_size = 18
-text = "GAME MASTER EINGABE"
-horizontal_alignment = 1
-
-[node name="Slots" type="HBoxContainer" parent="MainLayout/RightPanel/VBox/GMCard/VBox"]
-layout_mode = 2
-alignment = 1
-theme_override_constants/separation = 16
-
-[node name="Slot1" type="Label" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Slots"]
-custom_minimum_size = Vector2(60, 60)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
-theme_override_font_sizes/font_size = 38
-text = "_"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Slot2" type="Label" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Slots"]
-custom_minimum_size = Vector2(60, 60)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
-theme_override_font_sizes/font_size = 38
-text = "_"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Slot3" type="Label" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Slots"]
-custom_minimum_size = Vector2(60, 60)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.3, 1)
-theme_override_font_sizes/font_size = 38
-text = "_"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Buttons" type="HBoxContainer" parent="MainLayout/RightPanel/VBox/GMCard/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="BtnResolve" type="Button" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Buttons"]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
-text = "Auflösen"
-
-[node name="BtnClear" type="Button" parent="MainLayout/RightPanel/VBox/GMCard/VBox/Buttons"]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"SecondaryButton"
-theme_override_font_sizes/font_size = 18
-text = "Löschen"
-
-[node name="RevealCard" type="PanelContainer" parent="MainLayout/RightPanel/VBox"]
-visible = false
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
-
-[node name="VBox" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/RevealCard"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="RevealCardTitle" type="Label" parent="MainLayout/RightPanel/VBox/RevealCard/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.6, 1, 1)
-theme_override_font_sizes/font_size = 20
-text = "RUNDEN-AUFLÖSUNG"
-horizontal_alignment = 1
-
-[node name="RevealSummaryLabel" type="Label" parent="MainLayout/RightPanel/VBox/RevealCard/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "Alle Kombinationen aufgedeckt."
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SolutionsScroll" type="ScrollContainer" parent="MainLayout/RightPanel/VBox/RevealCard/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="SolutionsList" type="VBoxContainer" parent="MainLayout/RightPanel/VBox/RevealCard/VBox/SolutionsScroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 4
-
-[node name="BtnNextRound" type="Button" parent="MainLayout/RightPanel/VBox/RevealCard/VBox"]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "Nächste Runde"
-
-[node name="Spacer" type="Control" parent="MainLayout/RightPanel/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="BtnEndRound" type="Button" parent="MainLayout/RightPanel/VBox"]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "Runde beenden"
-
-[node name="BottomBar" type="PanelContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = -60.0
-offset_right = -20.0
-offset_bottom = -10.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
-
-[node name="FeedbackLabel" type="Label" parent="BottomBar"]
+[node name="FeedbackLabel" type="Label" parent="BottomContainer/BottomBar"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 text = "Erkläre Hexagon..."
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -457,55 +496,7 @@ vertical_alignment = 1
 layout_mode = 0
 offset_left = 14.0
 offset_top = 14.0
-offset_right = 64.0
-offset_bottom = 64.0
+offset_right = 78.0
+offset_bottom = 78.0
 
-[node name="VictoryOverlay" type="ColorRect" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 0
-color = Color(0.03, 0.04, 0.07, 0.85)
-
-[node name="Panel" type="PanelContainer" parent="VictoryOverlay"]
-custom_minimum_size = Vector2(800, 480)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -400.0
-offset_top = -240.0
-offset_right = 400.0
-offset_bottom = 240.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = ExtResource("8_panel_modal")
-
-[node name="VBox" type="VBoxContainer" parent="VictoryOverlay/Panel"]
-layout_mode = 2
-theme_override_constants/separation = 20
-
-[node name="VictoryTitle" type="Label" parent="VictoryOverlay/Panel/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
-theme_override_font_sizes/font_size = 42
-text = "SIEGEREHRUNG"
-horizontal_alignment = 1
-
-[node name="Podium" type="HBoxContainer" parent="VictoryOverlay/Panel/VBox"]
-layout_mode = 2
-size_flags_vertical = 3
-alignment = 1
-theme_override_constants/separation = 24
-
-[node name="BtnBackToBoard" parent="VictoryOverlay/Panel/VBox" instance=ExtResource("2_btn")]
-custom_minimum_size = Vector2(340, 60)
-layout_mode = 2
-size_flags_horizontal = 4
-text = "Zurück zum Spielbrett"
+[node name="MinigameWinnerOverlay" parent="." instance=ExtResource("10_winner_overlay")]
